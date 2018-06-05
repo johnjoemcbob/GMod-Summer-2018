@@ -81,10 +81,8 @@ function ENT:Think()
 		self.Entity:BulletAction()
 	end
 	
-	--trace = {self:GetPos(), self:GetPos() + self.launch_vector, {}, MASK_SOLID, COLLISION_GROUP_NONE, false, nil}
-	
 	traceResult = util.QuickTrace(self:GetPos(), self.launch_vector / 2, self )
-	if(traceResult.Hit == true) then
+	if(traceResult.Hit == true and string.find(traceResult.Entity:GetClass(), "prk_turret") == nil) then
 		self.has_collided = true
 	end
 

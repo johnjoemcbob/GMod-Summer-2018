@@ -3,10 +3,6 @@ AddCSLuaFile('cl_init.lua')
 
 include('shared.lua')
 
--- TODO: [ ] SEEMS WEIRD THAT THIS WON'T SPAWN IF GAMEMODE ISN'T SANDBOX DERIVED
---		 [ ] MOVETYPE_FLY AND ENT:PHYSICSCOLLIDE DON'T PLAY NICELY TOGETHER - NEED TO DO SOME SMALL TRACES TO DO WORLD COLLISION MAYBE?
---				* could actually just store a maximum travel distance based on bullet speed and trace from cannon, blow up after distance travelled/time expired?
-
 sound.Add({ 
 	name = "prk_bullet_flysound",
 	channel = CHAN_ITEM,

@@ -7,10 +7,19 @@ include('shared.lua')
 --		 [ ] MOVETYPE_FLY AND ENT:PHYSICSCOLLIDE DON'T PLAY NICELY TOGETHER - NEED TO DO SOME SMALL TRACES TO DO WORLD COLLISION MAYBE?
 --				* could actually just store a maximum travel distance based on bullet speed and trace from cannon, blow up after distance travelled/time expired?
 
+sound.Add({ 
+	name = "prk_bullet_flysound",
+	channel = CHAN_ITEM,
+	volume = 1.0,
+	level = 75,
+	pitch = {140, 180},
+	sound = "weapons/physcannon/hold_loop.wav"
+})
+
 function ENT:Initialize()
 	-- Variables
 	self.model = "models/Items/AR2_Grenade.mdl"
-	self.blast_radius = 10
+	self.blast_radius = 100
 	self.blast_force = 0
 	self.blast_damage = 5
 	self.bullet_scale = 10
@@ -24,27 +33,32 @@ function ENT:Initialize()
 	self:SetMoveType(MOVETYPE_FLY)
 	self:SetRenderMode(RENDERMODE_TRANSALPHA)
 	self.RenderGroup = RENDERGROUP_TRANSLUCENT
+	self:SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS)
 	self:SetColor( Color(0,0,0,255) )
 	self:SetModelScale(self.bullet_scale, 0)
 	self:PhysWake()
-	self:SetGravity(0)
+	self:SetGravity(0.01)
+	self:SetTrigger(true)
+	
 
 	
 	-- Precache missile noises
 	--util.PrecacheSound("weapons/crossbow/fire1.wav") -- turret fire sound?
 	util.PrecacheSound("weapons/physcannon/hold_loop.wav") -- flyby sound
-
+	
 	-- call me from cannon/turret
-	self:Launch(Vector(0,0,0), Vector(0,self.bullet_speed,0))
+	self:Launch(Vector(0,0,0), VectorRand() * self.bullet_speed)
 	
 	
 	
 end
 
 function ENT:Launch(startpos, velocity)
+	self.launch_vector = velocity
 	self:SetPos(startpos)
 	self:SetVelocity(velocity)
 	self:SetAngles(velocity:Angle())
+	self:EmitSound("prk_bullet_flysound")
 end
 
 function ENT:OnTakeDamage(dmg)
@@ -67,9 +81,15 @@ function ENT:PhysicsCollide( colData, collider )
 end
 
 function ENT:Think()
-
 	if(self.has_collided == true) then
 		self.Entity:BulletAction()
+	end
+	
+	--trace = {self:GetPos(), self:GetPos() + self.launch_vector, {}, MASK_SOLID, COLLISION_GROUP_NONE, false, nil}
+	
+	traceResult = util.QuickTrace(self:GetPos(), self.launch_vector / 2, self )
+	if(traceResult.Hit == true) then
+		self.has_collided = true
 	end
 
 end
@@ -94,6 +114,7 @@ end
 function ENT:BulletAction()
 	-- If we haven't exploded yet...
 	if(self.has_exploded == false) then
+		self:StopSound("prk_bullet_flysound")
 		-- Where are we?
 		pos = self.Entity:GetPos()
 		-- EXPLODE!

@@ -5,6 +5,9 @@
 -- Level Generation
 --
 
+local DEBUG = true
+
+
 local size = 47.45
 local hsize = size / 2
 
@@ -12,50 +15,102 @@ local DefaultRooms = {
 	-- Default room
 	{
 		Models = {
+			-- Floor
 			{
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( -size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( 0, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( 0, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( size * 8, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( -size * 8, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( -size * 8, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( size * 8, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
+			},
+
+			-- Walls
+			{
+				Pos = Vector( size * 8 + hsize * 8, -size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( size * 8 + hsize * 8, size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -size * 8 - hsize * 8, -size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -size * 8 - hsize * 8, size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -size * 8, size * 8 + hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( size * 8, size * 8 + hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -size * 8, -size * 8 - hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( size * 8, -size * 8 - hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
 			},
 
 			-- Door placehold
@@ -112,20 +167,56 @@ local DefaultRooms = {
 	-- L room
 	{
 		Models = {
+			-- Floor
 			{
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
 			},
 			{
 				Pos = Vector( 0, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
+				Collide = true,
+			},
+
+			-- Walls
+			{
+				Pos = Vector( -hsize * 8, 0, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -hsize * 8, size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( 0, -hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( size * 8, -hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( hsize * 8, size * 8, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( size * 8, hsize * 8, 0 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
 			},
 
 			-- Door placehold
@@ -164,9 +255,23 @@ local DefaultRooms = {
 	-- Corridor
 	{
 		Models = {
+			-- Floor
 			{
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Collide = true,
+			},
+
+			-- Wall
+			{
+				Pos = Vector( hsize * 3, 0, 0 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+			},
+			{
+				Pos = Vector( -hsize * 3, 0, 0 ),
+				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
 			},
 
@@ -205,8 +310,28 @@ local DefaultRooms = {
 	},
 }
 
-local LastGen = {}
-local CurrentRoomID = 0
+local HelperModels = {
+	Anchor = {
+		Model = "models/props_c17/pulleyhook01.mdl",
+		Angle = Angle( 180, 0, 0 ),
+	},
+	Min = {
+		Model = "models/mechanics/solid_steel/l-beam__16.mdl",
+		Angle = Angle( 0, 0, 0 ),
+	},
+	Max = {
+		Model = "models/hunter/tubes/tube2x2x+.mdl",
+		Angle = Angle( 0, 0, 0 ),
+	},
+	Attach = {
+		Model = "models/props_junk/PushCart01a.mdl",
+		Angle = Angle( 0, 0, 0 ),
+	},
+}
+
+local LastGen = {} -- Table of all rooms last generated
+local ToGen = {} -- Table of rooms still to try attach points for
+local CurrentRoomID = 0 -- Indices for rooms
 
 concommand.Add( "prk_gen", function( ply, cmd, args )
 	PRK_Gen_Remove()
@@ -214,84 +339,106 @@ concommand.Add( "prk_gen", function( ply, cmd, args )
 end )
 
 concommand.Add( "prk_test", function( ply, cmd, args )
-	for k, room in pairs( LastGen ) do
-		PRK_Gen_RotateAround( room, 1, 45 )
-	end
+	PRK_Gen_Step( ply:GetPos() - Vector( 0, 0, 100 ) )
+	-- for k, room in pairs( LastGen ) do
+		-- PRK_Gen_RotateAround( room, 1, 45 )
+	-- end
 end )
 
+local room
 concommand.Add( "prk_test2", function( ply, cmd, args )
-	for k, room in pairs( LastGen ) do
-		PRK_Gen_RotateAround( room, 2, 45 )
-	end
+	-- for k, room in pairs( LastGen ) do
+		if ( room.AttachPoints ) then
+			PRK_Gen_RotateAround( room, room.AttachPoints[2], 90 )
+		end
+	-- end
 end )
 
 function PRK_Gen( origin )
 	LastGen = {}
 	CurrentRoomID = 0
 
-	-- Generate first room
-	PRK_Gen_Room( origin )
-
-	-- Loop through all connections and generate more rooms for them
-	-- Maybe based on a grid array of open spaces, fill in by size of room?
-	-- Could also just spawn the props and check for collision but would be slow i guess
-	local tries = 100
-	for k, room in pairs( LastGen ) do
-		for _, attach in pairs( room.AttachPoints ) do
-			if ( tries <= 0 ) then
-				return
-			end
-			if ( !attach.Attached ) then
-				-- Chance to lead somewhere
-				if ( math.random( 1, 10 ) != 1 ) then
-					debugoverlay.Sphere(
-						room.Origin + attach.Pos,
-						10,
-						20,
-						Color( 100, 100, 255, 255 ),
-						true
-					)
-					PRK_Gen_Room( room.Origin + attach.Pos, attach )
-					debugoverlay.Line( room.Origin, room.Origin + attach.Pos, 20, Color( 100, 0, 100, 200 ), true )
-					PrintTable( room )
-					print( "more room" )
-				end
-				LastGen[k].AttachPoints[_].Attached = true
-				tries = tries - 1
-			end
-		end
+	-- Create each helper model entity
+	for k, v in pairs( HelperModels ) do
+		local ent = PRK_CreateProp( v.Model, origin, v.Angle )
+		v.Ent = ent
 	end
+
+--	-- Generate first room
+--	PRK_Gen_Room( origin )
+--
+--	-- Loop through all connections and generate more rooms for them
+--	-- Maybe based on a grid array of open spaces, fill in by size of room?
+--	-- Could also just spawn the props and check for collision but would be slow i guess
+--	local tries = 2
+--	for k, room in pairs( LastGen ) do
+--		for _, attach in pairs( room.AttachPoints ) do
+--			if ( tries <= 0 ) then
+--				return
+--			end
+--			if ( !attach.Attached ) then
+--				-- Chance to lead somewhere
+--				if ( math.random( 1, 10 ) != 1 ) then
+--					PRK_Gen_Room( room.Origin + attach.Pos, attach )
+--				end
+--				LastGen[k].AttachPoints[_].Attached = true
+--				tries = tries - 1
+--			end
+--		end
+--	end
+	ToGen = {
+		{
+			AttachPoints = {
+				{
+					Pos = origin
+				}
+			}
+		}
+	}
+	PRK_Gen_Step()
 end
 
-function PRK_Gen_Room( origin, attachto )
-	local room = {}
-		room.Origin = origin
+-- local room = nil
+local plan
+local index_try = 1
+local orient_try = 1
+function PRK_Gen_Step()
+	print( "step" )
+	if ( !ToGen or #ToGen == 0 ) then return end
 
-		-- Choose a random room
-		local rnd = DefaultRooms[math.random( 1, #DefaultRooms )]
+	local origin = ToGen[1].AttachPoints[1].Pos
 
-		-- Check room attach
-		local att
-		if ( attachto ) then
-			-- local att = rnd.AttachPoints[math.random( 1, #rnd.AttachPoints )]
-
-			-- Instead of random
-			-- Take the opposite of the attachto direction and try to find a match
-			local opposite = VectorNegate( attachto.Dir ) -- attachto.Dir --
-				for k, v in pairs( rnd.AttachPoints ) do
-					if ( opposite == v.Dir ) then
-						att = v
-						break
-					end
-				end
-			if ( !att ) then
-				return
-			end
+	local function next_attach()
+		-- Ensure parents are removed
+		for k, v in pairs( room.Ents ) do
+			v:SetParent( nil )
 		end
 
-		-- Add the room visuals/physics
+		-- Reset for next point
+		room = nil
+		orient_try = 1
+		inde = 1
+		CurrentRoomID = CurrentRoomID + 1
+
+		-- Remove ToGen element if no more attachpoints to try
+		table.remove( ToGen[1].AttachPoints, 1 )
+		if ( #ToGen[1].AttachPoints == 0 ) then
+			table.remove( ToGen, 1 )
+		end
+	end
+	local function next_step()
+		timer.Simple( 1, function() PRK_Gen_Step() end )
+	end
+
+	if ( !room ) then
+		print( "Create room!" )
+		-- plan = DefaultRooms[2]
+		plan = DefaultRooms[math.random( 1, #DefaultRooms )]
+
+		room = {}
+			room.Origin = origin
 		room.Ents = {}
-		for k, mod in pairs( rnd.Models ) do
+		for k, mod in pairs( plan.Models ) do
 			local ent = PRK_CreateProp(
 				mod.Mod,
 				room.Origin + mod.Pos,
@@ -300,66 +447,125 @@ function PRK_Gen_Room( origin, attachto )
 			if ( #room.Ents != 0 ) then
 				ent:SetParent( room.Ents[1] )
 			end
+			ent.Collide = mod.Collide
 			ent.PRK_Room = CurrentRoomID
 			table.insert( room.Ents, ent )
 		end
+		room.AttachPoints = table.shallowcopy( plan.AttachPoints )
 
-		-- Move room to attach
-		if ( attachto ) then
-			-- First move position
-			room.Ents[1]:SetPos( room.Ents[1]:GetPos() - att.Pos )
-			debugoverlay.Line( room.Origin - att.Pos, room.Origin, 20, Color( 255, 0, 255, 200 ), true )
-			room.Origin = room.Origin - att.Pos
+		index_try = 1
+		orient_try = 1
+	else
+		local att = room.AttachPoints[index_try]
 
-			-- Then figure out how to match rotation
+		-- Move anchor to correct position
+		local anchor = HelperModels["Anchor"].Ent
+		anchor:SetPos( room.Origin + att.Pos )
+		anchor:SetAngles( HelperModels["Anchor"].Angle )
+
+		-- Parent all to anchor helper
+		for k, v in pairs( room.Ents ) do
+			v:SetParent( anchor )
 		end
 
-		-- Check space at spot
-		for _, v in pairs( rnd.GenerateShape ) do
-			local min, max = v[1], v[2]
-				-- Slightly smaller to avoid border crossover
-				local bor = 95 / 100
-				min = min * bor
-				max = max * bor
-			for k, collision in pairs( ents.FindInBox( room.Origin + min, room.Origin + max ) ) do
-				if ( collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
-					-- Remove this room
-					print( collision )
-					for p, ent in pairs( room.Ents ) do
-						ent:Remove()
+		-- Rotate
+		anchor:SetAngles( HelperModels["Anchor"].Angle + Angle( 0, 90 * ( orient_try - 1 ), 0 ) )
+
+		-- Move anchor to origin attach point
+		anchor:SetPos( room.Origin )
+
+		-- If no collision then store this room
+		local collide = false
+		for _, v in pairs( room.Ents ) do
+			if ( v.Collide ) then
+				local pos = v:GetPos()
+				local min, max = v:OBBMins(), v:OBBMaxs()
+					-- Slightly smaller to avoid border crossover
+					local bor = 95 / 100
+					min = min * bor
+					max = max * bor
+				for k, collision in pairs( ents.FindInBox( pos + min, pos + max ) ) do
+					if ( collision.Collide and collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
+						collide = true
+						debugoverlay.Box( pos, min, max, 2, Color( 255, 0, 0, 100 ) )
 					end
-					return
 				end
-			end
-			debugoverlay.Box( room.Origin, min, max, 10, Color( 255, 255, 0, 100 ) )
-		end
-
-		-- Visualise attach points
-		for k, v in pairs( rnd.AttachPoints ) do
-			PRK_BasicDebugSphere( room.Origin + v.Pos )
-		end
-		-- Store attach for next genroom
-		room.AttachPoints = table.shallowcopy( rnd.AttachPoints )
-		if ( attachto ) then
-			-- Remove the currently attached point
-			for k, v in pairs( room.AttachPoints ) do
-				if ( v.Pos == att.Pos ) then
-					room.AttachPoints[k].Attached = true
-				end
+				debugoverlay.Box( pos, min, max, 2, Color( 255, 255, 0, 100 ) )
 			end
 		end
+		if ( !collide ) then
+			table.insert( LastGen, room )
 
-		-- Spawn points
-		-- todo
+			local temp_orient = orient_try
+			-- Add newest room
+			local temp_room = LastGen[#LastGen]
+			local attachpoints = {}
+			for k, v in pairs( temp_room.AttachPoints ) do
+				if ( k != index_try ) then
+					local helper = HelperModels["Attach"].Ent
+					-- Undo parent
+					helper:SetParent( nil )
 
-		-- Remove parents after reorienting
-		for k, ent in pairs( room.Ents ) do
-			ent:SetParent( nil )
+					-- Undo move
+					anchor:SetPos( temp_room.Origin + att.Pos )
+
+					-- Undo rotation
+					anchor:SetAngles( HelperModels["Anchor"].Angle )
+
+					-- Set attach helper position
+					helper:SetPos( temp_room.Origin + v.Pos )
+
+					-- Parent back to anchor
+					helper:SetParent( anchor )
+
+					-- Rotate back
+					anchor:SetAngles( HelperModels["Anchor"].Angle + Angle( 0, 90 * ( orient_try - 1 ), 0 ) )
+
+					-- Move back
+					anchor:SetPos( temp_room.Origin )
+
+					-- Store pos
+					local point = {
+						Pos = helper:GetPos()
+					}
+					table.insert( attachpoints, point )
+				end
+			end
+
+			-- Must be after attach point etc
+			next_attach()
+
+			table.insert( ToGen, { AttachPoints = attachpoints } )
+			print( "not collide" )
+			PrintTable( ToGen )
+
+			next_step()
+
+			return
 		end
 
-		-- Last: Increment room ID
-		CurrentRoomID = CurrentRoomID + 1
-	table.insert( LastGen, room )
+		-- Otherwise undo rotation and parents
+		anchor:SetPos( room.Origin + att.Pos )
+		anchor:SetAngles( HelperModels["Anchor"].Angle )
+		for k, v in pairs( room.Ents ) do
+			v:SetParent( nil )
+		end
+
+		-- setup next
+		orient_try = orient_try + 1
+		if ( orient_try > 4 ) then
+			orient_try = 1
+			index_try = index_try + 1
+			if ( index_try > #room.AttachPoints ) then
+				for p, ent in pairs( room.Ents ) do
+					ent:Remove()
+				end
+				next_attach()
+			end
+		end
+	end
+
+	next_step()
 end
 
 function PRK_Gen_RotateAround( room, attach, angle )
@@ -367,7 +573,7 @@ function PRK_Gen_RotateAround( room, attach, angle )
 		if ( !ent.OriginalPos ) then
 			ent.OriginalPos = ent:GetPos()
 		end
-	local attpos = room.AttachPoints[attach].Pos
+	local attpos = attach.Pos
 
 	local mat_inverse = Matrix()
 		mat_inverse:SetTranslation( attpos )
@@ -384,6 +590,25 @@ function PRK_Gen_RotateAround( room, attach, angle )
 	local ang = mat_final:GetAngles()
 	ent:SetPos( ent.OriginalPos + pos )
 	ent:SetAngles( ang )
+end
+
+function PRK_Gen_RotatePointAround( point, pointangle, attach, angle )
+	local attpos = attach.Pos
+
+	local mat_inverse = Matrix()
+		mat_inverse:SetTranslation( attpos )
+
+	local mat_rot = Matrix()
+		mat_rot:SetAngles( pointangle + Angle( 0, angle, 0 ) )
+
+	local mat_trans = Matrix()
+		mat_trans:SetTranslation( -attpos )
+
+	-- Move to origin, rotate, move from origin
+	local mat_final = ( mat_inverse * mat_rot ) * mat_trans
+	local pos = mat_final:GetTranslation()
+	local ang = mat_final:GetAngles()
+	return pos, ang
 end
 
 function PRK_Gen_Remove()

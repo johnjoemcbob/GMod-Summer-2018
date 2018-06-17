@@ -5,8 +5,20 @@
 -- Level Generation
 --
 
-local DEBUG = true
+local DEBUG						= true
+local PRK_GEN_COLLIDE_ALL		= false
+local PRK_GEN_DONT				= 4000
+local PRK_GEN_DONT_SIZEMULT		= 1 / 300
+local PRK_GEN_COLLISION_BORDER	= 90 / 100
 
+local PRK_GEN_TYPE_FLOOR	= 1
+local PRK_GEN_TYPE_WALL		= 2
+local PRK_GEN_TYPE_CEILING	= 3
+
+PRK_GEN_TYPE_MAT = {}
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_FLOOR]	= "phoenix_storms/bluemetal"
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_WALL]		= "phoenix_storms/dome"
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_CEILING]	= "phoenix_storms/metalset_1-2"
 
 local size = 47.45
 local hsize = size / 2
@@ -20,120 +32,226 @@ local DefaultRooms = {
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( -size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( 0, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( 0, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( size * 8, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( -size * 8, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( -size * 8, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 			{
 				Pos = Vector( size * 8, -size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 8 },
 			},
 
 			-- Walls
 			{
-				Pos = Vector( size * 8 + hsize * 8, -size * 8, 0 ),
+				Pos = Vector( size * 8 + hsize * 8, -size * 8, hsize * 8 ),
 				Ang = Angle( 90, 0, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( size * 8 + hsize * 8, size * 8, 0 ),
+				Pos = Vector( size * 8 + hsize * 8, size * 8, hsize * 8 ),
 				Ang = Angle( 90, 0, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -size * 8 - hsize * 8, -size * 8, 0 ),
+				Pos = Vector( -size * 8 - hsize * 8, -size * 8, hsize * 8 ),
 				Ang = Angle( 90, 0, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -size * 8 - hsize * 8, size * 8, 0 ),
+				Pos = Vector( -size * 8 - hsize * 8, size * 8, hsize * 8 ),
 				Ang = Angle( 90, 0, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -size * 8, size * 8 + hsize * 8, 0 ),
+				Pos = Vector( -size * 8, size * 8 + hsize * 8, hsize * 8 ),
 				Ang = Angle( 90, 90, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( size * 8, size * 8 + hsize * 8, 0 ),
+				Pos = Vector( size * 8, size * 8 + hsize * 8, hsize * 8 ),
 				Ang = Angle( 90, 90, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -size * 8, -size * 8 - hsize * 8, 0 ),
+				Pos = Vector( -size * 8, -size * 8 - hsize * 8, hsize * 8 ),
 				Ang = Angle( 90, 90, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( size * 8, -size * 8 - hsize * 8, 0 ),
+				Pos = Vector( size * 8, -size * 8 - hsize * 8, hsize * 8 ),
 				Ang = Angle( 90, 90, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -size * 8 - hsize * 8, 0, hsize * 6 + hsize * 5 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate5x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( size * 8 + hsize * 8, 0, hsize * 6 + hsize * 5 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate5x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, -size * 8 - hsize * 8, hsize * 6 + hsize * 5 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate5x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, size * 8 + hsize * 8, hsize * 6 + hsize * 5 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate5x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+
+			-- Ceiling
+			{
+				Pos = Vector( 0, 0, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( size * 8, 0, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size * 8, 0, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( 0, size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( 0, -size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( size * 8, size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size * 8, -size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size * 8, size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( size * 8, -size * 8, size * 8 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
 			},
 
 			-- Door placehold
-			{
-				Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
-				Ang = Angle( 0, 0, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
-			{
-				Pos = Vector( -size * 8 + - hsize * 8, 0, 0 ),
-				Ang = Angle( 0, 0, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
-			{
-				Pos = Vector( 0, size * 8 + hsize * 8, 0 ),
-				Ang = Angle( 0, 90, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
-			{
-				Pos = Vector( 0, -size * 8 - hsize * 8, 0 ),
-				Ang = Angle( 0, 90, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
+			-- {
+				-- Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
+				-- Ang = Angle( 0, 0, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( -size * 8 + - hsize * 8, 0, 0 ),
+				-- Ang = Angle( 0, 0, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, size * 8 + hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, -size * 8 - hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
 		},
 		AttachPoints = {
 			{
@@ -172,64 +290,96 @@ local DefaultRooms = {
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
 			},
 			{
 				Pos = Vector( size * 8, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
 			},
 			{
 				Pos = Vector( 0, size * 8, 0 ),
 				Ang = Angle( 0, 0, 0 ),
 				Mod = "models/hunter/plates/plate8x8.mdl",
-				Collide = true,
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
 			},
 
 			-- Walls
 			{
-				Pos = Vector( -hsize * 8, 0, 0 ),
+				Pos = Vector( -hsize * 8, 0, hsize * 3 ),
 				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -hsize * 8, size * 8, 0 ),
+				Pos = Vector( -hsize * 8, size * 8, hsize * 3 ),
 				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( 0, -hsize * 8, 0 ),
+				Pos = Vector( 0, -hsize * 8, hsize * 3 ),
 				Ang = Angle( 90, 90, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( size * 8, -hsize * 8, 0 ),
+				Pos = Vector( size * 8, -hsize * 8, hsize * 3 ),
 				Ang = Angle( 90, 90, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( hsize * 8, size * 8, 0 ),
+				Pos = Vector( hsize * 8, size * 8, hsize * 3 ),
 				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( size * 8, hsize * 8, 0 ),
+				Pos = Vector( size * 8, hsize * 8, hsize * 3 ),
 				Ang = Angle( 90, 90, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+
+			-- Ceiling
+			{
+				Pos = Vector( 0, 0, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( size * 8, 0, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( 0, size * 8, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
 			},
 
 			-- Door placehold
-			{
-				Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
-				Ang = Angle( 0, 0, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
-			{
-				Pos = Vector( 0, size * 8 + hsize * 8, 0 ),
-				Ang = Angle( 0, 90, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
+			-- {
+				-- Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
+				-- Ang = Angle( 0, 0, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, size * 8 + hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
 		},
 		AttachPoints = {
 			{
@@ -252,6 +402,151 @@ local DefaultRooms = {
 			},
 		},
 	},
+	-- S room
+	{
+		Models = {
+			-- Floor
+			{
+				Pos = Vector( 0, 0, 0 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
+			},
+			{
+				Pos = Vector( size * 8, 0, 0 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
+			},
+			{
+				Pos = Vector( 0, size * 8, 0 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
+			},
+			{
+				Pos = Vector( -size * 8, size * 8, 0 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
+			},
+
+			-- Walls
+			{
+				Pos = Vector( -hsize * 8, 0, hsize * 3 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -size * 8, hsize * 8, hsize * 3 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( size * 8, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( size * 8, hsize * 8, hsize * 3 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 8, size * 8, hsize * 3 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, size * 8 + hsize * 8, hsize * 3 ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			-- {
+				-- Pos = Vector( -size * 8, size * 8 + hsize * 8, hsize * 3 ),
+				-- Ang = Angle( 90, 90, 0 ),
+				-- Mod = "models/hunter/plates/plate3x8.mdl",
+				-- Type = PRK_GEN_TYPE_WALL,
+			-- },
+
+			-- Ceiling
+			{
+				Pos = Vector( 0, 0, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( size * 8, 0, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( 0, size * 8, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size * 8, size * 8, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate8x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+
+			-- Door placehold
+			-- {
+				-- Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
+				-- Ang = Angle( 0, 0, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( -size * 8, size * 8 + hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( -size * 8 + -hsize * 8, size * 8, 0 ),
+				-- Ang = Angle( 0, 0, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+		},
+		AttachPoints = {
+			{
+				Pos = Vector( size * 8 + hsize * 8, 0, 0 ),
+			},
+			{
+				Pos = Vector( -size * 8, size * 8 + hsize * 8, 0 ),
+			},
+			{
+				Pos = Vector( -size * 8 + -hsize * 8, size * 8, 0 ),
+			},
+		},
+		SpawnPoints = {
+			-- Position, angle, type
+		},
+	},
 	-- Corridor
 	{
 		Models = {
@@ -259,33 +554,69 @@ local DefaultRooms = {
 			{
 				Pos = Vector( 0, 0, 0 ),
 				Ang = Angle( 0, 0, 0 ),
-				Mod = "models/hunter/plates/plate3x8.mdl",
-				Collide = true,
+				Mod = "models/hunter/plates/plate4x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 3 },
 			},
 
 			-- Wall
 			{
-				Pos = Vector( hsize * 3, 0, 0 ),
+				Pos = Vector( hsize * 4, 0, hsize * 3 ),
 				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
 			},
 			{
-				Pos = Vector( -hsize * 3, 0, 0 ),
+				Pos = Vector( -hsize * 4, 0, hsize * 3 ),
 				Ang = Angle( 90, 0, 0 ),
 				Mod = "models/hunter/plates/plate3x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+
+			-- Ceiling
+			{
+				Pos = Vector( 0, 0, size * 3 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate4x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
 			},
 
 			-- Door placehold
-			{
-				Pos = Vector( 0, hsize * 8, 0 ),
-				Ang = Angle( 0, 90, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
-			{
-				Pos = Vector( 0, -hsize * 8, 0 ),
-				Ang = Angle( 0, 90, 0 ),
-				Mod = "models/props/de_inferno/archwaysupport.mdl",
-			},
+			-- {
+				-- Pos = Vector( 0, hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, -hsize * 8, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
 		},
 		AttachPoints = {
 			{
@@ -308,6 +639,191 @@ local DefaultRooms = {
 			},
 		},
 	},
+	-- Stairs Test
+	{
+		Models = {
+			-- Floor
+			{
+				Pos = Vector( 0, 0, 0 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate4x8.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = { 0, size * 7 },
+			},
+
+			-- Floor (Steps)
+			{
+				Pos = Vector( -size - hsize, size * 0 + hsize, 0 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size - hsize, size * 1 + hsize, size * 1 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size - hsize, size * 2 + hsize, size * 2 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -size - hsize, size * 3 + hsize, size * 3 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -hsize, size * 0 + hsize, 0 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -hsize, size * 1 + hsize, size * 1 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -hsize, size * 2 + hsize, size * 2 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+			{
+				Pos = Vector( -hsize, size * 3 + hsize, size * 3 ),
+				Ang = Angle( 0, -90, 0 ),
+				Mod = "models/hunter/misc/stair1x1.mdl",
+				Type = PRK_GEN_TYPE_FLOOR,
+				Collide = true,
+			},
+
+			-- Wall
+			{
+				Pos = Vector( hsize * 4, 0, hsize * 7 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate7x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 4, 0, hsize * 7 ),
+				Ang = Angle( 90, 0, 0 ),
+				Mod = "models/hunter/plates/plate7x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, hsize * 8, size * 5 + hsize ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, hsize * 8, size * 5 + hsize ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, -hsize * 8, hsize * 3 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( hsize * 6, -hsize * 8, size * 5 + hsize ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -hsize * 6, -hsize * 8, size * 5 + hsize ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate2x3.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, -hsize * 8, size * 5 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/plates/plate4x4.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( 0, hsize * 8, size * 3 + hsize ),
+				Ang = Angle( 90, 90, 0 ),
+				Mod = "models/hunter/plates/plate1x4.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+
+			-- Ceiling
+			{
+				Pos = Vector( 0, 0, size * 7 ),
+				Ang = Angle( 0, 0, 0 ),
+				Mod = "models/hunter/plates/plate4x8.mdl",
+				Type = PRK_GEN_TYPE_CEILING,
+				Collide = true,
+			},
+
+			-- Door placehold
+			-- {
+				-- Pos = Vector( 0, -size * 4, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, size * 4, hsize * 8 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+			-- {
+				-- Pos = Vector( 0, size * 4, 0 ),
+				-- Ang = Angle( 0, 90, 0 ),
+				-- Mod = "models/props/de_inferno/archwaysupport.mdl",
+			-- },
+		},
+		AttachPoints = {
+			{
+				Pos = Vector( 0, -size * 4, 0 ),
+			},
+			{
+				Pos = Vector( 0, size * 4, hsize * 8 ),
+			},
+			{
+				Pos = Vector( 0, size * 4, 0 ),
+			},
+		},
+		SpawnPoints = {
+			-- Position, angle, type
+		},
+	},
 }
 
 local HelperModels = {
@@ -315,18 +831,18 @@ local HelperModels = {
 		Model = "models/props_c17/pulleyhook01.mdl",
 		Angle = Angle( 180, 0, 0 ),
 	},
-	Min = {
-		Model = "models/mechanics/solid_steel/l-beam__16.mdl",
-		Angle = Angle( 0, 0, 0 ),
-	},
-	Max = {
-		Model = "models/hunter/tubes/tube2x2x+.mdl",
-		Angle = Angle( 0, 0, 0 ),
-	},
 	Attach = {
 		Model = "models/props_junk/PushCart01a.mdl",
 		Angle = Angle( 0, 0, 0 ),
 	},
+	-- Min = {
+		-- Model = "models/mechanics/solid_steel/l-beam__16.mdl",
+		-- Angle = Angle( 0, 0, 0 ),
+	-- },
+	-- Max = {
+		-- Model = "models/hunter/tubes/tube2x2x+.mdl",
+		-- Angle = Angle( 0, 0, 0 ),
+	-- },
 }
 
 local LastGen = {} -- Table of all rooms last generated
@@ -339,19 +855,32 @@ concommand.Add( "prk_gen", function( ply, cmd, args )
 end )
 
 concommand.Add( "prk_test", function( ply, cmd, args )
-	PRK_Gen_Step( ply:GetPos() - Vector( 0, 0, 100 ) )
-	-- for k, room in pairs( LastGen ) do
-		-- PRK_Gen_RotateAround( room, 1, 45 )
-	-- end
-end )
+	PRK_Gen_Remove()
 
-local room
-concommand.Add( "prk_test2", function( ply, cmd, args )
-	-- for k, room in pairs( LastGen ) do
-		if ( room.AttachPoints ) then
-			PRK_Gen_RotateAround( room, room.AttachPoints[2], 90 )
+	local origin = ply:GetPos() - Vector( 0, 0, 100 )
+
+	plan = DefaultRooms[3]
+
+	room = {}
+		room.Origin = origin
+	room.Ents = {}
+	for k, mod in pairs( plan.Models ) do
+		local ent = PRK_CreateProp(
+			mod.Mod,
+			room.Origin + mod.Pos,
+			mod.Ang
+		)
+		if ( mod.Type != nil ) then
+			ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
 		end
-	-- end
+		if ( #room.Ents != 0 ) then
+			ent:SetParent( room.Ents[1] )
+		end
+		ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
+		ent.PRK_Room = CurrentRoomID
+		table.insert( room.Ents, ent )
+	end
+	table.insert( LastGen, room )
 end )
 
 function PRK_Gen( origin )
@@ -365,27 +894,6 @@ function PRK_Gen( origin )
 	end
 
 --	-- Generate first room
---	PRK_Gen_Room( origin )
---
---	-- Loop through all connections and generate more rooms for them
---	-- Maybe based on a grid array of open spaces, fill in by size of room?
---	-- Could also just spawn the props and check for collision but would be slow i guess
---	local tries = 2
---	for k, room in pairs( LastGen ) do
---		for _, attach in pairs( room.AttachPoints ) do
---			if ( tries <= 0 ) then
---				return
---			end
---			if ( !attach.Attached ) then
---				-- Chance to lead somewhere
---				if ( math.random( 1, 10 ) != 1 ) then
---					PRK_Gen_Room( room.Origin + attach.Pos, attach )
---				end
---				LastGen[k].AttachPoints[_].Attached = true
---				tries = tries - 1
---			end
---		end
---	end
 	ToGen = {
 		{
 			AttachPoints = {
@@ -403,8 +911,10 @@ local plan
 local index_try = 1
 local orient_try = 1
 function PRK_Gen_Step()
-	print( "step" )
-	if ( !ToGen or #ToGen == 0 ) then return end
+	if ( !ToGen or #ToGen == 0 or #ToGen[1].AttachPoints == 0 ) then
+		PRK_Gen_End()
+		return
+	end
 
 	local origin = ToGen[1].AttachPoints[1].Pos
 
@@ -427,11 +937,11 @@ function PRK_Gen_Step()
 		end
 	end
 	local function next_step()
-		timer.Simple( 1, function() PRK_Gen_Step() end )
+		-- PRK_Gen_Step()
+		timer.Simple( 0.01, function() PRK_Gen_Step() end )
 	end
 
 	if ( !room ) then
-		print( "Create room!" )
 		-- plan = DefaultRooms[2]
 		plan = DefaultRooms[math.random( 1, #DefaultRooms )]
 
@@ -444,10 +954,13 @@ function PRK_Gen_Step()
 				room.Origin + mod.Pos,
 				mod.Ang
 			)
+			if ( mod.Type != nil ) then
+				ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
+			end
 			if ( #room.Ents != 0 ) then
 				ent:SetParent( room.Ents[1] )
 			end
-			ent.Collide = mod.Collide
+			ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
 			ent.PRK_Room = CurrentRoomID
 			table.insert( room.Ents, ent )
 		end
@@ -481,9 +994,13 @@ function PRK_Gen_Step()
 				local pos = v:GetPos()
 				local min, max = v:OBBMins(), v:OBBMaxs()
 					-- Slightly smaller to avoid border crossover
-					local bor = 95 / 100
+					local bor = PRK_GEN_COLLISION_BORDER
 					min = min * bor
 					max = max * bor
+					if ( v.Collide != true ) then -- Must be table
+						min = min + Vector( 0, 0, v.Collide[1] )
+						max = max + Vector( 0, 0, v.Collide[2] )
+					end
 				for k, collision in pairs( ents.FindInBox( pos + min, pos + max ) ) do
 					if ( collision.Collide and collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
 						collide = true
@@ -501,7 +1018,16 @@ function PRK_Gen_Step()
 			local temp_room = LastGen[#LastGen]
 			local attachpoints = {}
 			for k, v in pairs( temp_room.AttachPoints ) do
-				if ( k != index_try ) then
+				-- Chance to not use this attach point
+				-- With less chance as the generation continues
+				local use = true
+				local donttarget = PRK_GEN_DONT
+				local rnd = math.random( 1, donttarget ) * ( CurrentRoomID * PRK_GEN_DONT_SIZEMULT )
+				if ( rnd >= donttarget ) then
+					use = false
+				end
+
+				if ( use and k != index_try ) then
 					local helper = HelperModels["Attach"].Ent
 					-- Undo parent
 					helper:SetParent( nil )
@@ -536,8 +1062,6 @@ function PRK_Gen_Step()
 			next_attach()
 
 			table.insert( ToGen, { AttachPoints = attachpoints } )
-			print( "not collide" )
-			PrintTable( ToGen )
 
 			next_step()
 
@@ -566,6 +1090,14 @@ function PRK_Gen_Step()
 	end
 
 	next_step()
+end
+
+function PRK_Gen_End()
+	-- Remove each helper model entity
+	for k, v in pairs( HelperModels ) do
+		v.Ent:Remove()
+		v.Ent = nil
+	end
 end
 
 function PRK_Gen_RotateAround( room, attach, angle )

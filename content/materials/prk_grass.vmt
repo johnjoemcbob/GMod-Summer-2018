@@ -1,0 +1,6 @@
+"UnlitGeneric"
+{
+	"$basetexture" "prk_grass"
+	"$alphatest" 1
+	"$translucent" 1
+}

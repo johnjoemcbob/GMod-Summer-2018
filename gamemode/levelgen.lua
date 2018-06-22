@@ -8,7 +8,7 @@
 local DEBUG						= true
 local PRK_GEN_COLLIDE_ALL		= false
 local PRK_GEN_DONT				= 4000
-local PRK_GEN_DONT_SIZEMULT		= 1 / 300
+local PRK_GEN_DONT_SIZEMULT		= 1 / 30
 local PRK_GEN_COLLISION_BORDER	= 90 / 100
 
 local PRK_GEN_TYPE_FLOOR	= 1
@@ -16,9 +16,9 @@ local PRK_GEN_TYPE_WALL		= 2
 local PRK_GEN_TYPE_CEILING	= 3
 
 PRK_GEN_TYPE_MAT = {}
-PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_FLOOR]	= "phoenix_storms/bluemetal"
-PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_WALL]		= "phoenix_storms/dome"
-PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_CEILING]	= "phoenix_storms/metalset_1-2"
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_FLOOR]	= "models/rendertarget" -- "phoenix_storms/bluemetal"
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_WALL]		= "prk_gradient" -- "phoenix_storms/dome"
+PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_CEILING]	= "models/rendertarget" -- "phoenix_storms/metalset_1-2"
 
 local size = 47.45
 local hsize = size / 2
@@ -163,6 +163,32 @@ local DefaultRooms = {
 				Pos = Vector( 0, size * 8 + hsize * 8, hsize * 6 + hsize * 5 ),
 				Ang = Angle( 90, 90, 0 ),
 				Mod = "models/hunter/plates/plate5x8.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+
+			-- Pillars
+			{
+				Pos = Vector( size * 8, size * 8, hsize * 8 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/blocks/cube1x8x1.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -size * 8, size * 8, hsize * 8 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/blocks/cube1x8x1.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( size * 8, -size * 8, hsize * 8 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/blocks/cube1x8x1.mdl",
+				Type = PRK_GEN_TYPE_WALL,
+			},
+			{
+				Pos = Vector( -size * 8, -size * 8, hsize * 8 ),
+				Ang = Angle( 0, 0, 90 ),
+				Mod = "models/hunter/blocks/cube1x8x1.mdl",
 				Type = PRK_GEN_TYPE_WALL,
 			},
 
@@ -848,6 +874,7 @@ local HelperModels = {
 local LastGen = {} -- Table of all rooms last generated
 local ToGen = {} -- Table of rooms still to try attach points for
 local CurrentRoomID = 0 -- Indices for rooms
+local room
 
 concommand.Add( "prk_gen", function( ply, cmd, args )
 	PRK_Gen_Remove()
@@ -865,13 +892,20 @@ concommand.Add( "prk_test", function( ply, cmd, args )
 		room.Origin = origin
 	room.Ents = {}
 	for k, mod in pairs( plan.Models ) do
-		local ent = PRK_CreateProp(
+		local class = "prop_physics"
+			if ( mod.Type == PRK_GEN_TYPE_FLOOR ) then
+				class = "prk_floor"
+			elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
+				class = "prk_wall"
+			end
+		local ent = PRK_CreateEnt(
+			class,
 			mod.Mod,
 			room.Origin + mod.Pos,
 			mod.Ang
 		)
 		if ( mod.Type != nil ) then
-			ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
+			ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type], true )
 		end
 		if ( #room.Ents != 0 ) then
 			ent:SetParent( room.Ents[1] )
@@ -949,7 +983,14 @@ function PRK_Gen_Step()
 			room.Origin = origin
 		room.Ents = {}
 		for k, mod in pairs( plan.Models ) do
-			local ent = PRK_CreateProp(
+			local class = "prop_physics"
+				if ( mod.Type == PRK_GEN_TYPE_FLOOR ) then
+					class = "prk_floor"
+				elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
+					class = "prk_wall"
+				end
+			local ent = PRK_CreateEnt(
+				class,
 				mod.Mod,
 				room.Origin + mod.Pos,
 				mod.Ang

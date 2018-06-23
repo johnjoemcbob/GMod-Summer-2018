@@ -156,7 +156,7 @@ function ENT:CollideWithEnt( ent )
 	end
 
 	-- Apply damage/force
-	if ( self.State == State.Damage ) then
+	if ( self.State == State.Damage and ent != self.Owner ) then
 		local mult = 1
 			-- testing/fun
 			if ( ent:IsNPC() or ent:IsPlayer() or ent:GetClass() == "prop_physics" ) then

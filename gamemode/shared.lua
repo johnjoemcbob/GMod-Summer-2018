@@ -14,6 +14,7 @@ GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 
 -- Globals
+PRK_Plate_Size = 47.45
 PRK_Speed	= 600
 PRK_Jump	= 0
 

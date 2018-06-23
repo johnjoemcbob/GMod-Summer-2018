@@ -19,6 +19,8 @@ function GM:Think()
 end
 
 function GM:HUDPaint()
+	PRK_HUDPaint_Health()
+
 	PRK_HUDPaint_ExtraAmmo()
 	PRK_HUDPaint_RevolverChambers()
 end
@@ -42,13 +44,41 @@ function GM:HUDShouldDraw( name )
 	return true
 end
 
-function BlockJump( ply, bind )
+hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bind )
 	if string.find( bind, "+jump" ) then
 		-- ply:ConCommand( "prk_effect" )
 		return true
 	end
+	if string.find( bind, "+duck" ) then
+		-- ply:ConCommand( "prk_effect" )
+		return true
+	end
+end )
+
+function PRK_HUDPaint_Health()
+	local r = 16
+	local s = r
+	local sb = r + 4
+	local x = 0
+	local y = ScrH() - r * 1
+
+	local maxhealth = LocalPlayer():GetMaxHealth()
+	local health = LocalPlayer():Health()
+	local function mask()
+		-- Draw heart icons for max health
+		for i = 1, maxhealth / 2 do
+			surface.SetDrawColor( 70, 20, 30, 255 )
+			draw.Heart( x + ( sb + s ) * i, y - s, s, 16 )
+		end
+	end
+	local function inner()
+		-- Draw filled rectangle for health bar
+		surface.SetDrawColor( 255, 20, 30, 255 )
+		draw.NoTexture()
+		surface.DrawTexturedRect( x + s, y - s * 2, x + ( sb + s ) * health / 2, s * 2 )
+	end
+	draw.StencilBasic( mask, inner )
 end
-hook.Add( "PlayerBindPress", "BlockJump", BlockJump )
 
 -----------------
   -- PRK Gun --
@@ -125,17 +155,32 @@ function PRK_HUDPaint_RevolverChambers()
 
 	-- Draw 'No Ammo' warning
 	if ( PRK_RevolverChambers.NoAmmoWarning ) then
+		-- Draw message above empty chambers
 		local message = "RELOAD"
 			local extraammo = LocalPlayer():GetNWInt( "PRK_ExtraAmmo" )
 			if ( extraammo == 0 ) then
 				message = "FIND AMMO"
 			end
+		local pulsespeed = 10
+		local pulsemag = 105
 		draw.SimpleText(
 			message,
 			"CloseCaption_Bold",
 			x,
 			y - r * 1.3,
-			Color( 255, 255, 255, 150 + math.sin( CurTime() * 10 ) * 105 ),
+			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
+			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_CENTER
+		)
+
+		-- Draw R in the middle of chambers
+		local pulsemag = 20
+		draw.SimpleText(
+			"R",
+			"CloseCaption_Bold",
+			x,
+			y - 2,
+			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_CENTER
 		)
@@ -180,12 +225,43 @@ end )
 --------------
   -- Util --
 --------------
--- From: http://wiki.garrysmod.com/page/surface/DrawPoly
+function draw.Heart( x, y, radius, seg )
+	local circle_rad = radius / 2
+	local circle_off = circle_rad
+
+	-- Left circle
+	local cir_left = PRK_GetCirclePoints( x - circle_off, y - circle_off, circle_rad, seg, 0 )
+	surface.DrawPoly( cir_left )
+
+	-- Right circle
+	local cir_right = PRK_GetCirclePoints( x + circle_off, y - circle_off, circle_rad, seg, 0 )
+	surface.DrawPoly( cir_right )
+
+	-- Bottom triangle
+	local triangle_off = -circle_rad
+	local tri = {
+		{
+			x = cir_left[1].x + triangle_off,
+			y = cir_left[1].y + triangle_off,
+		},
+		{
+			x = cir_right[1].x - triangle_off,
+			y = cir_right[1].y + triangle_off,
+		},
+		{
+			x = x,
+			y = y + radius,
+		},
+	}
+	surface.DrawPoly( tri )
+end
+
 function draw.Circle( x, y, radius, seg, rotate )
 	local cir = PRK_GetCirclePoints( x, y, radius, seg, rotate )
 	surface.DrawPoly( cir )
 end
 
+-- From: http://wiki.garrysmod.com/page/surface/DrawPoly
 function PRK_GetCirclePoints( x, y, radius, seg, rotate )
 	local cir = {}
 		-- table.insert( cir, { x = x, y = y, u = 0.5, v = 0.5 } )

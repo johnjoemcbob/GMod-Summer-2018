@@ -4,22 +4,27 @@ local models = {
 	{
 		"models/props/de_inferno/bushgreensmall.mdl",
 		Vector( 0, 0, 0 ),
+		Vector( 0.5, 0.5, 0.5 ),
 	},
 	{
 		"models/props/cs_militia/fern01.mdl",
-		Vector( 0, 0, 25 ),
+		Vector( 0, 0, 15 ),
+		Vector( 0.5, 0.5, 0.5 ),
 	},
 	{
 		"models/props/pi_fern.mdl",
 		Vector( 0, 0, 0 ),
+		Vector( 0.5, 0.5, 0.5 ),
 	},
 	{
 		"models/props/de_inferno/cactus.mdl",
 		Vector( 0, 0, 0 ),
+		Vector( 0.2, 0.2, 1 ),
 	},
 	{
 		"models/props/de_inferno/cactus2.mdl",
 		Vector( 0, 0, 0 ),
+		Vector( 0.2, 0.2, 1 ),
 	}
 }
 
@@ -41,7 +46,11 @@ function ENT:Initialize()
 		local ang = Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
 		local mat = "models/debug/debugwhite"
 		local col = colours[math.random( 1, #colours )]
-		self:AddModel( mdl, pos, ang, 1, mat, col )
+		local ent = self:AddModel( mdl, pos, ang, 1, mat, col )
+		local sca = rnd[3]
+		local mat = Matrix()
+			mat:Scale( sca )
+		ent:EnableMatrix( "RenderMultiply", mat )
 	end
 end
 

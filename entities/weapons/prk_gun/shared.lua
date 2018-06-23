@@ -29,6 +29,7 @@ SWEP.Secondary.Ammo			= "none"
 local dist = 3000
 SWEP.MaxDistance			= dist
 SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
+SWEP.RightHanded			= 1
 
 if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
@@ -59,6 +60,7 @@ if ( CLIENT ) then
 		local self = net.ReadEntity()
 
 		self.GunPunch = 1
+		self.GunPunchRnd = math.random( -10, 10 )
 		PRK_Gun_UseAmmo() -- In main cl_init.lua
 
 		-- Play shoot effect
@@ -79,6 +81,7 @@ if ( CLIENT ) then
 		local self = net.ReadEntity()
 
 		self.GunPunch = -0.2
+		self.GunPunchRnd = math.random( -10, 10 )
 		PRK_Gun_AddAmmo() -- In main cl_init.lua
 	end )
 
@@ -174,7 +177,7 @@ function SWEP:PrimaryAttack( right )
 	self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
 
 	-- Punch the player's view
-	self.Owner:ViewPunch( Angle( -5, 0, 0 ) )
+	self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
 	local pushback = self.Owner:GetForward() * -20
 		if ( self.Owner:IsOnGround() ) then
 			pushback = pushback * 2
@@ -182,14 +185,8 @@ function SWEP:PrimaryAttack( right )
 		pushback.z = 0
 	self.Owner:SetVelocity( pushback )
 
-	-- print( "hi" )
-	-- if ( CLIENT ) then -- Only in multiplayer
-		-- self.GunPunch = 1
-
-		-- PRK_Gun_UseAmmo() -- In main cl_init.lua
-	-- end
-
 	self:SetNextPrimaryFire( CurTime() + 0.5 )
+	self.NextReload = CurTime() + 0.5
 end
 
 function SWEP:SecondaryAttack()
@@ -286,7 +283,7 @@ if ( CLIENT ) then
 		local target = 
 			vm:GetPos() +
 			vm:GetForward() * 115 +
-			vm:GetRight() * 10 +
+			vm:GetRight() * 10 * self.RightHanded +
 			vm:GetUp() * - 15
 		local speedpunch = 10
 		local speed = 40 * PRK_Speed / 400
@@ -294,20 +291,23 @@ if ( CLIENT ) then
 		local dist = math.min( 1, curpos:Distance( target ) )
 		local targetang =
 			vm:GetAngles() +
-			Angle( 0, 1, 0 ) * 10
+			Angle( 0, 1, 0 ) * 10 * self.RightHanded
 
 		-- Gun punch
 		if ( !self.GunPunch ) then
 			self.GunPunch = 0
+			self.GunPunchRnd = 0
 		end
 		target =
 			target +
 			vm:GetUp() * 10 * self.GunPunch +
-			vm:GetForward() * -20 * self.GunPunch
+			vm:GetForward() * -20 * self.GunPunch +
+			vm:GetRight() * self.GunPunchRnd / 10
 		targetang =
 			targetang +
 			Angle( -1, 0, 0 ) * 150 * self.GunPunch
 		self.GunPunch = Lerp( FrameTime() * speedpunch, self.GunPunch, 0 )
+		self.GunPunchRnd = Lerp( FrameTime() * speedpunch, self.GunPunchRnd, 0 )
 
 		-- Lerp
 		self.GunModel:SetPos( LerpVector( FrameTime() * speed * dist, curpos, target ) )

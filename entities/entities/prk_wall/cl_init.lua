@@ -30,8 +30,13 @@ function ENT:Initialize()
 end
 
 function ENT:Think()
-	self.Models[1]:SetPos( self:GetPos() )
-	self.Models[1]:SetAngles( self:GetAngles() )
+	-- Fail safe, can be removed if client graphic settings are changed
+	if ( self.Models[1] and self.Models[1]:IsValid() ) then
+		self.Models[1]:SetPos( self:GetPos() )
+		self.Models[1]:SetAngles( self:GetAngles() )
+	else
+		self:Initialize()
+	end
 end
 
 function ENT:Draw()

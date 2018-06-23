@@ -44,7 +44,9 @@ end
 
 function ENT:OnTakeDamage( dmg )
 	-- Destroy anything linked
-	
+	if ( self.Attached and self.Attached:IsValid() ) then
+		self.Attached:Remove()
+	end
 
 	-- Play sound
 	local sounds = {
@@ -74,4 +76,8 @@ end
 
 function ENT:PhysicsCollide( colData, collider )
 	
+end
+
+function ENT:Attach( ent )
+	self.Attached = ent
 end

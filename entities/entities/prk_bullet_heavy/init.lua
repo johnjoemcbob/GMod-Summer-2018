@@ -165,12 +165,12 @@ function ENT:CollideWithEnt( ent )
 		ent:TakeDamage( self.Damage * mult, self.Owner, self )
 
 		-- testing/fun
-		if ( ent:GetClass() == "prop_physics" ) then
+		-- if ( ent:GetClass() == "prop_physics" and !(ent:IsNPC() or ent:IsPlayer()) ) then
 			local phys = ent:GetPhysicsObject()
 			if ( phys and IsValid( phys ) ) then
 				phys:ApplyForceOffset( ( ent:GetPos() - self:GetPos() ):GetNormalized() * 50000, self:GetPos() )
 			end
-		end
+		-- end
 	end
 
 	-- State specific collision logic

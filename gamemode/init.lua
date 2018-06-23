@@ -5,12 +5,29 @@
 -- Main Serverside
 --
 
+-- LUA Downloads
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "shared.lua" )
 
+-- LUA Includes
 include( "levelgen.lua" )
 include( "shared.lua" )
 
+-- Resource Downloads
+local files, directories = file.Find( "gamemodes/prickly_summer_2018/content/materials/*", "GAME" )
+print( "PRK" )
+print( "----------------" )
+print( "Add resources..." )
+for k, file in pairs( files ) do
+	print( "materials/" .. file )
+	resource.AddFile( "materials/" .. file )
+end
+print( "Finish resources..." )
+print( "-------------------" )
+
+------------------------
+  -- Gamemode Hooks --
+------------------------
 function GM:Initialize()
 
 end
@@ -20,6 +37,18 @@ function GM:InitPostEntity()
 end
 
 function GM:PlayerSpawn( ply )
+	ply:SetModel( "models/player/soldier_stripped.mdl" )
+	local mats = {
+		"phoenix_storms/wire/pcb_green",
+		"phoenix_storms/wire/pcb_red",
+		"phoenix_storms/wire/pcb_blue",
+	}
+	ply:SetMaterial( mats[math.random( 1, #mats )] )
+	-- ply:SetMaterial( "phoenix_storms/wire/pcb_red" )
+	-- ply:SetMaterial( "models/props_combine/tprings_globe" )
+	-- ply:SetMaterial( "debug/env_cubemap_model" )
+	-- ply:SetMaterial( "models/shadertest/shader5" )
+
 	-- Init health
 	local health = 6
 	ply:SetMaxHealth( health )
@@ -56,6 +85,9 @@ function GM:EntityTakeDamage( target, dmginfo )
 		dmginfo:ScaleDamage( 0.2 )
 	end
 end
+-------------------------
+  -- /Gamemode Hooks --
+-------------------------
 
 -- gateway
 -- lid				models/hunter/blocks/cube025x2x025.mdl
@@ -127,6 +159,9 @@ function GM:GenerateLobby()
 	end
 end
 
+--------------
+  -- Util --
+--------------
 -- Create a physics prop which is frozen by default
 -- Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
 function PRK_CreateProp( mod, pos, ang, mov )
@@ -160,3 +195,6 @@ function PRK_CreateEnt( class, mod, pos, ang, mov )
 		end
 	return ent
 end
+---------------
+  -- /Util --
+---------------

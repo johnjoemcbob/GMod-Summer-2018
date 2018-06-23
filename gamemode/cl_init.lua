@@ -31,6 +31,7 @@ function GM:PostDrawHUD()
 		if ( wep.GunModel and wep.GunModel:IsValid() ) then
 			wep.GunModel:DrawModel()
 		end
+		-- LocalPlayer():GetViewModel():DrawModel()
 	cam.End3D()
 end
 

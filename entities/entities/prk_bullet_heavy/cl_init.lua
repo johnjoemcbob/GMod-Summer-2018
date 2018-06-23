@@ -21,10 +21,12 @@ function ENT:Draw()
 		self:Initialize()
 	end
 	self.Bullet:SetPos( self:GetPos() )
-	if ( self:GetVelocity() != Vector() ) then
-		self.Bullet:SetAngles( self:GetVelocity():Angle() )
-	else
+	-- if ( self:GetVelocity() != Vector() ) then
+		-- self.Bullet:SetAngles( self:GetVelocity():Angle() )
+	-- else
 		self.Bullet:SetAngles( self:GetAngles() )
-	end
+	-- end
 	self.Bullet:DrawModel()
+
+	-- self:DrawModel()
 end

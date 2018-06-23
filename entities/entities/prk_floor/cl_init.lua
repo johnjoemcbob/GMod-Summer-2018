@@ -12,6 +12,14 @@ local models = {
 	{
 		"models/props/pi_fern.mdl",
 		Vector( 0, 0, 0 ),
+	},
+	{
+		"models/props/de_inferno/cactus.mdl",
+		Vector( 0, 0, 0 ),
+	},
+	{
+		"models/props/de_inferno/cactus2.mdl",
+		Vector( 0, 0, 0 ),
 	}
 }
 
@@ -25,7 +33,8 @@ function ENT:Initialize()
 	local min = self:OBBMins()
 	local max = self:OBBMaxs()
 	self.Models = {}
-	for i = 1, 2 do
+	local amount = math.floor( math.random( 10, 30 ) / 10 )
+	for i = 1, amount do
 		local rnd = models[math.random( 1, #models )]
 		local mdl = rnd[1]
 		local pos = Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) + rnd[2]

@@ -26,7 +26,7 @@ end
 function GM:PostDrawHUD()
 	cam.Start3D()
 		local wep = LocalPlayer():GetActiveWeapon()
-		if ( wep.GunModel ) then
+		if ( wep.GunModel and wep.GunModel:IsValid() ) then
 			wep.GunModel:DrawModel()
 		end
 	cam.End3D()
@@ -41,6 +41,14 @@ function GM:HUDShouldDraw( name )
 
 	return true
 end
+
+function BlockJump( ply, bind )
+	if string.find( bind, "+jump" ) then
+		-- ply:ConCommand( "prk_effect" )
+		return true
+	end
+end
+hook.Add( "PlayerBindPress", "BlockJump", BlockJump )
 
 -----------------
   -- PRK Gun --

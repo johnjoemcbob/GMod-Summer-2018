@@ -11,9 +11,30 @@ AddCSLuaFile( "shared.lua" )
 include( "levelgen.lua" )
 include( "shared.lua" )
 
+function GM:Initialize()
+
+end
+
 function GM:PlayerSpawn( ply )
+	-- Init Gun
 	local wep = ply:Give( "prk_gun", true )
 	wep:Initialize()
+
+	-- Init speed
+	ply:SetWalkSpeed( PRK_Speed )
+	ply:SetRunSpeed( PRK_Speed )
+	ply:SetMaxSpeed( PRK_Speed )
+
+	-- Init jump
+	ply:SetJumpPower( PRK_Jump )
+end
+
+function GM:Think()
+	
+end
+
+function GM:HandlePlayerJumping( ply, vel )
+	return true
 end
 
 -- Create a physics prop which is frozen by default

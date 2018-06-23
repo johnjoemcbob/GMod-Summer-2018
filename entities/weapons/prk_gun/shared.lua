@@ -26,6 +26,10 @@ SWEP.Secondary.DefaultClip	= -1
 SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
+local dist = 3000
+SWEP.MaxDistance			= dist
+SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
+
 if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
 	util.AddNetworkString( "PRK_Gun_Reload" )
@@ -61,7 +65,8 @@ if ( CLIENT ) then
 		local effectdata = EffectData()
 			local pos = self.GunModel:GetPos() +
 				self.GunModel:GetForward() * 50 +
-				self.GunModel:GetRight() * 20
+				self.GunModel:GetRight() * 20 +
+				LocalPlayer():GetVelocity() * 0.1
 			effectdata:SetOrigin( pos )
 			effectdata:SetNormal(
 				self.GunModel:GetForward() +
@@ -134,14 +139,30 @@ function SWEP:PrimaryAttack( right )
 	if ( SERVER ) then
 		local bullet = ents.Create( "prk_bullet_heavy" )
 		bullet:Spawn()
-		bullet:Launch(
-			self.Owner:EyePos() +
-			self.Owner:GetForward() * 100 +
-			self.Owner:GetRight() * 20,
-			self.Owner:GetForward() * 1000 +
-			self.Owner:GetUp() * 100 +
-			self.Owner:GetRight() * -50
-		)
+			-- Old code to launch from barrel
+			-- bullet:Launch(
+				-- self.Owner:EyePos() +
+				-- self.Owner:GetForward() * 100 +
+				-- self.Owner:GetRight() * 20,
+				-- self.Owner:GetForward() * 1000 +
+				-- self.Owner:GetUp() * 100 +
+				-- self.Owner:GetRight() * -50
+			-- )
+			-- New code to appear at hit point and bounce back towards player
+			local tr = self.Owner:GetEyeTrace()
+			local pos = tr.HitPos + tr.HitNormal * 10
+				-- Clamp pos to max distance
+				local dir = pos - self.Owner:EyePos()
+				if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+					pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+				end
+			local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
+			bullet:Launch( pos, dir )
+			local phys = bullet:GetPhysicsObject()
+			if ( phys and phys:IsValid() ) then
+				phys:AddAngleVelocity( VectorRand() * 1000 )
+			end
+			bullet:CollideWithEnt( tr.Entity )
 		bullet.Owner = self.Owner
 
 		-- Communicate with client
@@ -188,6 +209,9 @@ function SWEP:Reload()
 
 				-- Play sound
 				self.Weapon:EmitSound( "buttons/lever7.wav" )
+
+				-- Delay next shoot until reload finished
+				self:SetNextPrimaryFire( CurTime() + 0.5 )
 			elseif ( ammo == 0 ) then
 				-- Play sound
 				self.Weapon:EmitSound( "weapons/pistol/pistol_empty.wav" )
@@ -244,7 +268,7 @@ if ( CLIENT ) then
 
 	function SWEP:PostDrawViewModel( vm, weapon, ply )
 		-- Create if non-existant
-		if ( !self.GunModel ) then
+		if ( !self.GunModel or !self.GunModel:IsValid() ) then
 			self.GunModel = PRK_AddModel( self.WorldModel, Vector(), Angle(), 1, "models/shiny", Color( 100, 100, 100, 255 ) )
 
 			-- Scale
@@ -265,7 +289,7 @@ if ( CLIENT ) then
 			vm:GetRight() * 10 +
 			vm:GetUp() * - 15
 		local speedpunch = 10
-		local speed = 40
+		local speed = 40 * PRK_Speed / 400
 		local curpos = self.GunModel:GetPos()
 		local dist = math.min( 1, curpos:Distance( target ) )
 		local targetang =

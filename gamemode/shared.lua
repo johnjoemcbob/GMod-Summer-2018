@@ -13,6 +13,10 @@ GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 --DeriveGamemode( "base" )
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 
+-- Globals
+PRK_Speed	= 600
+PRK_Jump	= 0
+
 -- Easier for testing than writing out the whole function each time
 -- Requires "developer 1" in console
 function PRK_BasicDebugSphere( pos )

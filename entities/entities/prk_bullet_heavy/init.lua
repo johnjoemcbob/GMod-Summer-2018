@@ -159,7 +159,7 @@ function ENT:CollideWithEnt( ent )
 	if ( self.State == State.Damage and ent != self.Owner ) then
 		local mult = 1
 			-- testing/fun
-			if ( ent:IsNPC() or ent:IsPlayer() or ent:GetClass() == "prop_physics" ) then
+			if ( ent:IsNPC() or ent:GetClass() == "prop_physics" ) then
 				mult = 50
 			end
 		ent:TakeDamage( self.Damage * mult, self.Owner, self )
@@ -180,6 +180,9 @@ function ENT:CollideWithEnt( ent )
 	self.Collide = self.Collide + 1
 	if ( self.Collide == self.MaxDamageCollide ) then
 		self:StartState( State.Pickup )
+		if ( self.DamageEndCallback ) then
+			self:DamageEndCallback()
+		end
 	end
 
 	-- Play sound
@@ -194,14 +197,18 @@ function ENT:CollideWithEnt( ent )
 	util.Effect( "prk_hit", effectdata )
 end
 
-function ENT:Launch( startpos, velocity )
+function ENT:Launch( startpos, velocity, gravity )
+	if ( gravity == nil ) then
+		gravity = true
+	end
+
 	self.launch_vector = velocity
 	self:SetPos( startpos )
 	-- self:SetVelocity( velocity * 1000000000 )
 	local phys = self:GetPhysicsObject()
 	if ( phys and IsValid( phys ) ) then
 		phys:ApplyForceCenter( velocity )
-		phys:EnableGravity( true )
+		phys:EnableGravity( gravity )
 		phys:SetMaterial( "gmod_bouncy" )
 	end
 	self:SetGravity( 1000 )

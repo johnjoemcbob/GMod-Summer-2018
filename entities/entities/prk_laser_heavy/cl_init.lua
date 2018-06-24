@@ -2,14 +2,14 @@ include( "shared.lua" )
 
 function ENT:Initialize()
 	-- Add visual bullet
-	self.Bullet = ClientsideModel( "models/Items/AR2_Grenade.mdl" )
+	self.Bullet = ClientsideModel( "models/hunter/blocks/cube025x1x025.mdl" )
 	-- self.Bullet:SetNoDraw( true )
 	self.Bullet:SetMaterial( "models/shiny", true )
-	self.Bullet:SetColor( Color( 150, 150, 200, 255 ) )
-	self.Bullet:SetModelScale( self.Scale, 0 )
+	self.Bullet:SetColor( Color( 255, 255, 255, 255 ) )
+	self.Bullet:SetModelScale( 1, 0 )
 
 	-- Set bullet scale
-	local scale = Vector( 0.6, 1.5, 1.5 )
+	local scale = Vector( 0.1, 1, 0.1 )
 
 	local mat = Matrix()
 		mat:Scale( scale )
@@ -24,7 +24,7 @@ function ENT:Draw()
 	-- if ( self:GetVelocity() != Vector() ) then
 		-- self.Bullet:SetAngles( self:GetVelocity():Angle() )
 	-- else
-		self.Bullet:SetAngles( self:GetAngles() )
+		self.Bullet:SetAngles( self:GetAngles() + Angle( 0, 90, 0 ) )
 	-- end
 	-- self.Bullet:DrawModel()
 

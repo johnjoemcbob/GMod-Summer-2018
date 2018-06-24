@@ -45,7 +45,21 @@ function GM:HUDShouldDraw( name )
 	return true
 end
 
+-- Blocking jump/crouch with overrides
+-- Block weapon switching with no override
+local blockdefault = {
+	"slot1",
+	"slot2",
+	"slot3",
+	"slot4",
+	"slot5",
+	"slot6",
+	"slot6",
+	"invprev",
+	"invnext",
+}
 hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bind )
+	-- Blocking with overrides
 	if string.find( bind, "+jump" ) then
 		-- ply:ConCommand( "prk_effect" )
 		return true
@@ -53,6 +67,13 @@ hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bi
 	if string.find( bind, "+duck" ) then
 		-- ply:ConCommand( "prk_effect" )
 		return true
+	end
+
+	-- Blocking without overrides
+	for k, v in pairs( blockdefault ) do
+		if ( string.find( bind, v ) ) then
+			return true
+		end
 	end
 end )
 
@@ -257,23 +278,10 @@ function draw.Heart( x, y, radius, seg )
 	surface.DrawPoly( tri )
 end
 
+-- More in shared.lua
 function draw.Circle( x, y, radius, seg, rotate )
 	local cir = PRK_GetCirclePoints( x, y, radius, seg, rotate )
 	surface.DrawPoly( cir )
-end
-
--- From: http://wiki.garrysmod.com/page/surface/DrawPoly
-function PRK_GetCirclePoints( x, y, radius, seg, rotate )
-	local cir = {}
-		-- table.insert( cir, { x = x, y = y, u = 0.5, v = 0.5 } )
-		for i = 0, seg do
-			local a = math.rad( ( ( i / seg ) * -360 ) + rotate )
-			table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
-		end
-
-		-- local a = math.rad( 0 ) -- This is need for non absolute segment counts
-		-- table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
-	return cir
 end
 
 function draw.StencilBasic( mask, inner )

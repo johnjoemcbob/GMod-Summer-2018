@@ -82,7 +82,12 @@ end
 
 function GM:EntityTakeDamage( target, dmginfo )
 	if ( target:IsPlayer() ) then
-		dmginfo:ScaleDamage( 0.2 )
+		if ( !string.find( dmginfo:GetInflictor():GetClass(), "prk" ) ) then
+			dmginfo:ScaleDamage( 0.2 )
+		end
+		if ( dmginfo:GetDamageType() == DMG_CRUSH ) then
+			dmginfo:ScaleDamage( 0 )
+		end
 	end
 end
 -------------------------

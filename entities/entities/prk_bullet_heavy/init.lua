@@ -26,7 +26,7 @@ sound.Add(
 )
 
 local function trypickup( ent, colent )
-	if ( colent:IsPlayer() and colent == ent.Owner ) then
+	if ( colent:IsPlayer() ) then --and colent == ent.Owner ) then
 		colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
 		-- colent:EmitSound( "friends/friend_join.wav" )
 		colent:EmitSound( "garrysmod/content_downloaded.wav" )

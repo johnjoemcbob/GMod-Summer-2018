@@ -201,7 +201,9 @@ end
 -- Class (String), Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
 function PRK_CreateEnt( class, mod, pos, ang, mov )
 	local ent = ents.Create( class )
-		ent:SetModel( mod )
+		if ( mod ) then
+			ent:SetModel( mod )
+		end
 		ent:SetPos( pos )
 		ent:SetAngles( ang )
 		ent:Spawn()

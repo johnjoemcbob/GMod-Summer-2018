@@ -52,6 +52,9 @@ function GM:HUDPaint()
 
 	PRK_HUDPaint_ExtraAmmo()
 	PRK_HUDPaint_RevolverChambers()
+
+	-- Must be last!
+	LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
 end
 
 function GM:PostDrawHUD()
@@ -162,12 +165,15 @@ function PRK_Initialise_RevolverChambers()
 		Ang = 0,
 		TargetAng = 0,
 		NoAmmoWarning = false,
+		ExtraChange = 0,
 	}
 end
 
 function PRK_Think_RevolverChambers()
 	local speed = FrameTime() * 10
+	local old = PRK_RevolverChambers.Ang
 	PRK_RevolverChambers.Ang = Lerp( speed, PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng )
+	PRK_RevolverChambers.LastChange = math.abs( old - PRK_RevolverChambers.Ang )
 	-- PRK_RevolverChambers.Ang = math.ApproachAngle( PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng, speed )
 end
 
@@ -202,24 +208,28 @@ function PRK_HUDPaint_ExtraAmmo()
 end
 
 function PRK_HUDPaint_RevolverChambers()
+	if ( !LocalPlayer():GetActiveWeapon() or !LocalPlayer():GetActiveWeapon():IsValid() or LocalPlayer():GetActiveWeapon():GetClass() != "prk_gun" ) then return end
+
 	local r = 48
+		r = r + PRK_RevolverChambers.LastChange * 4
 	local x = ScrW() - r * 5.7
 	local y = ScrH() - r * 1.2
 	local ang = PRK_RevolverChambers.Ang
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
+	local chambers = LocalPlayer():GetActiveWeapon().MaxClip
+
 	-- Draw background
 	surface.SetDrawColor( 230, 230, 240, 255 )
 	if ( PRK_RevolverChambers.NoAmmoWarning ) then
 		surface.SetDrawColor( 230, 130, 130, 255 )
 	end
-	draw.Circle( x, y, r, 6, ang )
+	draw.Circle( x, y, r, chambers, ang )
 
 	-- Draw individual chambers
-	local chambers = 6
-	local points = PRK_GetCirclePoints( x, y, r / 10 * 6, chambers, ang + 180 )
-	local cham_rad = r / 4
+	local points = PRK_GetCirclePoints( x, y, r - chambers * 3, chambers, ang + 180 )
+	local cham_rad = r / chambers * 1.5
 	local ammo = LocalPlayer():GetNWInt( "PRK_Clip" )
 	for k, point in pairs( points ) do
 		if ( k <= ammo + 1 ) then
@@ -269,6 +279,7 @@ end
 function PRK_Gun_AddAmmo()
 	PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + 60
 	PRK_RevolverChambers.NoAmmoWarning = false
+	PRK_RevolverChambers.ExtraChange = 1
 end
 
 function PRK_Gun_NoAmmoWarning()
@@ -302,21 +313,22 @@ end )
 --------------
 function PRK_DrawText( text, x, y, col, xalign, yalign )
 	-- Shadow
-	local left = ( x <= ScrW() / 2 )
-	local bott = ( y <= ScrH() / 2 )
-	local offx = 2
-		if ( left ) then
-			offx = -offx
-		end
-	local offy = -2
-		if ( bott ) then
-			offy = -offy
-		end
+	local offx, offy = PRK_GetUIPosVelocity( x, y, -2, 2, 2 )
+	-- local left = ( x <= ScrW() / 2 )
+	-- local bott = ( y <= ScrH() / 2 )
+	-- local offx = 2
+		-- if ( left ) then
+			-- offx = -offx
+		-- end
+	-- local offy = -2
+		-- if ( bott ) then
+			-- offy = -offy
+		-- end
 	draw.SimpleText(
 		text,
 		"HeavyHUD",
-		x - offx,
-		y - offy,
+		offx,
+		offy,
 		Color( 255, 100, 150, 255 ),
 		xalign,
 		yalign
@@ -334,33 +346,59 @@ function PRK_DrawText( text, x, y, col, xalign, yalign )
 	)
 end
 
-function PRK_GetUIPosVelocity( x, y, lagx, lagy )
-	local left = ( x <= ScrW() / 2 )
-	local bott = ( y <= ScrH() / 2 )
-	local offx = lagx * LocalPlayer():GetVelocity():Length() / PRK_Speed
-		if ( left ) then
-			x = x - offx
-		else
-			x = x + offx
+function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
+	-- Default variables
+	if ( !effect ) then
+		effect = 20
+	end
+	effectpunch = 0.25
+	effectrotate = 0.25
+
+	local targetx = x
+	local targety = y
+		local left = ( x <= ScrW() / 2 )
+		local bott = ( y <= ScrH() / 2 )
+		-- Default effect + punch effect (From gun firing, etc)
+		local wep = LocalPlayer():GetActiveWeapon()
+		if ( wep.GunPunch ) then
+			local offx = lagx + wep.GunPunch * effectpunch * effect * 2
+				if ( left ) then
+					targetx = targetx - offx
+				else
+					targetx = targetx + offx
+				end
+			local offy = lagy + wep.GunPunch * effectpunch * effect * 2
+				if ( bott ) then
+					targety = targety - offy
+				else
+					targety = targety + offy
+				end
 		end
-	local offy = lagy * LocalPlayer():GetVelocity():Length() / PRK_Speed
-		if ( bott ) then
-			y = y - offy
-		else
-			y = y + offy
-		end
-	-- local vel_right = LocalPlayer():GetVelocity():Angle():Right()
-	-- local pos = vel_right:Dot( LocalPlayer():EyePos() )
-	-- local right = vel_right:Dot( LocalPlayer():GetVelocity() )
-	-- local speed = LocalPlayer():GetVelocity():Length()
-	-- local offx = lagx * ( pos - right ) * speed / ( PRK_Speed * PRK_Speed )
-		-- x = x + offx
-	-- local vel_forward = LocalPlayer():GetVelocity():Angle():Forward()
-	-- local pos = vel_forward:Dot( LocalPlayer():EyePos() )
-	-- local forward = vel_forward:Dot( LocalPlayer():GetVelocity() )
-	-- local speed = LocalPlayer():GetVelocity():Length()
-	-- local offy = lagy * ( pos - forward ) * speed / ( PRK_Speed * PRK_Speed )
-		-- y = y + offy
+		-- Velocity effect
+		local vel = LocalPlayer():GetVelocity()
+		local rgt = -LocalPlayer():GetRight()
+		local up  = LocalPlayer():GetUp()
+			targetx = targetx + vel:Dot( rgt ) / PRK_Speed * effect
+			targety = targety + vel:Dot( up ) / PRK_Speed * effect
+		-- Turn effect (stored on DrawHUD)
+		-- if ( vel:Length() < PRK_Speed / 10 ) then
+			-- if ( LocalPlayer().LastEyeAngles ) then
+				-- local bac = -LocalPlayer():GetForward()
+				-- local movingback = 1 -- vel:Dot( bac ) > 0 and -1 or 1
+				-- print( movingback )
+				-- local max = 5
+				-- local eye = LocalPlayer():EyeAngles()
+					-- targetx = targetx + movingback * math.Clamp( math.AngleDifference( eye.y, LocalPlayer().LastEyeAngles.y ), -max, max ) * effectrotate * effect
+					-- targety = targety + movingback * -math.Clamp( math.AngleDifference( eye.x, LocalPlayer().LastEyeAngles.x ), -max, max ) * effectrotate * effect
+			-- end
+		-- end
+	-- Lerp
+	local frametime = 0.016 -- FrameTime()
+	local speed = 50
+	x = Lerp( frametime * speed, x, targetx )
+	y = Lerp( frametime * speed, y, targety )
+	-- x = targetx
+	-- y = targety
 	return x, y
 end
 

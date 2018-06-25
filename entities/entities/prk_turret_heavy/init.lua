@@ -176,12 +176,20 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
+	-- Stop looping sound
 	self.Sound_Rotate:Stop()
 
+	-- Remove visuals
 	for k, v in pairs( self.Ents ) do
 		if ( v and v:IsValid() ) then
 			v:Remove()
 		end
+	end
+
+	-- Spawn money
+	local money = 4
+	for i = 1, money do
+		PRK_CreateEnt( "prk_coin_heavy", nil, self:GetPos(), AngleRand(), true )
 	end
 end
 

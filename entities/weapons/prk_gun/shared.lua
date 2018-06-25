@@ -26,6 +26,8 @@ SWEP.Secondary.DefaultClip	= -1
 SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
+SWEP.RequireAmmo			= true
+SWEP.MaxClip				= 6
 local dist = 3000
 SWEP.MaxDistance			= dist
 SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
@@ -107,7 +109,7 @@ function SWEP:Initialize()
 	-- self:SetHoldType( "passive" )
 
 	if ( SERVER ) then
-		self.Owner:SetNWInt( "PRK_Clip", 6 )
+		self.Owner:SetNWInt( "PRK_Clip", self.MaxClip )
 		self.Owner:SetNWInt( "PRK_ExtraAmmo", 0 )
 	end
 
@@ -141,7 +143,7 @@ function SWEP:PrimaryAttack( right )
 	-- Make sure we can shoot first
 	-- if ( !self:CanPrimaryAttack() ) then return end
 	local ammo = self.Owner:GetNWInt( "PRK_Clip" )
-	if ( ammo <= 0 ) then
+	if ( self.RequireAmmo and ammo <= 0 ) then
 		-- Play sound
 		self.Weapon:EmitSound( "buttons/lightswitch2.wav" )
 
@@ -194,22 +196,30 @@ function SWEP:PrimaryAttack( right )
 		bullet.Owner = self.Owner
 
 		-- Remove 1 bullet from our clip
-		-- self:TakePrimaryAmmo( 1 )
-		self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
+		if ( self.RequireAmmo ) then
+			self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
+		end
 
 		-- Communicate with client
 		self:SendFire()
 	end
 
-	-- Punch FOV
-	if ( !self.FOVBase ) then
-		self.FOVBase = self.Owner:GetFOV()
-	end
-	local base = self.FOVBase
-	local fov = base + self.DistFOVPunch
-	self.Owner:SetFOV( fov, self.TimeFOVPunch )
-	self.FOVPunch = CurTime() + self.TimeFOVPunch + self.TimeHoldFOVPunch
-	-- timer.Simple( self.TimeFOVPunch + self.TimeHoldFOVPunch, function() self.Owner:SetFOV( 0, self.TimeFOVPunch ) end )
+	-- Punch FOV (if not running backwards - this felt bad, like the player had stopped moving)
+	local vel = self.Owner:GetVelocity()
+	local bac = -self.Owner:GetForward()
+	local movingback = vel:Dot( bac ) > 0
+	-- if ( !movingback ) then
+		if ( !self.FOVBase ) then
+			self.FOVBase = self.Owner:GetFOV()
+		end
+		local base = self.FOVBase
+		local fov = base + self.DistFOVPunch
+			if ( movingback ) then
+				fov = base - self.DistFOVPunch
+			end
+		self.Owner:SetFOV( fov, self.TimeFOVPunch )
+		self.FOVPunch = CurTime() + self.TimeFOVPunch + self.TimeHoldFOVPunch
+	-- end
 
 	-- Punch the player's view
 	self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
@@ -218,7 +228,7 @@ function SWEP:PrimaryAttack( right )
 			pushback = pushback * 2
 		end
 		pushback.z = 0
-	self.Owner:SetVelocity( pushback )
+	-- self.Owner:SetVelocity( pushback )
 
 	self:SetNextPrimaryFire( CurTime() + self.TimeFire )
 	self.NextReload = CurTime() + self.TimeReload
@@ -233,7 +243,7 @@ function SWEP:Reload()
 		if ( !self.NextReload or self.NextReload <= CurTime() ) then
 			local ammo = self.Owner:GetNWInt( "PRK_Clip" )
 			local extraammo = self.Owner:GetNWInt( "PRK_ExtraAmmo" )
-			if ( extraammo > 0 and ammo < 6 ) then
+			if ( extraammo > 0 and ammo < self.MaxClip ) then
 				-- Reload and communicate
 				self.Owner:SetNWInt( "PRK_ExtraAmmo", extraammo - 1 )
 				self.Owner:SetNWInt( "PRK_Clip", ammo + 1 )
@@ -304,7 +314,7 @@ if ( CLIENT ) then
 				ang:Forward() * 20 +
 				ang:Right() * 10 * self.RightHanded +
 				ang:Up() * -15
-			local speedpunch = 0.5
+			local speedpunch = 1.5 -- 0.5
 			local speed = 15 * PRK_Speed / 400
 			local curpos = LocalPlayer():GetViewModel():GetPos() -- old targetpos?
 			local dist = 1 -- math.max( 1, curpos:Distance( target ) )

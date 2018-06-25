@@ -10,6 +10,33 @@ include( "shared.lua" )
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
 
+-- Fonts
+local function loadfonts()
+	surface.CreateFont( "HeavyHUD", {
+		font = "Alte Haas Grotesk", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+		extended = false,
+		size = 36,
+		weight = 2000,
+		blursize = 1,
+		scanlines = 0,
+		antialias = true,
+		underline = false,
+		italic = false,
+		strikeout = false,
+		symbol = false,
+		rotary = false,
+		shadow = false,
+		additive = false,
+		outline = false,
+	} )
+end
+loadfonts()
+
+-- Variables
+local LagX = 10
+local LagY = 5
+
+-- Gamemode Hooks
 function GM:Initialize()
 	PRK_Initialise_RevolverChambers()
 end
@@ -20,6 +47,8 @@ end
 
 function GM:HUDPaint()
 	PRK_HUDPaint_Health()
+
+	PRK_HUDPaint_Money()
 
 	PRK_HUDPaint_ExtraAmmo()
 	PRK_HUDPaint_RevolverChambers()
@@ -81,8 +110,10 @@ function PRK_HUDPaint_Health()
 	local r = 16
 	local s = r
 	local sb = r + 4
-	local x = 0
-	local y = ScrH() - r * 1
+	local x = r * 3
+	local y = ScrH() - r * 3
+	-- Move slightly with player
+	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
 	local maxhealth = LocalPlayer():GetMaxHealth()
 	local health = LocalPlayer():Health()
@@ -95,11 +126,32 @@ function PRK_HUDPaint_Health()
 	end
 	local function inner()
 		-- Draw filled rectangle for health bar
-		surface.SetDrawColor( 255, 20, 30, 255 )
+		surface.SetDrawColor( 150, 20, 70, 255 )
 		draw.NoTexture()
-		surface.DrawTexturedRect( x + s, y - s * 2, x + ( sb + s ) * health / 2, s * 2 )
+		surface.DrawTexturedRect( x + sb, y - s * 2, ( sb + s ) * health / 2, s * 2 )
 	end
 	draw.StencilBasic( mask, inner )
+end
+
+function PRK_HUDPaint_Money()
+	local r = 32
+	local s = r
+	local sb = r + 4
+	local x = r * 2.2
+	local y = ScrH() - r * 1
+	-- Move slightly with player
+	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
+
+	local money = LocalPlayer():GetNWInt( "PRK_Money" )
+		money = "€" .. money
+	PRK_DrawText(
+		money,
+		x,
+		y,
+		Color( 255, 255, 50, 255 ),
+		TEXT_ALIGN_LEFT,
+		TEXT_ALIGN_CENTER
+	)
 end
 
 -----------------
@@ -122,8 +174,10 @@ end
 function PRK_HUDPaint_ExtraAmmo()
 	local r = 64
 	local s = 32
-	local x = ScrW() - r * 1
+	local x = ScrW() - r * 3
 	local y = ScrH() - r * 1
+	-- Move slightly with player
+	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
 	-- Draw ammo icon
 	surface.SetDrawColor( 100, 190, 190, 255 )
@@ -137,9 +191,8 @@ function PRK_HUDPaint_ExtraAmmo()
 			extraammo = "0" .. extraammo
 		end
 		extraammo = "x" .. extraammo
-	draw.SimpleText(
+	PRK_DrawText(
 		extraammo,
-		"CloseCaption_Bold",
 		x,
 		y,
 		Color( 255, 255, 255, 255 ),
@@ -150,9 +203,11 @@ end
 
 function PRK_HUDPaint_RevolverChambers()
 	local r = 48
-	local x = ScrW() - r * 3
+	local x = ScrW() - r * 5.7
 	local y = ScrH() - r * 1.2
 	local ang = PRK_RevolverChambers.Ang
+	-- Move slightly with player
+	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
 	-- Draw background
 	surface.SetDrawColor( 230, 230, 240, 255 )
@@ -185,9 +240,8 @@ function PRK_HUDPaint_RevolverChambers()
 			end
 		local pulsespeed = 10
 		local pulsemag = 105
-		draw.SimpleText(
+		PRK_DrawText(
 			message,
-			"CloseCaption_Bold",
 			x,
 			y - r * 1.3,
 			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
@@ -197,9 +251,8 @@ function PRK_HUDPaint_RevolverChambers()
 
 		-- Draw R in the middle of chambers
 		local pulsemag = 20
-		draw.SimpleText(
+		PRK_DrawText(
 			"R",
-			"CloseCaption_Bold",
 			x,
 			y - 2,
 			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
@@ -247,6 +300,70 @@ end )
 --------------
   -- Util --
 --------------
+function PRK_DrawText( text, x, y, col, xalign, yalign )
+	-- Shadow
+	local left = ( x <= ScrW() / 2 )
+	local bott = ( y <= ScrH() / 2 )
+	local offx = 2
+		if ( left ) then
+			offx = -offx
+		end
+	local offy = -2
+		if ( bott ) then
+			offy = -offy
+		end
+	draw.SimpleText(
+		text,
+		"HeavyHUD",
+		x - offx,
+		y - offy,
+		Color( 255, 100, 150, 255 ),
+		xalign,
+		yalign
+	)
+
+	-- Real text
+	draw.SimpleText(
+		text,
+		"HeavyHUD",
+		x,
+		y,
+		col,
+		xalign,
+		yalign
+	)
+end
+
+function PRK_GetUIPosVelocity( x, y, lagx, lagy )
+	local left = ( x <= ScrW() / 2 )
+	local bott = ( y <= ScrH() / 2 )
+	local offx = lagx * LocalPlayer():GetVelocity():Length() / PRK_Speed
+		if ( left ) then
+			x = x - offx
+		else
+			x = x + offx
+		end
+	local offy = lagy * LocalPlayer():GetVelocity():Length() / PRK_Speed
+		if ( bott ) then
+			y = y - offy
+		else
+			y = y + offy
+		end
+	-- local vel_right = LocalPlayer():GetVelocity():Angle():Right()
+	-- local pos = vel_right:Dot( LocalPlayer():EyePos() )
+	-- local right = vel_right:Dot( LocalPlayer():GetVelocity() )
+	-- local speed = LocalPlayer():GetVelocity():Length()
+	-- local offx = lagx * ( pos - right ) * speed / ( PRK_Speed * PRK_Speed )
+		-- x = x + offx
+	-- local vel_forward = LocalPlayer():GetVelocity():Angle():Forward()
+	-- local pos = vel_forward:Dot( LocalPlayer():EyePos() )
+	-- local forward = vel_forward:Dot( LocalPlayer():GetVelocity() )
+	-- local speed = LocalPlayer():GetVelocity():Length()
+	-- local offy = lagy * ( pos - forward ) * speed / ( PRK_Speed * PRK_Speed )
+		-- y = y + offy
+	return x, y
+end
+
 function draw.Heart( x, y, radius, seg )
 	local circle_rad = radius / 2
 	local circle_off = circle_rad

@@ -32,6 +32,10 @@ SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
 SWEP.RightHanded			= 1
 SWEP.TimeFire				= 0.2
 SWEP.TimeReload				= 0.2
+SWEP.TimeFOVPunch			= 0.1
+SWEP.TimeBackFOVPunch		= 0.2
+SWEP.TimeHoldFOVPunch		= 0.1
+SWEP.DistFOVPunch			= 10
 
 if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
@@ -86,7 +90,7 @@ if ( CLIENT ) then
 
 		self:EmitSound( "buttons/lever7.wav" )
 
-		self.GunPunch = -0.2
+		self.GunPunch = -0.4
 		self.GunPunchRnd = math.random( -10, 10 )
 		PRK_Gun_AddAmmo() -- In main cl_init.lua
 	end )
@@ -116,6 +120,13 @@ function SWEP:Think()
 	-- self:SetHoldType( "knife" )
 	-- self:SetHoldType( "slam" )
 	-- self:SetHoldType( "fist" )
+	if ( self.FOVPunch and self.FOVPunch <= CurTime() ) then
+		self.Owner:SetFOV( 0, self.TimeBackFOVPunch )
+		self.FOVPunch = nil
+	end
+
+	self:NextThink( CurTime() + 1 )
+	return true
 end
 
 function SWEP:PreDrawViewModel( vm, wep, ply )
@@ -182,13 +193,23 @@ function SWEP:PrimaryAttack( right )
 			bullet:CollideWithEnt( tr.Entity )
 		bullet.Owner = self.Owner
 
+		-- Remove 1 bullet from our clip
+		-- self:TakePrimaryAmmo( 1 )
+		self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
+
 		-- Communicate with client
 		self:SendFire()
 	end
 
-	-- Remove 1 bullet from our clip
-	-- self:TakePrimaryAmmo( 1 )
-	self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
+	-- Punch FOV
+	if ( !self.FOVBase ) then
+		self.FOVBase = self.Owner:GetFOV()
+	end
+	local base = self.FOVBase
+	local fov = base + self.DistFOVPunch
+	self.Owner:SetFOV( fov, self.TimeFOVPunch )
+	self.FOVPunch = CurTime() + self.TimeFOVPunch + self.TimeHoldFOVPunch
+	-- timer.Simple( self.TimeFOVPunch + self.TimeHoldFOVPunch, function() self.Owner:SetFOV( 0, self.TimeFOVPunch ) end )
 
 	-- Punch the player's view
 	self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
@@ -256,42 +277,37 @@ end
 if ( CLIENT ) then
 	function SWEP:Initialize()
 		-- Create if non-existant
-		-- if ( !self.GunModel or !self.GunModel:IsValid() ) then
-			local pos = LocalPlayer():GetViewModel():GetPos()
-			local ang = LocalPlayer():GetViewModel():GetAngles()
-			self.GunModel = PRK_AddModel( self.WorldModel, pos, ang, 1, "models/shiny", Color( 100, 100, 100, 255 ) )
+		local pos = LocalPlayer():GetViewModel():GetPos()
+		local ang = LocalPlayer():GetViewModel():GetAngles()
+		self.GunModel = PRK_AddModel( self.WorldModel, pos, ang, 1, "models/shiny", Color( 100, 100, 100, 255 ) )
 
-			-- Scale
-			local scale = Vector( 1, 3, 3 )
+		-- Scale
+		local scale = Vector( 1, 3, 3 )
 
-			local mat = Matrix()
-				mat:Scale( scale )
-			self.GunModel:EnableMatrix( "RenderMultiply", mat )
+		local mat = Matrix()
+			mat:Scale( scale )
+		self.GunModel:EnableMatrix( "RenderMultiply", mat )
 
-			-- Draw manually
-			self.GunModel:SetNoDraw( true )
+		-- Draw manually
+		self.GunModel:SetNoDraw( true )
 
-			-- self.GunModel:SetPos( pos )
-			-- self.GunModel:SetAngles( ang )
-			self.GunModel:SetParent( LocalPlayer():GetViewModel() )
-			print( "create " )
-		-- end
+		-- self.GunModel:SetPos( pos )
+		-- self.GunModel:SetAngles( ang )
+		self.GunModel:SetParent( LocalPlayer():GetViewModel() )
 	end
 
-	local ViewModel_Dest_Up = 0
-	local targetpos = Vector()
 	function SWEP:GetViewModelPosition( pos, ang )
-		-- if ( IsFirstTimePredicted() ) then
+		local frametime = 0.016
 			-- Default pos/ang
 			local target = 
 				pos +
 				ang:Forward() * 20 +
 				ang:Right() * 10 * self.RightHanded +
 				ang:Up() * -15
-			local speedpunch = 3
+			local speedpunch = 0.5
 			local speed = 15 * PRK_Speed / 400
 			local curpos = LocalPlayer():GetViewModel():GetPos() -- old targetpos?
-			local dist = math.min( 1, curpos:Distance( target ) )
+			local dist = 1 -- math.max( 1, curpos:Distance( target ) )
 			local targetang =
 				ang +
 				Angle( 0, 1, 0 ) * 10 * self.RightHanded
@@ -309,80 +325,29 @@ if ( CLIENT ) then
 			targetang =
 				targetang +
 				Angle( -1, 0, 0 ) * 150 * self.GunPunch
-			self.GunPunch = Lerp( FrameTime() * speedpunch, self.GunPunch, 0 )
-			self.GunPunchRnd = Lerp( FrameTime() * speedpunch, self.GunPunchRnd, 0 )
+			self.GunPunch = math.Approach( self.GunPunch, 0, frametime * speedpunch )
+			self.GunPunchRnd = math.Approach( self.GunPunchRnd, 0, frametime * speedpunch )
 
 			-- Lerp
-			pos = LerpVector( 0.016 * speed * dist, curpos, target )
-			-- Check for NAN and correct (NAN should not be equal to anything)
-			if ( pos.x != pos.x and pos.y != pos.y and pos.z != pos.z ) then
-				pos = curpos
-			end
+			pos = LerpVector( frametime * speed * dist, curpos, target )
+			-- Check for NaN or inf (NaN should not be equal to anything)
+			-- if (
+				-- pos.x != pos.x or
+				-- pos.y != pos.y or
+				-- pos.z != pos.z or
+				-- math.abs( pos.x ) == math.huge or
+				-- math.abs( pos.y ) == math.huge or
+				-- math.abs( pos.z ) == math.huge
+			-- ) then
+				-- pos = target
+			-- end
 			ang = targetang
-			targetpos = target
-		-- end
 
-		-- local ang = LocalPlayer():GetRenderAngles()
-
-		-- pos = pos + ( ang:Up() * 2 )
-		-- pos = pos + ( ang:Forward() * -100 )
-		-- pos = pos + ( ang:Right() * 1 )
-
-		-- ang = ang + Angle( 14, -5, 0 )-- ViewModel_Angle_Roll )
-
+			-- Debug
+			-- print( pos )
+			-- print( target )
 		return pos, ang
 	end
---
---	function SWEP:PostDrawViewModel( vm, weapon, ply )
---		-- Create if non-existant
---		if ( !self.GunModel or !self.GunModel:IsValid() ) then
---			self.GunModel = PRK_AddModel( self.WorldModel, Vector(), Angle(), 1, "models/shiny", Color( 100, 100, 100, 255 ) )
---
---			-- Scale
---			local scale = Vector( 1, 3, 3 )
---
---			local mat = Matrix()
---				mat:Scale( scale )
---			self.GunModel:EnableMatrix( "RenderMultiply", mat )
---
---			-- Draw manually
---			self.GunModel:SetNoDraw( true )
---		end
---
---		-- Default pos/ang
---		local target = 
---			vm:GetPos() +
---			vm:GetForward() * 115 +
---			vm:GetRight() * 10 * self.RightHanded +
---			vm:GetUp() * - 15
---		local speedpunch = 10
---		local speed = 40 * PRK_Speed / 400
---		local curpos = self.GunModel:GetPos()
---		local dist = math.min( 1, curpos:Distance( target ) )
---		local targetang =
---			vm:GetAngles() +
---			Angle( 0, 1, 0 ) * 10 * self.RightHanded
---
---		-- Gun punch
---		if ( !self.GunPunch ) then
---			self.GunPunch = 0
---			self.GunPunchRnd = 0
---		end
---		target =
---			target +
---			vm:GetUp() * 10 * self.GunPunch +
---			vm:GetForward() * -20 * self.GunPunch +
---			vm:GetRight() * self.GunPunchRnd / 10
---		targetang =
---			targetang +
---			Angle( -1, 0, 0 ) * 150 * self.GunPunch
---		self.GunPunch = Lerp( FrameTime() * speedpunch, self.GunPunch, 0 )
---		self.GunPunchRnd = Lerp( FrameTime() * speedpunch, self.GunPunchRnd, 0 )
---
---		-- Lerp
---		self.GunModel:SetPos( LerpVector( FrameTime() * speed * dist, curpos, target ) )
---		self.GunModel:SetAngles( targetang )
---	end
 
 	function SWEP:OnRemove()
 		if ( self.GunModel and self.GunModel:IsValid() ) then

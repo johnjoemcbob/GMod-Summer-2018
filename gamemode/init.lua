@@ -14,14 +14,24 @@ include( "levelgen.lua" )
 include( "shared.lua" )
 
 -- Resource Downloads
-local files, directories = file.Find( "gamemodes/prickly_summer_2018/content/materials/*", "GAME" )
+function resource.AddDir( localdir )
+	local srchpath = localdir .. "*"
+	-- print( srchpath )
+	local files, directories = file.Find( srchpath, "GAME" )
+	for k, file in pairs( files ) do
+		-- print( localdir .. file )
+		resource.AddFile( localdir .. file )
+	end
+	for k, dir in pairs( directories ) do
+		-- print( localdir )
+		-- print( localdir .. dir )
+		resource.AddDir( localdir .. dir .. "/" )
+	end
+end
 print( "PRK" )
 print( "----------------" )
 print( "Add resources..." )
-for k, file in pairs( files ) do
-	print( "materials/" .. file )
-	resource.AddFile( "materials/" .. file )
-end
+resource.AddDir( "gamemodes/prickly_summer_2018/content/" )
 print( "Finish resources..." )
 print( "-------------------" )
 
@@ -53,6 +63,9 @@ function GM:PlayerSpawn( ply )
 	local health = 6
 	ply:SetMaxHealth( health )
 	ply:SetHealth( health )
+
+	-- Init money
+	ply:SetNWInt( "PRK_Money", 0 )
 
 	-- Init gun
 	local wep = ply:Give( "prk_gun", true )

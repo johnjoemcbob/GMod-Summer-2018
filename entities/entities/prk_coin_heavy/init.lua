@@ -5,7 +5,8 @@ include( "shared.lua" )
 
 local function trypickup( ent, colent )
 	if ( colent:IsPlayer() ) then
-		colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
+		-- colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
+		colent:SetNWInt( "PRK_Money", colent:GetNWInt( "PRK_Money" ) + 1 )
 		colent:EmitSound( "garrysmod/content_downloaded.wav" )
 		ent:Remove()
 	end
@@ -19,13 +20,14 @@ local function tryjump( ent )
 		-- Jump off ground
 		local phys = ent:GetPhysicsObject()
 		if ( phys and phys:IsValid() ) then
-			local horizontal	= 250
-			local vertical		= 450
+			local horizontal	= 50
+			local vertical		= 200
+			local angle			= 5000
 			phys:ApplyForceCenter( Vector( math.random( -1, 1 ) * horizontal, math.random( -1, 1 ) * horizontal, vertical ) )
-			phys:AddAngleVelocity( VectorRand() * 10000 )
+			phys:AddAngleVelocity( VectorRand() * angle )
 		end
 
-		timer.Simple( ent.JumpDelay, function() tryjump( ent ) end )
+		timer.Simple( math.random( ent.JumpDelay[1], ent.JumpDelay[2] ), function() tryjump( ent ) end )
 	end
 end
 
@@ -35,7 +37,7 @@ State = {
 	Pickup = {
 		Start = function( self, ent )
 			-- print( "pck up" )
-			timer.Simple( ent.JumpDelay, function() tryjump( ent ) end )
+			timer.Simple( math.random( ent.JumpDelay[1], ent.JumpDelay[2] ), function() tryjump( ent ) end )
 		end,
 		Think = function( self, ent )
 			for k, colent in pairs( ents.FindInSphere( ent:GetPos(), 50 ) ) do
@@ -66,7 +68,7 @@ function ENT:Initialize()
 	self:PhysWake()
 
 	-- Variables
-	self.JumpDelay = 4
+	self.JumpDelay = { 4, 8 }
 
 	-- Initialise
 	self:StartState( State.Pickup )

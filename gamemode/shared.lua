@@ -14,9 +14,21 @@ GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 
 -- Globals
-PRK_Plate_Size = 47.45
-PRK_Speed	= 600
-PRK_Jump	= 0
+PRK_HUD_Colour_Main			= Color( 255, 255, 255, 255 )
+PRK_HUD_Colour_Dark			= Color( 0, 0, 0, 255 )
+PRK_HUD_Colour_Money		= Color( 255, 255, 50, 255 )
+PRK_HUD_Colour_Shadow		= Color( 255, 100, 150, 255 )
+PRK_HUD_Colour_Highlight	= Color( 100, 190, 190, 255 )
+PRK_CurrencyBefore			= "€"
+PRK_CurrencyAfter			= ""
+PRK_CursorSize				= 8
+PRK_Plate_Size				= 47.45
+PRK_Speed					= 600
+PRK_Jump					= 0
+
+function PRK_GetAsCurrency( val )
+	return PRK_CurrencyBefore .. tostring( val ) .. PRK_CurrencyAfter
+end
 
 -- Easier for testing than writing out the whole function each time
 -- Requires "developer 1" in console

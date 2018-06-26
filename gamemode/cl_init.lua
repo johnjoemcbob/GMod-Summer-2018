@@ -12,23 +12,34 @@ PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
 
 -- Fonts
 local function loadfonts()
-	surface.CreateFont( "HeavyHUD", {
-		font = "Alte Haas Grotesk", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
-		extended = false,
-		size = 36,
-		weight = 2000,
-		blursize = 1,
-		scanlines = 0,
-		antialias = true,
-		underline = false,
-		italic = false,
-		strikeout = false,
-		symbol = false,
-		rotary = false,
-		shadow = false,
-		additive = false,
-		outline = false,
-	} )
+	local fontsizes = {
+		16,
+		20,
+		24,
+		30,
+		36,
+		48,
+		64
+	}
+	for k, size in pairs( fontsizes ) do
+		surface.CreateFont( "HeavyHUD" .. size, {
+			font = "Alte Haas Grotesk", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+			extended = false,
+			size = size,
+			weight = 2000,
+			blursize = 1,
+			scanlines = 0,
+			antialias = true,
+			underline = false,
+			italic = false,
+			strikeout = false,
+			symbol = false,
+			rotary = false,
+			shadow = false,
+			additive = false,
+			outline = false,
+		} )
+	end
 end
 loadfonts()
 
@@ -146,12 +157,12 @@ function PRK_HUDPaint_Money()
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
 	local money = LocalPlayer():GetNWInt( "PRK_Money" )
-		money = "€" .. money
+		money = PRK_GetAsCurrency( money )
 	PRK_DrawText(
 		money,
 		x,
 		y,
-		Color( 255, 255, 50, 255 ),
+		PRK_HUD_Colour_Money,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
 	)
@@ -201,7 +212,7 @@ function PRK_HUDPaint_ExtraAmmo()
 		extraammo,
 		x,
 		y,
-		Color( 255, 255, 255, 255 ),
+		PRK_HUD_Colour_Main,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
 	)
@@ -311,33 +322,33 @@ end )
 --------------
   -- Util --
 --------------
-function PRK_DrawText( text, x, y, col, xalign, yalign )
+function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
+	-- Default args
+	if ( fontsize == nil ) then
+		fontsize = 36
+	end
+	if ( shadow == nil ) then
+		shadow = true
+	end
+
 	-- Shadow
-	local offx, offy = PRK_GetUIPosVelocity( x, y, -2, 2, 2 )
-	-- local left = ( x <= ScrW() / 2 )
-	-- local bott = ( y <= ScrH() / 2 )
-	-- local offx = 2
-		-- if ( left ) then
-			-- offx = -offx
-		-- end
-	-- local offy = -2
-		-- if ( bott ) then
-			-- offy = -offy
-		-- end
-	draw.SimpleText(
-		text,
-		"HeavyHUD",
-		offx,
-		offy,
-		Color( 255, 100, 150, 255 ),
-		xalign,
-		yalign
-	)
+	if ( shadow ) then
+		local offx, offy = PRK_GetUIPosVelocity( x, y, -2, 2, 2 )
+		draw.SimpleText(
+			text,
+			"HeavyHUD" .. fontsize,
+			offx,
+			offy,
+			PRK_HUD_Colour_Shadow,
+			xalign,
+			yalign
+		)
+	end
 
 	-- Real text
 	draw.SimpleText(
 		text,
-		"HeavyHUD",
+		"HeavyHUD" .. fontsize,
 		x,
 		y,
 		col,
@@ -400,6 +411,17 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 	-- x = targetx
 	-- y = targety
 	return x, y
+end
+
+function draw.Box( x, y, w, h, color )
+	if ( color ) then
+		draw.SetDrawColor( color )
+	end
+	surface.DrawRect( x, y, w, h )
+end
+
+function draw.SetDrawColor( color )
+	surface.SetDrawColor( color.r, color.g, color.b, color.a )
 end
 
 function draw.Heart( x, y, radius, seg )

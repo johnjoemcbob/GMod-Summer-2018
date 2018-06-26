@@ -10,8 +10,8 @@ AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "shared.lua" )
 
 -- LUA Includes
+include( "shared.lua" ) -- Must be first for globals
 include( "levelgen.lua" )
-include( "shared.lua" )
 
 -- Resource Downloads
 function resource.AddDir( localdir )
@@ -83,6 +83,9 @@ function GM:PlayerSpawn( ply )
 	ply:SetViewOffsetDucked( ply:GetViewOffset() )
 	local min, max = ply:GetHull()
 	ply:SetHullDuck( min, max )
+
+	-- Init no crosshair
+	ply:CrosshairDisable()
 end
 
 function GM:Think()
@@ -101,6 +104,16 @@ function GM:EntityTakeDamage( target, dmginfo )
 		if ( dmginfo:GetDamageType() == DMG_CRUSH ) then
 			dmginfo:ScaleDamage( 0 )
 		end
+	end
+end
+
+function GM:OnNPCKilled( npc, attacker, inflictor )
+	-- Testing / fun (only non-prickly NPCs)
+	if ( string.find( npc:GetClass(), "prk_" ) ) then return end
+	local mult = 0.1
+	local coins = npc:GetMaxHealth() * mult
+	for i = 1, coins do
+		PRK_CreateEnt( "prk_coin_heavy", nil, npc:GetPos(), AngleRand(), true )
 	end
 end
 -------------------------

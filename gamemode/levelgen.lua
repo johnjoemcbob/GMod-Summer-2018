@@ -8,7 +8,7 @@
 local DEBUG						= true
 local PRK_GEN_COLLIDE_ALL		= false
 local PRK_GEN_DONT				= 4000
-local PRK_GEN_DONT_SIZEMULT		= 1 / 30
+local PRK_GEN_DONT_SIZEMULT		= 1 / PRK_Gen_SizeModifier
 local PRK_GEN_COLLISION_BORDER	= 90 / 100
 
 local PRK_GEN_TYPE_FLOOR	= 1

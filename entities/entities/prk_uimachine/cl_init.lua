@@ -97,10 +97,6 @@ function ENT:Initialize()
 
 				if ( self.Entity.ButtonHovered or self.Entity.LastButtonHovered ) then
 					-- Large rectangular cursor
-						-- Store for lerping
-						if ( !self.RectCursY ) then
-							self.RectCursY = y
-						end
 						-- For if no buttons are hovered, but was still lerping
 						local butt = self.Entity.ButtonHovered
 						if ( butt != nil ) then
@@ -113,6 +109,10 @@ function ENT:Initialize()
 						local speed = 10
 						local x, y = butt:GetPos()
 							x = x - border
+						-- Store for lerping
+						if ( !self.RectCursY ) then
+							self.RectCursY = y
+						end
 						local old = self.RectCursY
 							self.RectCursY = Lerp( frametime * speed, self.RectCursY, y )
 						local change = math.abs( self.RectCursY - old )

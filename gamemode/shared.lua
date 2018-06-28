@@ -14,17 +14,29 @@ GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 
 -- Globals
-PRK_HUD_Colour_Main			= Color( 255, 255, 255, 255 )
-PRK_HUD_Colour_Dark			= Color( 0, 0, 0, 255 )
-PRK_HUD_Colour_Money		= Color( 255, 255, 50, 255 )
-PRK_HUD_Colour_Shadow		= Color( 255, 100, 150, 255 )
-PRK_HUD_Colour_Highlight	= Color( 100, 190, 190, 255 )
-PRK_CurrencyBefore			= "€"
-PRK_CurrencyAfter			= ""
-PRK_CursorSize				= 8
-PRK_Plate_Size				= 47.45
-PRK_Speed					= 600
-PRK_Jump					= 0
+PRK_HUD_Colour_Main					= Color( 255, 255, 255, 255 )
+PRK_HUD_Colour_Dark					= Color( 0, 0, 0, 255 )
+PRK_HUD_Colour_Money				= Color( 255, 255, 50, 255 )
+PRK_HUD_Colour_Shadow				= Color( 255, 100, 150, 255 )
+PRK_HUD_Colour_Highlight			= Color( 100, 190, 190, 255 )
+PRK_Colour_Enemy_Skin				= Color( 0, 0, 5, 255 )
+PRK_Colour_Enemy_Eye				= PRK_HUD_Colour_Shadow
+PRK_Colour_Enemy_Tooth				= PRK_HUD_Colour_Main
+PRK_Colour_Enemy_Mouth				= Color( 100, 100, 100, 255 )
+PRK_Grass_Mesh_CountRange			= { 1, 6 } -- { 0, 2 }
+PRK_Grass_Billboard_Count			= 100
+PRK_Grass_Billboard_DrawRange		= 1000
+PRK_Grass_Billboard_SortRange		= 10
+PRK_Grass_Billboard_ShouldDrawTime	= 1
+PRK_Grass_Billboard_MaxSortCount	= 0
+PRK_Grass_Billboard_MaxRenderCount	= 10000
+PRK_Gen_SizeModifier				= 10
+PRK_CurrencyBefore					= "€"
+PRK_CurrencyAfter					= ""
+PRK_CursorSize						= 8
+PRK_Plate_Size						= 47.45
+PRK_Speed							= 600
+PRK_Jump							= 0
 
 function PRK_GetAsCurrency( val )
 	return PRK_CurrencyBefore .. tostring( val ) .. PRK_CurrencyAfter
@@ -84,6 +96,45 @@ function table.length(T)
 	for _ in pairs(T) do count = count + 1 end
 	return count
 end
+
+function table.bubbleSort( T, func, maxchange )
+	local count = #T
+	local changed
+	local changecount = 0
+	repeat
+		changed = false
+		count = count - 1
+		for i = 1, count do
+			if func( T[i], T[i + 1] ) then
+				T[i], T[i + 1] = T[i + 1], T[i]
+				changed = true
+				changecount = changecount + 1
+				if ( maxchange and changecount >= maxchange ) then
+					print( changecount )
+					return
+				end
+			end
+		end
+	until ( changed == false )
+	print( changecount )
+end
+
+-- local T = {
+	-- 6,
+	-- 5,
+	-- 8,
+	-- 2,
+	-- 4,
+	-- 3,
+	-- 7,
+	-- 9,
+	-- 1,
+-- }
+-- PrintTable( T )
+-- table.bubbleSort( T, function( a, b )
+	-- return a > b
+-- end )
+-- PrintTable( T )
 
 -- Negate a Vector without having 0 -> -0 issues
 function VectorNegate( V )

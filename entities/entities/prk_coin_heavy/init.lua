@@ -4,8 +4,7 @@ AddCSLuaFile( "cl_init.lua" )
 include( "shared.lua" )
 
 local function trypickup( ent, colent )
-	if ( colent:IsPlayer() ) then
-		-- colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
+	if ( colent:IsPlayer() and colent:Alive() ) then
 		colent:SetNWInt( "PRK_Money", colent:GetNWInt( "PRK_Money" ) + 1 )
 		colent:EmitSound( "garrysmod/content_downloaded.wav" )
 		ent:Remove()

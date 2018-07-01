@@ -95,7 +95,10 @@ function ENT:Initialize()
 			local function mask()
 				draw.RoundedBox( 0, 0, h / 2.5, w, ui_main_h, col_background_main )
 
-				if ( self.Entity.ButtonHovered or self.Entity.LastButtonHovered ) then
+				if (
+					( self.Entity.ButtonHovered and self.Entity.ButtonHovered:IsValid() ) or
+					( self.Entity.LastButtonHovered and self.Entity.LastButtonHovered:IsValid() )
+				) then
 					-- Large rectangular cursor
 						-- For if no buttons are hovered, but was still lerping
 						local butt = self.Entity.ButtonHovered
@@ -218,7 +221,8 @@ function ENT:Initialize()
 					if ( canpurchase( price ) ) then
 						self.Entity:SendSelection( name )
 					else
-						self.Entity:EmitSound( "npc/scanner/combat_scan3.wav" )
+						-- Deny sound
+						self.Entity:EmitSound( "npc/scanner/combat_scan3.wav", 75, math.random( 90, 110 ) )
 					end
 				end
 			end

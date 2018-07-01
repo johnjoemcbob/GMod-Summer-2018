@@ -14,29 +14,104 @@ GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 
 -- Globals
-PRK_HUD_Colour_Main					= Color( 255, 255, 255, 255 )
-PRK_HUD_Colour_Dark					= Color( 0, 0, 0, 255 )
-PRK_HUD_Colour_Money				= Color( 255, 255, 50, 255 )
-PRK_HUD_Colour_Shadow				= Color( 255, 100, 150, 255 )
-PRK_HUD_Colour_Highlight			= Color( 100, 190, 190, 255 )
-PRK_Colour_Enemy_Skin				= Color( 0, 0, 5, 255 )
-PRK_Colour_Enemy_Eye				= PRK_HUD_Colour_Shadow
-PRK_Colour_Enemy_Tooth				= PRK_HUD_Colour_Main
-PRK_Colour_Enemy_Mouth				= Color( 100, 100, 100, 255 )
-PRK_Grass_Mesh_CountRange			= { 1, 6 } -- { 0, 2 }
-PRK_Grass_Billboard_Count			= 100
-PRK_Grass_Billboard_DrawRange		= 1000
-PRK_Grass_Billboard_SortRange		= 10
+PRK_HUD_Colour_Main							= Color( 255, 255, 255, 255 )
+PRK_HUD_Colour_Dark							= Color( 0, 0, 0, 255 )
+PRK_HUD_Colour_Money						= Color( 255, 255, 50, 255 )
+PRK_HUD_Colour_Shadow						= Color( 255, 100, 150, 255 )
+PRK_HUD_Colour_Highlight					= Color( 100, 190, 190, 255 )
+PRK_Colour_Enemy_Skin						= Color( 0, 0, 5, 255 )
+PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
+PRK_Colour_Enemy_Tooth						= PRK_HUD_Colour_Main
+PRK_Colour_Enemy_Mouth						= Color( 100, 100, 100, 255 )
+PRK_Grass_Mesh_CountRange				= { 1, 6 } -- { 0, 2 }
+PRK_Grass_Billboard_Count					= 100
+PRK_Grass_Billboard_DrawRange			= 2000
+PRK_Grass_Billboard_SortRange				= 10
 PRK_Grass_Billboard_ShouldDrawTime	= 1
-PRK_Grass_Billboard_MaxSortCount	= 0
+PRK_Grass_Billboard_MaxSortCount		= 0
 PRK_Grass_Billboard_MaxRenderCount	= 10000
-PRK_Gen_SizeModifier				= 10
-PRK_CurrencyBefore					= "€"
-PRK_CurrencyAfter					= ""
-PRK_CursorSize						= 8
-PRK_Plate_Size						= 47.45
-PRK_Speed							= 600
-PRK_Jump							= 0
+PRK_Gen_SizeModifier							= 10
+PRK_CurrencyBefore								= "€"
+PRK_CurrencyAfter									= ""
+PRK_CursorSize										= 8
+PRK_Plate_Size										= 47.45
+PRK_Speed											= 600
+PRK_Jump												= 0
+PRK_MaxAverageFrameTimes					= 50
+
+------------------------
+  -- Gamemode Hooks --
+------------------------
+function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
+	ply:EmitSound(
+		"player/footsteps/gravel" .. math.random( 1, 4 ) .. ".wav",
+		75,
+		math.random( 90, 120 ),
+		0.2
+	)
+
+	-- if ( CLIENT ) then
+		local effectdata = EffectData()
+			local pos = pos
+			effectdata:SetOrigin( pos )
+			effectdata:SetNormal( Vector( 0, 0, 1 ) )
+		util.Effect( "prk_hit", effectdata )
+	-- end
+
+	return true
+end
+------------------------
+  -- /Gamemode Hooks --
+------------------------
+
+-- Average the frametime over a few frames to stop viewmodel jittering when lerping
+PRK_AverageFrameTimes = {}
+PRK_AverageFrameTime = 0
+hook.Add( "Think", "PRK_Think_FrameTime", function()
+	table.insert( PRK_AverageFrameTimes, FrameTime() )
+		if ( #PRK_AverageFrameTimes > PRK_MaxAverageFrameTimes ) then
+			table.remove( PRK_AverageFrameTimes, 1 )
+		end
+		for k, frametime in pairs( PRK_AverageFrameTimes ) do
+			PRK_AverageFrameTime = PRK_AverageFrameTime + frametime
+		end
+	PRK_AverageFrameTime = PRK_AverageFrameTime / PRK_MaxAverageFrameTimes
+end )
+
+function PRK_GetFrameTime()
+	if ( !PRK_AverageFrameTime or PRK_AverageFrameTime == 0 ) then
+		return 0.016
+	end
+	-- print( PRK_AverageFrameTime )
+	return PRK_AverageFrameTime -- FrameTime() -- 0.016
+end
+
+-- Sounds with pitch asc/desc when played in a row
+PRK_PitchSounds = {}
+hook.Add( "Think", "PRK_Think_PitchSounds", function()
+	for name, pitch in pairs( PRK_PitchSounds ) do
+		pitch.Current = Lerp( FrameTime() * pitch.Speed, pitch.Current, pitch.Default )
+	end
+end )
+
+function PRK_EmitPitchedSound( name, ent, sound, level, vol, pitchdefault, pitchchange, pitchspeed )
+	-- Initialise
+	if ( !PRK_PitchSounds[name] ) then
+		PRK_PitchSounds[name] = {
+			Current = pitchdefault,
+		}
+	end
+	-- Update any values
+	PRK_PitchSounds[name].Default = pitchdefault
+	PRK_PitchSounds[name].Change = pitchchange
+	PRK_PitchSounds[name].Speed = pitchspeed
+
+	-- Apply change
+	PRK_PitchSounds[name].Current = math.min( PRK_PitchSounds[name].Current + pitchchange, 255 )
+
+	-- Play audio
+	ent:EmitSound( sound, level, PRK_PitchSounds[name].Current, vol )
+end
 
 function PRK_GetAsCurrency( val )
 	return PRK_CurrencyBefore .. tostring( val ) .. PRK_CurrencyAfter

@@ -3,17 +3,6 @@ AddCSLuaFile( "cl_init.lua" )
 
 include( "shared.lua" )
 
--- sound.Add(
-	-- { 
-		-- name = "prk_bullet_heavy_fly",
-		-- channel = CHAN_ITEM,
-		-- level = 75,
-		-- volume = 1.0,
-		-- pitch = { 140, 180 },
-		-- sound = "weapons/physcannon/hold_loop.wav"
-	-- }
--- )
-
 sound.Add(
 	{ 
 		name = "prk_bullet_heavy_hit_surface",
@@ -26,10 +15,18 @@ sound.Add(
 )
 
 local function trypickup( ent, colent )
-	if ( colent:IsPlayer() ) then --and colent == ent.Owner ) then
+	if ( colent:IsPlayer() and colent:Alive() ) then --and colent == ent.Owner ) then
 		colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
-		-- colent:EmitSound( "friends/friend_join.wav" )
-		colent:EmitSound( "garrysmod/content_downloaded.wav" )
+		PRK_EmitPitchedSound(
+			colent:Nick() .. "_PRK_Bullet_Pickup",
+			colent,
+			"garrysmod/content_downloaded.wav",
+			75,
+			1,
+			80,
+			5,
+			3
+		)
 		ent:Remove()
 	end
 end

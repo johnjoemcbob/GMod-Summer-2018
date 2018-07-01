@@ -16,19 +16,21 @@ function ENT:Initialize()
 	self.Bullet:EnableMatrix( "RenderMultiply", mat )
 end
 
+-- Also update pos/ang here in case Draw wouldn't be called (if the entity is already out of view)
+function ENT:Think()
+	if ( !self.Bullet ) then
+		self:Initialize()
+	end
+	self.Bullet:SetPos( self:GetPos() )
+	self.Bullet:SetAngles( self:GetAngles() )
+end
+
 function ENT:Draw()
 	if ( !self.Bullet ) then
 		self:Initialize()
 	end
 	self.Bullet:SetPos( self:GetPos() )
-	-- if ( self:GetVelocity() != Vector() ) then
-		-- self.Bullet:SetAngles( self:GetVelocity():Angle() )
-	-- else
-		self.Bullet:SetAngles( self:GetAngles() )
-	-- end
-	-- self.Bullet:DrawModel()
-
-	-- self:DrawModel()
+	self.Bullet:SetAngles( self:GetAngles() )
 end
 
 function ENT:OnRemove()

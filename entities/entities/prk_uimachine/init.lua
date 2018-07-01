@@ -60,6 +60,17 @@ local models = {
 	},
 }
 
+sound.Add(
+	{ 
+		name = "prk_uimachine_hum",
+		channel = CHAN_ITEM,
+		level = 60,
+		volume = 1.0,
+		pitch = { 80, 120 },
+		sound = "ambient/energy/electric_loop.wav"
+	}
+)
+
 util.AddNetworkString( "PRK_UIMachine_Stock" )
 util.AddNetworkString( "PRK_UIMachine_Select" )
 
@@ -116,6 +127,10 @@ function ENT:Initialize()
 	-- Physics
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_NONE )
+	local phys = self:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( false )
+	end
 
 	-- Extra models
 	local oldang = self:GetAngles()
@@ -141,6 +156,8 @@ function ENT:Initialize()
 		["KNIFE"]		= { 30, "prk_bullet_heavy" },
 	}
 	timer.Simple( 0.1, function() self:SendStock() end )
+
+	self:EmitSound( "prk_uimachine_hum" )
 end
 
 function ENT:Think()
@@ -151,6 +168,8 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
+	self:StopSound( "prk_uimachine_hum" )
+
 	for k, v in pairs( self.Ents ) do
 		if ( v and v:IsValid() ) then
 			v:Remove()

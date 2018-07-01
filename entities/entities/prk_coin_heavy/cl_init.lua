@@ -16,15 +16,21 @@ function ENT:Initialize()
 	self.Visual:EnableMatrix( "RenderMultiply", mat )
 end
 
+-- Also update pos/ang here in case Draw wouldn't be called (if the entity is already out of view)
+function ENT:Think()
+	if ( !self.Visual ) then
+		self:Initialize()
+	end
+	self.Visual:SetPos( self:GetPos() )
+	self.Visual:SetAngles( self:GetAngles() + Angle( 0, 0, 0 ) )
+end
+
 function ENT:Draw()
 	if ( !self.Visual ) then
 		self:Initialize()
 	end
 	self.Visual:SetPos( self:GetPos() )
 	self.Visual:SetAngles( self:GetAngles() + Angle( 0, 0, 0 ) )
-	-- self.Visual:DrawModel()
-
-	-- self:DrawModel()
 end
 
 function ENT:OnRemove()

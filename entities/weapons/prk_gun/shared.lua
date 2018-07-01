@@ -38,6 +38,14 @@ SWEP.TimeFOVPunch			= 0.1
 SWEP.TimeBackFOVPunch		= 0.2
 SWEP.TimeHoldFOVPunch		= 0.1
 SWEP.DistFOVPunch			= 10
+SWEP.LerpSpeedPunch		= 1
+SWEP.LerpSpeed				= 10
+SWEP.SoundPitchFireBase = 100
+SWEP.SoundPitchFireIncrease = -3
+SWEP.SoundPitchFireSpeed = 0.2
+SWEP.SoundPitchReloadBase = 80
+SWEP.SoundPitchReloadIncrease = 10
+SWEP.SoundPitchReloadSpeed = 0.4
 
 if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
@@ -90,7 +98,7 @@ if ( CLIENT ) then
 	net.Receive( "PRK_Gun_Reload", function( len, ply )
 		local self = net.ReadEntity()
 
-		self:EmitSound( "buttons/lever7.wav" )
+		-- self:EmitSound( "buttons/lever7.wav" )
 
 		self.GunPunch = -0.4
 		self.GunPunchRnd = math.random( -10, 10 )
@@ -106,7 +114,6 @@ end
 
 function SWEP:Initialize()
 	self:SetHoldType( "fist" )
-	-- self:SetHoldType( "passive" )
 
 	if ( SERVER ) then
 		self.Owner:SetNWInt( "PRK_Clip", self.MaxClip )
@@ -119,9 +126,6 @@ function SWEP:Initialize()
 end
 
 function SWEP:Think()
-	-- self:SetHoldType( "knife" )
-	-- self:SetHoldType( "slam" )
-	-- self:SetHoldType( "fist" )
 	if ( self.FOVPunch and self.FOVPunch <= CurTime() ) then
 		self.Owner:SetFOV( 0, self.TimeBackFOVPunch )
 		self.FOVPunch = nil
@@ -135,13 +139,8 @@ function SWEP:PreDrawViewModel( vm, wep, ply )
 	vm:SetMaterial( "engine/occlusionproxy" ) -- Hide that view model with hacky material
 end
 
--- function SWEP:SetupDataTables()
-	-- self:NetworkVar( "Float", 0, "NextIdle" )
--- end
-
 function SWEP:PrimaryAttack( right )
 	-- Make sure we can shoot first
-	-- if ( !self:CanPrimaryAttack() ) then return end
 	local ammo = self.Owner:GetNWInt( "PRK_Clip" )
 	if ( self.RequireAmmo and ammo <= 0 ) then
 		-- Play sound
@@ -157,28 +156,25 @@ function SWEP:PrimaryAttack( right )
 	end
 
 	-- Play shoot sound
-	self.Weapon:EmitSound( "weapons/grenade_launcher1.wav" )
-	-- self.Weapon:EmitSound( "weapons/357_fire2.wav" )
+	PRK_EmitPitchedSound(
+		self.Owner:Nick() .. "_PRK_Gun_Fire",
+		self.Weapon,
+		"weapons/grenade_launcher1.wav",
+		75,
+		1,
+		self.SoundPitchFireBase,
+		self.SoundPitchFireIncrease,
+		self.SoundPitchFireSpeed
+	)
 
 	-- Play animation
-	-- self.Weapon:SendWeaponAnim( ACT_VM_FIREMODE )
 	self.Owner:SetAnimation( PLAYER_ATTACK1 )
 
 	-- Shoot 1 bullet, 150 damage, 0.01 aimcone
-	-- self:ShootBullet( 150, 1, 0.01 )
 	if ( SERVER ) then
 		local bullet = ents.Create( "prk_bullet_heavy" )
 		bullet:Spawn()
-			-- Old code to launch from barrel
-			-- bullet:Launch(
-				-- self.Owner:EyePos() +
-				-- self.Owner:GetForward() * 100 +
-				-- self.Owner:GetRight() * 20,
-				-- self.Owner:GetForward() * 1000 +
-				-- self.Owner:GetUp() * 100 +
-				-- self.Owner:GetRight() * -50
-			-- )
-			-- New code to appear at hit point and bounce back towards player
+			-- Appear at hit point and bounce back towards player
 			local tr = self.Owner:GetEyeTrace()
 			local pos = tr.HitPos + tr.HitNormal * 10
 				-- Clamp pos to max distance
@@ -239,31 +235,43 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Reload()
-	if ( SERVER ) then
-		if ( !self.NextReload or self.NextReload <= CurTime() ) then
-			local ammo = self.Owner:GetNWInt( "PRK_Clip" )
-			local extraammo = self.Owner:GetNWInt( "PRK_ExtraAmmo" )
-			if ( extraammo > 0 and ammo < self.MaxClip ) then
-				-- Reload and communicate
+	if ( !self.NextReload or self.NextReload <= CurTime() ) then
+		local ammo = self.Owner:GetNWInt( "PRK_Clip" )
+		local extraammo = self.Owner:GetNWInt( "PRK_ExtraAmmo" )
+		if ( extraammo > 0 and ammo < self.MaxClip ) then
+			-- Reload and communicate
+			if ( SERVER ) then
 				self.Owner:SetNWInt( "PRK_ExtraAmmo", extraammo - 1 )
 				self.Owner:SetNWInt( "PRK_Clip", ammo + 1 )
 				self:SendReload()
-
-				-- Play sound
-				self.Weapon:EmitSound( "buttons/lever7.wav" )
-
-				-- Delay next shoot until reload finished
-				self:SetNextPrimaryFire( CurTime() + 0.5 )
-			elseif ( ammo == 0 ) then
-				-- Play sound
-				self.Weapon:EmitSound( "weapons/pistol/pistol_empty.wav" )
-
-				-- Communicate warning
-				self:SendNoAmmo()
 			end
 
-			self.NextReload = CurTime() + self.TimeReload
+			-- Play sound
+			-- self.Weapon:EmitSound( "buttons/lever7.wav" )
+			PRK_EmitPitchedSound(
+				self.Owner:Nick() .. "_PRK_Gun_Reload",
+				self.Weapon,
+				"buttons/lever7.wav",
+				75,
+				1,
+				self.SoundPitchReloadBase,
+				self.SoundPitchReloadIncrease,
+				self.SoundPitchReloadSpeed
+			)
+
+			-- Delay next shoot until reload finished
+			self:SetNextPrimaryFire( CurTime() + 0.5 )
+		elseif ( ammo == 0 ) then
+			-- Play sound
+			self.Weapon:EmitSound( "weapons/pistol/pistol_empty.wav" )
+
+			-- Communicate warning
+			if ( SERVER ) then
+				self:SendNoAmmo()
+			end
 		end
+
+		self.NextReload = CurTime() + self.TimeReload
 	end
 end
 
@@ -298,26 +306,24 @@ if ( CLIENT ) then
 			mat:Scale( scale )
 		self.GunModel:EnableMatrix( "RenderMultiply", mat )
 
-		-- Draw manually
-		self.GunModel:SetNoDraw( true )
-
-		-- self.GunModel:SetPos( pos )
-		-- self.GunModel:SetAngles( ang )
 		self.GunModel:SetParent( LocalPlayer():GetViewModel() )
 	end
 
+	local curpos = Vector()
 	function SWEP:GetViewModelPosition( pos, ang )
-		local frametime = 0.016
+		local frametime = PRK_GetFrameTime()
 			-- Default pos/ang
 			local target = 
 				pos +
 				ang:Forward() * 20 +
 				ang:Right() * 10 * self.RightHanded +
 				ang:Up() * -15
-			local speedpunch = 1.5 -- 0.5
-			local speed = 15 * PRK_Speed / 400
-			local curpos = LocalPlayer():GetViewModel():GetPos() -- old targetpos?
-			local dist = 1 -- math.max( 1, curpos:Distance( target ) )
+			local speedpunch = self.LerpSpeedPunch
+			local speed = self.LerpSpeed * PRK_Speed / 400
+			if ( !game.SinglePlayer() ) then
+				curpos = LocalPlayer():GetViewModel():GetPos()
+			end
+			local dist = 1
 			local targetang =
 				ang +
 				Angle( 0, 1, 0 ) * 10 * self.RightHanded
@@ -340,22 +346,8 @@ if ( CLIENT ) then
 
 			-- Lerp
 			pos = LerpVector( frametime * speed * dist, curpos, target )
-			-- Check for NaN or inf (NaN should not be equal to anything)
-			-- if (
-				-- pos.x != pos.x or
-				-- pos.y != pos.y or
-				-- pos.z != pos.z or
-				-- math.abs( pos.x ) == math.huge or
-				-- math.abs( pos.y ) == math.huge or
-				-- math.abs( pos.z ) == math.huge
-			-- ) then
-				-- pos = target
-			-- end
 			ang = targetang
-
-			-- Debug
-			-- print( pos )
-			-- print( target )
+			curpos = pos
 		return pos, ang
 	end
 

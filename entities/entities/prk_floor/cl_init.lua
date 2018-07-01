@@ -182,7 +182,7 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Gr
 				grass[1] + Vector( 0, 0, size / 2 ),
 				grass[2],
 				size, size + grass[3],
-				Color( 20, 20, 20, 255 ),
+				Color( 40, 40, 40, 255 ),
 				180
 			)
 			rendercount = rendercount + 1

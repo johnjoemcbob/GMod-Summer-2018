@@ -10,6 +10,20 @@ include( "shared.lua" )
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
 
+local BaseResW = 1600
+local BaseResH = 900
+function PRK_GetResolutionIndependent( num )
+	return math.min( PRK_GetResolutionIndependentW( num ), PRK_GetResolutionIndependentH( num ) )
+end
+
+function PRK_GetResolutionIndependentW( x )
+	return ( x / BaseResW ) * ScrW()
+end
+
+function PRK_GetResolutionIndependentH( y )
+	return ( y / BaseResH ) * ScrH()
+end
+
 -- Fonts
 local function loadfonts()
 	local fontsizes = {
@@ -23,9 +37,9 @@ local function loadfonts()
 	}
 	for k, size in pairs( fontsizes ) do
 		surface.CreateFont( "HeavyHUD" .. size, {
-			font = "Alte Haas Grotesk", -- Use the font-name which is shown to you by your operating system Font Viewer, not the file name
+			font = "Alte Haas Grotesk",
 			extended = false,
-			size = size,
+			size = PRK_GetResolutionIndependentH( size ),
 			weight = 2000,
 			blursize = 1,
 			scanlines = 0,
@@ -120,8 +134,12 @@ hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bi
 	end
 end )
 
+hook.Add( "OnResolutionChange", "PRK_OnResolutionChange_HUD", function()
+	loadfonts()
+end )
+
 function PRK_HUDPaint_Health()
-	local r = 16
+	local r = PRK_GetResolutionIndependent( 32 )
 	local s = r
 	local sb = r + 4
 	local x = r * 3
@@ -148,7 +166,7 @@ function PRK_HUDPaint_Health()
 end
 
 function PRK_HUDPaint_Money()
-	local r = 32
+	local r = PRK_GetResolutionIndependent( 64 )
 	local s = r
 	local sb = r + 4
 	local x = r * 2.2
@@ -189,9 +207,9 @@ function PRK_Think_RevolverChambers()
 end
 
 function PRK_HUDPaint_ExtraAmmo()
-	local r = 64
-	local s = 32
-	local x = ScrW() - r * 3
+	local r = PRK_GetResolutionIndependent( 112 )
+	local s = r / 2
+	local x = ScrW() - r * 2
 	local y = ScrH() - r * 1
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
@@ -221,9 +239,9 @@ end
 function PRK_HUDPaint_RevolverChambers()
 	if ( !LocalPlayer():GetActiveWeapon() or !LocalPlayer():GetActiveWeapon():IsValid() or LocalPlayer():GetActiveWeapon():GetClass() != "prk_gun" ) then return end
 
-	local r = 48
-		r = r + PRK_RevolverChambers.LastChange * 4
-	local x = ScrW() - r * 5.7
+	local r = PRK_GetResolutionIndependent( 80 )
+		r = r + math.min( PRK_RevolverChambers.LastChange, 10 ) * 4
+	local x = ScrW() - r * 4.5
 	local y = ScrH() - r * 1.2
 	local ang = PRK_RevolverChambers.Ang
 	-- Move slightly with player
@@ -239,8 +257,8 @@ function PRK_HUDPaint_RevolverChambers()
 	draw.Circle( x, y, r, chambers, ang )
 
 	-- Draw individual chambers
-	local points = PRK_GetCirclePoints( x, y, r - chambers * 3, chambers, ang + 180 )
 	local cham_rad = r / chambers * 1.5
+	local points = PRK_GetCirclePoints( x, y, r - cham_rad * 1.5, chambers, ang + 180 )
 	local ammo = LocalPlayer():GetNWInt( "PRK_Clip" )
 	for k, point in pairs( points ) do
 		if ( k <= ammo + 1 ) then
@@ -300,6 +318,7 @@ end
   -- /PRK Gun --
 ------------------
 
+-- View range limiter
 local function MyCalcView( ply, pos, angles, fov )
 	local view = {}
 
@@ -317,6 +336,16 @@ concommand.Add( "prk_effect", function( ply, cmd, args )
 	local effectdata = EffectData()
 		effectdata:SetOrigin( LocalPlayer():GetPos() )
 	util.Effect( "prk_grass", effectdata )
+end )
+
+local LastScrW = ScrW()
+local LastScrH = ScrH()
+timer.Create( "DetectResolutionChange", 1, 0, function()
+	if ( LastScrW != ScrW() or LastScrH != ScrH() ) then
+		LastScrW = ScrW()
+		LastScrH = ScrH()
+		hook.Call( "OnResolutionChange", GAMEMODE )
+	end 
 end )
 
 --------------

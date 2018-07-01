@@ -12,6 +12,7 @@ AddCSLuaFile( "shared.lua" )
 -- LUA Includes
 include( "shared.lua" ) -- Must be first for globals
 include( "levelgen.lua" )
+include( "buffs.lua" )
 
 -- Resource Downloads
 function resource.AddDir( localdir )
@@ -86,6 +87,9 @@ function GM:PlayerSpawn( ply )
 
 	-- Init no crosshair
 	ply:CrosshairDisable()
+    
+    -- Reset buffs
+    PRK_Buff_Register(ply)
 end
 
 function GM:Think()

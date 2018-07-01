@@ -159,13 +159,15 @@ function ENT:CollideWithEnt( ent )
 			if ( ent:IsNPC() or ent:GetClass() == "prop_physics" ) then
 				mult = 50
 			end
-		ent:TakeDamage( self.Damage * mult, self.Owner, self )
+        -- BUFF SYSTEM: Calculate additive buff damage (e.g, 1 stack = 105% dmg)
+        local buff_mult = PRK_Buff_Get(self.Owner, PRK_BUFFTYPE_BULLET_DMG) * (1.0 + PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER)
+		ent:TakeDamage( self.Damage * mult * buff_mult, self.Owner, self )
 
 		-- testing/fun
 		-- if ( ent:GetClass() == "prop_physics" and !(ent:IsNPC() or ent:IsPlayer()) ) then
 			local phys = ent:GetPhysicsObject()
 			if ( phys and IsValid( phys ) ) then
-				phys:ApplyForceOffset( ( ent:GetPos() - self:GetPos() ):GetNormalized() * 50000, self:GetPos() )
+				phys:ApplyForceOffset( ( ent:GetPos() - self:GetPos() ):GetNormalized() * 50000 * buff_mult, self:GetPos() )
 			end
 		-- end
 	end

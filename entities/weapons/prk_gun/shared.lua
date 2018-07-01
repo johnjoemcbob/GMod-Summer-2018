@@ -174,6 +174,7 @@ function SWEP:PrimaryAttack( right )
 	if ( SERVER ) then
 		local bullet = ents.Create( "prk_bullet_heavy" )
 		bullet:Spawn()
+        bullet.Owner = self.Owner
 			-- Appear at hit point and bounce back towards player
 			local tr = self.Owner:GetEyeTrace()
 			local pos = tr.HitPos + tr.HitNormal * 10
@@ -189,8 +190,7 @@ function SWEP:PrimaryAttack( right )
 				phys:AddAngleVelocity( VectorRand() * 1000 )
 			end
 			bullet:CollideWithEnt( tr.Entity )
-		bullet.Owner = self.Owner
-
+		
 		-- Remove 1 bullet from our clip
 		if ( self.RequireAmmo ) then
 			self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )

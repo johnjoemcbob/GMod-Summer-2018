@@ -16,6 +16,9 @@ PRK_PLY_BUFFS_TABLE = {}
 PRK_BUFFTYPE_BULLET_DMG = "Bullet Damage"
 PRK_BUFFTYPE_PLAYER_SPEED = "Run Speed"
 
+-- Any buff-specific values
+PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER = 0.05
+
 -- Register a player in the buffs table and set up their data.
 function PRK_Buff_Register(ply)
     PRK_PLY_BUFFS_TABLE[ply] = {}
@@ -68,9 +71,11 @@ end
 
 function PRK_Buff_Debug_Print()
     for ply,bufftab in pairs(PRK_PLY_BUFFS_TABLE) do
-        print("PLAYER: " .. ply:GetName() .. " Buffs: ")
+        print("PLAYER: " .. tostring(ply) .. " Buffs: ")
         for bufftype,stack in pairs(bufftab) do
             print("##### " .. bufftype .. ": " .. tostring(stack))
         end
     end
 end
+
+hook.Add("PlayerInitialSpawn", "prk_buff_spawn", PRK_Buff_Register)

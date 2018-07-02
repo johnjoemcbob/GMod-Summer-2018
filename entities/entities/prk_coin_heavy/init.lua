@@ -6,7 +6,26 @@ include( "shared.lua" )
 local function trypickup( ent, colent )
 	if ( colent:IsPlayer() and colent:Alive() ) then
 		colent:SetNWInt( "PRK_Money", colent:GetNWInt( "PRK_Money" ) + 1 )
-		colent:EmitSound( "garrysmod/content_downloaded.wav" )
+
+		local chain = PRK_EmitChainPitchedSound(
+			colent:Nick() .. "_PRK_Coin_Pickup",
+			colent,
+			"friends/friend_join.wav",
+			75,
+			1,
+			170,
+			10,
+			0.5,
+			1,
+			function( self )
+				colent:EmitSound( "items/medshot4.wav", 75, 255 )
+				-- SendKeyValue( colent, "PRK_Money_Add_End", "true" )
+				colent:SetNWInt( "PRK_Money_Add", 0 )
+			end
+		)
+		-- SendKeyValue( colent, "PRK_Money_Add", chain )
+		colent:SetNWInt( "PRK_Money_Add", chain )
+
 		ent:Remove()
 	end
 end
@@ -14,7 +33,8 @@ end
 local function tryjump( ent )
 	if ( ent and ent:IsValid() ) then
 		-- Play sound
-		ent:EmitSound( "physics/metal/metal_grenade_impact_hard" .. math.random( 1, 3 ) .. ".wav" )
+		-- ent:EmitSound( "npc/manhack/grind" .. math.random( 1, 5 ) .. ".wav", 75, 255 )
+		ent:EmitSound( "npc/turret_floor/ping.wav", 75, math.random( 200, 255 ) )
 
 		-- Jump off ground
 		local phys = ent:GetPhysicsObject()
@@ -98,7 +118,9 @@ function ENT:CollideWithEnt( ent )
 	self.State:Collide( self.Entity, ent )
 
 	-- Play sound
-	self:EmitSound( "physics/concrete/concrete_impact_hard1.wav", 75, math.random( 180, 200 ), 1 )
+	-- self:EmitSound( "physics/concrete/concrete_impact_hard1.wav", 75, math.random( 180, 200 ), 1 )
+	-- self:EmitSound( "npc/turret_floor/ping.wav", 75, math.random( 200, 255 ) )
+	self:EmitSound( "player/pl_shell" .. math.random( 1, 3 ) .. ".wav", 75, math.random( 200, 255 ) )
 
 	-- Play particle effect
 	local effectdata = EffectData()

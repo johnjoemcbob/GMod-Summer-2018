@@ -10,6 +10,7 @@ include( "shared.lua" )
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
 
+-- Resolution sccaling
 local BaseResW = 1600
 local BaseResH = 900
 function PRK_GetResolutionIndependent( num )
@@ -33,7 +34,8 @@ local function loadfonts()
 		30,
 		36,
 		48,
-		64
+		64,
+		96
 	}
 	for k, size in pairs( fontsizes ) do
 		surface.CreateFont( "HeavyHUD" .. size, {
@@ -57,9 +59,63 @@ local function loadfonts()
 end
 loadfonts()
 
+-- Sounds
+sound.Add(
+	{ 
+		name = "prk_reload_alarm",
+		channel = CHAN_ITEM,
+		level = 75,
+		volume = 0.05,
+		pitch = 255,
+		sound = "ambient/alarms/apc_alarm_loop1.wav"
+	}
+)
+sound.Add(
+	{ 
+		name = "prk_death",
+		channel = CHAN_STREAM,
+		level = 75,
+		volume = 1,
+		pitch = 255,
+		sound = PRK_Death_Sound
+	}
+)
+
 -- Variables
 local LagX = 10
 local LagY = 5
+
+-- Net
+PRK_NetKeyValues = {}
+net.Receive( "PRK_KeyValue", function( len, ply )
+	local key = net.ReadString()
+	local val = net.ReadString()
+
+	PRK_NetKeyValues[key] = val
+end )
+
+net.Receive( "PRK_TakeDamage", function( len, ply )
+	local amount = net.ReadFloat()
+	local dir = net.ReadVector()
+
+	LocalPlayer().PunchHUD = dir * amount * PRK_HUD_Punch_Amount
+end )
+
+net.Receive( "PRK_Die", function( len, ply )
+	local pos = net.ReadVector()
+	local ang = net.ReadAngle()
+
+	LocalPlayer().DieEffect = {
+		pos,
+		ang,
+		0,
+		TimeMin = CurTime() + 1,
+	}
+
+	LocalPlayer():EmitSound( "prk_death" )
+
+	PRK_Initialise_RevolverChambers()
+end )
 
 -- Gamemode Hooks
 function GM:Initialize()
@@ -68,9 +124,43 @@ end
 
 function GM:Think()
 	PRK_Think_RevolverChambers()
+
+	if ( LocalPlayer().PunchHUD ) then
+		LocalPlayer().PunchHUD = LerpVector( FrameTime() * PRK_HUD_Punch_Speed, LocalPlayer().PunchHUD, Vector() )
+	end
+
+	if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
+		local speedpos = 5
+		local speedang = 5
+		local speedcol = 3
+		LocalPlayer().DieEffect[1] = LerpVector(
+			FrameTime() * speedpos,
+			LocalPlayer().DieEffect[1],
+			Vector( LocalPlayer().DieEffect[1].x, LocalPlayer().DieEffect[1].y, LocalPlayer():GetPos().z + 3 )
+		)
+		LocalPlayer().DieEffect[2] = LerpAngle(
+			FrameTime() * speedang,
+			LocalPlayer().DieEffect[2],
+			Angle( 0, LocalPlayer().DieEffect[2].y, 0 )
+		)
+		LocalPlayer().DieEffect[3] = Lerp(
+			FrameTime() * speedcol,
+			LocalPlayer().DieEffect[3],
+			PRK_HUD_DieEffect_MaxAlpha
+		)
+	elseif ( LocalPlayer().DieEffect and LocalPlayer().DieEffect.TimeMin <= CurTime() ) then
+		LocalPlayer():StopSound( "prk_death" )
+		LocalPlayer().DieEffect = nil
+	end
 end
 
 function GM:HUDPaint()
+	-- Don't draw HUD if dead
+	if ( !LocalPlayer():Alive() ) then
+		PRK_HUDPaint_Death()
+		return
+	end
+
 	PRK_HUDPaint_Health()
 
 	PRK_HUDPaint_Money()
@@ -79,7 +169,10 @@ function GM:HUDPaint()
 	PRK_HUDPaint_RevolverChambers()
 
 	-- Must be last!
-	LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
+	if ( !LocalPlayer().LastEyeAngles ) then
+		LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
+	end
+	LocalPlayer().LastEyeAngles = LerpAngle( FrameTime() * 10, LocalPlayer().LastEyeAngles, LocalPlayer():EyeAngles() )
 end
 
 function GM:PostDrawHUD()
@@ -94,9 +187,13 @@ end
 
 local hide = {
 	["CHudHealth"] = true,
-	["CHudBattery"] = true
+	["CHudBattery"] = true,
+	["CHudAmmo"] = true,
+	["CHudSecondaryAmmo"] = true,
+	["CHudDamageIndicator"] = true,
 }
 function GM:HUDShouldDraw( name )
+	-- print( name )
 	if ( hide[ name ] ) then return false end
 
 	return true
@@ -138,6 +235,26 @@ hook.Add( "OnResolutionChange", "PRK_OnResolutionChange_HUD", function()
 	loadfonts()
 end )
 
+function PRK_HUDPaint_Death()
+	if ( !LocalPlayer().DieEffect ) then return end
+
+	surface.SetDrawColor( Color( 0, 0, 0, LocalPlayer().DieEffect[3] ) )
+	draw.NoTexture()
+	surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
+
+	local x = ScrW() / 2
+	local y = Lerp( 1 - ( LocalPlayer().DieEffect[3] / PRK_HUD_DieEffect_MaxAlpha ), ScrH() / 2, ScrH() + 100 )
+	PRK_DrawText(
+		"YOU DIED",
+		x,
+		y,
+		PRK_HUD_Colour_Shadow,
+		TEXT_ALIGN_CENTER,
+		TEXT_ALIGN_CENTER,
+		96
+	)
+end
+
 function PRK_HUDPaint_Health()
 	local r = PRK_GetResolutionIndependent( 32 )
 	local s = r
@@ -149,17 +266,36 @@ function PRK_HUDPaint_Health()
 
 	local maxhealth = LocalPlayer():GetMaxHealth()
 	local health = LocalPlayer():Health()
+
+	-- Draw heart icons for max health shadow
 	local function mask()
-		-- Draw heart icons for max health
+		local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
 		for i = 1, maxhealth / 2 do
-			surface.SetDrawColor( 70, 20, 30, 255 )
+			surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+			draw.Heart( offx + ( sb + s ) * i, offy - s, s, 16 )
+		end
+	end
+	local function inner()
+		-- Draw filled rectangle for health bar
+		surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+		draw.NoTexture()
+		surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
+		-- surface.DrawTexturedRect( x + sb, y - s * 2, ( sb + s ) * health / 2, s * 2 )
+	end
+	draw.StencilBasic( mask, inner )
+
+	-- Draw heart icons for max health
+	local function mask()
+		for i = 1, maxhealth / 2 do
+			surface.SetDrawColor( PRK_HUD_Colour_Heart_Dark )
 			draw.Heart( x + ( sb + s ) * i, y - s, s, 16 )
 		end
 	end
 	local function inner()
 		-- Draw filled rectangle for health bar
-		surface.SetDrawColor( 150, 20, 70, 255 )
+		surface.SetDrawColor( PRK_HUD_Colour_Heart_Light )
 		draw.NoTexture()
+		-- surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
 		surface.DrawTexturedRect( x + sb, y - s * 2, ( sb + s ) * health / 2, s * 2 )
 	end
 	draw.StencilBasic( mask, inner )
@@ -174,16 +310,31 @@ function PRK_HUDPaint_Money()
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
+	local money_add = LocalPlayer():GetNWInt( "PRK_Money_Add" )
 	local money = LocalPlayer():GetNWInt( "PRK_Money" )
-		money = PRK_GetAsCurrency( money )
-	PRK_DrawText(
-		money,
+		if ( money_add ) then
+			money = money - money_add
+		end
+	local w, h = PRK_DrawText(
+		PRK_GetAsCurrency( money ),
 		x,
 		y,
 		PRK_HUD_Colour_Money,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
 	)
+
+	if ( money_add and money_add != 0 ) then
+		local offy = 0
+		PRK_DrawText(
+			"+" .. PRK_GetAsCurrency( money_add ),
+			x + w,
+			y + offy,
+			PRK_HUD_Colour_Money,
+			TEXT_ALIGN_LEFT,
+			TEXT_ALIGN_CENTER
+		)
+	end
 end
 
 -----------------
@@ -204,50 +355,41 @@ function PRK_Think_RevolverChambers()
 	PRK_RevolverChambers.Ang = Lerp( speed, PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng )
 	PRK_RevolverChambers.LastChange = math.abs( old - PRK_RevolverChambers.Ang )
 	-- PRK_RevolverChambers.Ang = math.ApproachAngle( PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng, speed )
-end
 
-function PRK_HUDPaint_ExtraAmmo()
-	local r = PRK_GetResolutionIndependent( 112 )
-	local s = r / 2
-	local x = ScrW() - r * 2
-	local y = ScrH() - r * 1
-	-- Move slightly with player
-	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
-
-	-- Draw ammo icon
-	surface.SetDrawColor( 100, 190, 190, 255 )
-	surface.SetMaterial( PRK_Material_Icon_Bullet )
-		surface.DrawTexturedRect( x - s / 1.5, y - s / 2, s / 2, s )
-	draw.NoTexture()
-
-	-- Draw ammo number
-	local extraammo = LocalPlayer():GetNWInt( "PRK_ExtraAmmo" )
-		if ( extraammo < 10 ) then
-			extraammo = "0" .. extraammo
-		end
-		extraammo = "x" .. extraammo
-	PRK_DrawText(
-		extraammo,
-		x,
-		y,
-		PRK_HUD_Colour_Main,
-		TEXT_ALIGN_LEFT,
-		TEXT_ALIGN_CENTER
-	)
+	if ( !LocalPlayer():Alive() ) then
+		PRK_Initialise_RevolverChambers()
+	end
 end
 
 function PRK_HUDPaint_RevolverChambers()
 	if ( !LocalPlayer():GetActiveWeapon() or !LocalPlayer():GetActiveWeapon():IsValid() or LocalPlayer():GetActiveWeapon():GetClass() != "prk_gun" ) then return end
 
+	draw.NoTexture()
+
+	-- local chambers = math.floor( math.max( 3, math.abs( math.sin( CurTime() / 2 ) ) * 15 ) )
+	local chambers = LocalPlayer():GetActiveWeapon().MaxClip
+
 	local r = PRK_GetResolutionIndependent( 80 )
-		r = r + math.min( PRK_RevolverChambers.LastChange, 10 ) * 4
+	local r_def = r
+	local r_add = 0
+		if ( PRK_RevolverChambers.LastChange ) then
+			r_add = math.min( PRK_RevolverChambers.LastChange, 10 ) * 4
+			r = r + r_add
+		end
 	local x = ScrW() - r * 4.5
 	local y = ScrH() - r * 1.2
 	local ang = PRK_RevolverChambers.Ang
+	-- print( ang )
+	-- print( chambers )
+		local off = 180 -- ( ( 1 / chambers ) * -360 ) + 180
+		ang = ang - off
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
 
-	local chambers = LocalPlayer():GetActiveWeapon().MaxClip
+	-- Draw blur
+	local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
+	surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+	draw.Circle( offx, offy, r, chambers, ang )
 
 	-- Draw background
 	surface.SetDrawColor( 230, 230, 240, 255 )
@@ -257,16 +399,31 @@ function PRK_HUDPaint_RevolverChambers()
 	draw.Circle( x, y, r, chambers, ang )
 
 	-- Draw individual chambers
-	local cham_rad = r / chambers * 1.5
-	local points = PRK_GetCirclePoints( x, y, r - cham_rad * 1.5, chambers, ang + 180 )
+	local cham_rad = math.min( 32, ( r_def / chambers * 1.5 ) + r_add )
+	local points = PRK_GetCirclePoints( x, y, r - cham_rad * 1.5, chambers, ang )
+		-- Remove middle point
+		table.remove( points, 1 )
 	local ammo = LocalPlayer():GetNWInt( "PRK_Clip" )
 	for k, point in pairs( points ) do
-		if ( k <= ammo + 1 ) then
+		local id = k -- #points - k + 1
+		if ( id <= ammo ) then
 			surface.SetDrawColor( 100, 190, 190, 255 )
 		else
 			surface.SetDrawColor( 0, 20, 20, 255 )
 		end
-		draw.Circle( point.x, point.y, cham_rad, 32, 0 )
+		if ( id == 1 ) then
+			-- surface.SetDrawColor( 255, 20, 20, 255 )
+		end
+		draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 )
+		PRK_DrawText(
+			id,
+			point.x,
+			point.y,
+			Color( 255, 255, 255, 255 ),
+			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_CENTER,
+			16
+		)
 	end
 
 	-- Draw 'No Ammo' warning
@@ -277,13 +434,14 @@ function PRK_HUDPaint_RevolverChambers()
 			if ( extraammo == 0 ) then
 				message = "FIND AMMO"
 			end
-		local pulsespeed = 10
+		local pulsespeed = 8.35 -- 8.3
 		local pulsemag = 105
+		local time = CurTime() - PRK_RevolverChambers.NoAmmoWarningStart
 		PRK_DrawText(
 			message,
 			x,
 			y - r * 1.3,
-			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
+			Color( 255, 255, 255, 255 - pulsemag + math.sin( time * pulsespeed ) * pulsemag ),
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_CENTER
 		)
@@ -294,25 +452,93 @@ function PRK_HUDPaint_RevolverChambers()
 			"R",
 			x,
 			y - 2,
-			Color( 255, 255, 255, 255 - pulsemag + math.sin( CurTime() * pulsespeed ) * pulsemag ),
+			Color( 255, 255, 255, 255 - pulsemag + math.sin( time * pulsespeed ) * pulsemag ),
 			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_CENTER
+		)
+
+		LocalPlayer():EmitSound( "prk_reload_alarm" )
+	else
+		LocalPlayer():StopSound( "prk_reload_alarm" )
+	end
+end
+
+function PRK_HUDPaint_ExtraAmmo()
+	local r = PRK_GetResolutionIndependent( 112 )
+	local s = r / 2
+	local x = ScrW() - r * 2
+	local y = ScrH() - r * 1
+	-- Move slightly with player
+	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
+
+	-- Draw ammo icon shadow
+	local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
+	surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+	surface.SetMaterial( PRK_Material_Icon_Bullet )
+		surface.DrawTexturedRect( offx - s / 1.5, offy - s / 2, s / 2, s )
+	draw.NoTexture()
+
+	-- Draw ammo icon
+	surface.SetDrawColor( PRK_HUD_Colour_Highlight )
+	surface.SetMaterial( PRK_Material_Icon_Bullet )
+		surface.DrawTexturedRect( x - s / 1.5, y - s / 2, s / 2, s )
+	draw.NoTexture()
+
+	-- Draw ammo number
+	local extraammo = LocalPlayer():GetNWInt( "PRK_ExtraAmmo" )
+	local extraammo_add = LocalPlayer():GetNWInt( "PRK_ExtraAmmo_Add" )
+		-- Clamp difference between current extraammo and additional extra ammo just picked up
+		local temp = extraammo
+		extraammo = math.max( 0, extraammo - extraammo_add )
+		extraammo_add = temp - extraammo
+		if ( extraammo < 10 ) then
+			extraammo = "0" .. extraammo
+		end
+		extraammo = "x" .. extraammo
+	local w, h = PRK_DrawText(
+		extraammo,
+		x,
+		y,
+		PRK_HUD_Colour_Main,
+		TEXT_ALIGN_LEFT,
+		TEXT_ALIGN_CENTER
+	)
+
+	if ( extraammo_add and extraammo_add != 0 ) then
+		local offy = 0
+		if ( extraammo_add > 0 ) then
+			extraammo_add = "+" .. extraammo_add
+		end
+		PRK_DrawText(
+			extraammo_add,
+			x + w,
+			y + offy,
+			PRK_HUD_Colour_Main,
+			TEXT_ALIGN_LEFT,
 			TEXT_ALIGN_CENTER
 		)
 	end
 end
 
 function PRK_Gun_UseAmmo()
-	PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng - 60
+	if ( LocalPlayer():GetActiveWeapon() and LocalPlayer():GetActiveWeapon():IsValid() ) then
+		local chambers = LocalPlayer():GetActiveWeapon().MaxClip or 6
+		PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng - ( 360 / chambers )
+	end
 end
 
 function PRK_Gun_AddAmmo()
-	PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + 60
-	PRK_RevolverChambers.NoAmmoWarning = false
-	PRK_RevolverChambers.ExtraChange = 1
+	if ( LocalPlayer():GetActiveWeapon() and LocalPlayer():GetActiveWeapon():IsValid() ) then
+		local chambers = LocalPlayer():GetActiveWeapon().MaxClip or 6
+		PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + ( 360 / chambers )
+		PRK_RevolverChambers.NoAmmoWarning = false
+		PRK_RevolverChambers.ExtraChange = 1
+	end
 end
 
 function PRK_Gun_NoAmmoWarning()
 	PRK_RevolverChambers.NoAmmoWarning = true
+	PRK_RevolverChambers.NoAmmoWarningStart = CurTime()
 end
 ------------------
   -- /PRK Gun --
@@ -324,9 +550,13 @@ local function MyCalcView( ply, pos, angles, fov )
 
 	view.origin = pos -- ( angles:Forward() * 100 )
 	view.angles = angles
+		if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
+			view.origin = LocalPlayer().DieEffect[1]
+			view.angles = LocalPlayer().DieEffect[2]
+		end
 	view.fov = fov
 	view.drawviewer = false
-	view.zfar = 3050
+	view.zfar = PRK_DrawDistance
 
 	return view
 end
@@ -362,7 +592,7 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 
 	-- Shadow
 	if ( shadow ) then
-		local offx, offy = PRK_GetUIPosVelocity( x, y, -2, 2, 2 )
+		local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
 		draw.SimpleText(
 			text,
 			"HeavyHUD" .. fontsize,
@@ -384,6 +614,10 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 		xalign,
 		yalign
 	)
+
+	surface.SetFont( "HeavyHUD" .. fontsize )
+	local w, h = surface.GetTextSize( text )
+	return w, h
 end
 
 function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
@@ -414,6 +648,13 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 					targety = targety + offy
 				end
 		end
+		if ( LocalPlayer().PunchHUD ) then
+			local vel = LocalPlayer().PunchHUD
+			local rgt = -LocalPlayer():GetRight()
+			local forw  = LocalPlayer():GetForward()
+				targetx = targetx + vel:Dot( rgt ) * effect
+				targety = targety + vel:Dot( forw ) * effect
+		end
 		-- Velocity effect
 		local vel = LocalPlayer():GetVelocity()
 		local rgt = -LocalPlayer():GetRight()
@@ -422,15 +663,14 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 			targety = targety + vel:Dot( up ) / PRK_Speed * effect
 		-- Turn effect (stored on DrawHUD)
 		-- if ( vel:Length() < PRK_Speed / 10 ) then
-			-- if ( LocalPlayer().LastEyeAngles ) then
-				-- local bac = -LocalPlayer():GetForward()
-				-- local movingback = 1 -- vel:Dot( bac ) > 0 and -1 or 1
-				-- print( movingback )
-				-- local max = 5
-				-- local eye = LocalPlayer():EyeAngles()
-					-- targetx = targetx + movingback * math.Clamp( math.AngleDifference( eye.y, LocalPlayer().LastEyeAngles.y ), -max, max ) * effectrotate * effect
-					-- targety = targety + movingback * -math.Clamp( math.AngleDifference( eye.x, LocalPlayer().LastEyeAngles.x ), -max, max ) * effectrotate * effect
-			-- end
+			if ( LocalPlayer().LastEyeAngles ) then
+				local bac = -LocalPlayer():GetForward()
+				local angeffect = 0.5 -- vel:Dot( bac ) > 0 and -1 or 1
+				local max = 5
+				local eye = LocalPlayer():EyeAngles()
+					targetx = targetx + angeffect * math.Clamp( math.AngleDifference( eye.y, LocalPlayer().LastEyeAngles.y ), -max, max ) * effectrotate * effect
+					targety = targety + angeffect * -math.Clamp( math.AngleDifference( eye.x, LocalPlayer().LastEyeAngles.x ), -max, max ) * effectrotate * effect
+			end
 		-- end
 	-- Lerp
 	local frametime = 0.016 -- FrameTime()

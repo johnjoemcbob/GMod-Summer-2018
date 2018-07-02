@@ -27,7 +27,7 @@ SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
 SWEP.RequireAmmo			= true
-SWEP.MaxClip				= 6
+SWEP.MaxClip				= 3
 local dist = 3000
 SWEP.MaxDistance			= dist
 SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
@@ -41,7 +41,7 @@ SWEP.DistFOVPunch			= 10
 SWEP.LerpSpeedPunch		= 1
 SWEP.LerpSpeed				= 10
 SWEP.SoundPitchFireBase = 100
-SWEP.SoundPitchFireIncrease = -3
+SWEP.SoundPitchFireIncrease = -50 --  -3
 SWEP.SoundPitchFireSpeed = 0.2
 SWEP.SoundPitchReloadBase = 80
 SWEP.SoundPitchReloadIncrease = 10
@@ -72,27 +72,14 @@ if ( SERVER ) then
 end
 
 if ( CLIENT ) then
+	PRK_Initialise_RevolverChambers()
+
 	net.Receive( "PRK_Gun_Fire", function( len, ply )
 		local self = net.ReadEntity()
 
 		self.GunPunch = 1
 		self.GunPunchRnd = math.random( -10, 10 )
 		PRK_Gun_UseAmmo() -- In main cl_init.lua
-
-		-- Play shoot effect
-		if ( self.GunModel and self.GunModel:IsValid() ) then
-			local effectdata = EffectData()
-				local pos = self.GunModel:GetPos() +
-					self.GunModel:GetForward() * 50 +
-					self.GunModel:GetRight() * 20 * self.RightHanded +
-					LocalPlayer():GetVelocity() * 0.1
-				effectdata:SetOrigin( pos )
-				effectdata:SetNormal(
-					self.GunModel:GetForward() +
-					self.GunModel:GetUp()
-				)
-			util.Effect( "prk_hit", effectdata )
-		end
 	end )
 
 	net.Receive( "PRK_Gun_Reload", function( len, ply )
@@ -156,19 +143,47 @@ function SWEP:PrimaryAttack( right )
 	end
 
 	-- Play shoot sound
-	PRK_EmitPitchedSound(
-		self.Owner:Nick() .. "_PRK_Gun_Fire",
-		self.Weapon,
+	-- PRK_EmitChainPitchedSound(
+		-- self.Owner:Nick() .. "_PRK_Gun_Fire",
+		-- self.Weapon,
+		-- "weapons/grenade_launcher1.wav",
+		-- 75,
+		-- 1,
+		-- self.SoundPitchFireBase,
+		-- self.SoundPitchFireIncrease,
+		-- self.SoundPitchFireSpeed
+	-- )
+	self.Weapon:EmitSound(
 		"weapons/grenade_launcher1.wav",
 		75,
-		1,
-		self.SoundPitchFireBase,
-		self.SoundPitchFireIncrease,
-		self.SoundPitchFireSpeed
+		self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( ammo / self.MaxClip ) ) )
 	)
+	-- print( self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ammo / self.MaxClip ) )
 
 	-- Play animation
 	self.Owner:SetAnimation( PLAYER_ATTACK1 )
+
+	-- Play shoot effect
+	local vm = self.Owner:GetViewModel()
+	local effectdata = EffectData()
+		local pos = vm:GetPos() +
+			self.Owner:GetForward() * 60 +
+			self.Owner:GetRight() * 20 * self.RightHanded +
+			self.Owner:GetVelocity() * 0.1
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal(
+			self.Owner:GetForward() +
+			self.Owner:GetUp()
+		)
+	util.Effect( "prk_hit", effectdata )
+
+	-- Play first impact effect at spawn point
+	local tr = self.Owner:GetEyeTrace()
+	local effectdata = EffectData()
+		local pos = tr.HitPos
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal( tr.HitNormal )
+	util.Effect( "prk_hit", effectdata )
 
 	-- Shoot 1 bullet, 150 damage, 0.01 aimcone
 	if ( SERVER ) then
@@ -176,7 +191,6 @@ function SWEP:PrimaryAttack( right )
 		bullet:Spawn()
         bullet.Owner = self.Owner
 			-- Appear at hit point and bounce back towards player
-			local tr = self.Owner:GetEyeTrace()
 			local pos = tr.HitPos + tr.HitNormal * 10
 				-- Clamp pos to max distance
 				local dir = pos - self.Owner:EyePos()
@@ -241,14 +255,20 @@ function SWEP:Reload()
 		if ( extraammo > 0 and ammo < self.MaxClip ) then
 			-- Reload and communicate
 			if ( SERVER ) then
+				-- local extraammo_add = self.Owner:GetNWInt( "PRK_ExtraAmmo_Add" )
+				-- if ( extraammo_add > 0 ) then
+					-- self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", extraammo_add - 1 )
+				-- end
 				self.Owner:SetNWInt( "PRK_ExtraAmmo", extraammo - 1 )
+				local extraammo_add = self.Owner:GetNWInt( "PRK_ExtraAmmo_Add" )
+				self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", extraammo_add - 1 )
 				self.Owner:SetNWInt( "PRK_Clip", ammo + 1 )
 				self:SendReload()
 			end
 
 			-- Play sound
 			-- self.Weapon:EmitSound( "buttons/lever7.wav" )
-			PRK_EmitPitchedSound(
+			PRK_EmitChainPitchedSound(
 				self.Owner:Nick() .. "_PRK_Gun_Reload",
 				self.Weapon,
 				"buttons/lever7.wav",
@@ -256,7 +276,14 @@ function SWEP:Reload()
 				1,
 				self.SoundPitchReloadBase,
 				self.SoundPitchReloadIncrease,
-				self.SoundPitchReloadSpeed
+				self.SoundPitchReloadSpeed,
+				0.5,
+				function()
+					if ( self and self:IsValid() ) then
+						self.Owner:EmitSound( "buttons/blip1.wav", 75, 50, 0.15 )
+						self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", 0 )
+					end
+				end
 			)
 
 			-- Delay next shoot until reload finished
@@ -311,6 +338,10 @@ if ( CLIENT ) then
 
 	local curpos = Vector()
 	function SWEP:GetViewModelPosition( pos, ang )
+		if ( !self.GunModel or !self.GunModel:IsValid() ) then
+			self:Initialize()
+		end
+
 		local frametime = PRK_GetFrameTime()
 			-- Default pos/ang
 			local target = 

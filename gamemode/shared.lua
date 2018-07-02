@@ -19,6 +19,14 @@ PRK_HUD_Colour_Dark							= Color( 0, 0, 0, 255 )
 PRK_HUD_Colour_Money						= Color( 255, 255, 50, 255 )
 PRK_HUD_Colour_Shadow						= Color( 255, 100, 150, 255 )
 PRK_HUD_Colour_Highlight					= Color( 100, 190, 190, 255 )
+PRK_HUD_Colour_Heart_Dark					= Color( 70, 20, 30, 255 )
+PRK_HUD_Colour_Heart_Light					= Color( 150, 20, 70, 255 )
+PRK_HUD_Shadow_DistX						= -2
+PRK_HUD_Shadow_DistY						= 2
+PRK_HUD_Shadow_Effect						= 4
+PRK_HUD_Punch_Amount						= 5
+PRK_HUD_Punch_Speed							= 10
+PRK_HUD_DieEffect_MaxAlpha				= 230
 PRK_Colour_Enemy_Skin						= Color( 0, 0, 5, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
 PRK_Colour_Enemy_Tooth						= PRK_HUD_Colour_Main
@@ -30,10 +38,13 @@ PRK_Grass_Billboard_SortRange				= 10
 PRK_Grass_Billboard_ShouldDrawTime	= 1
 PRK_Grass_Billboard_MaxSortCount		= 0
 PRK_Grass_Billboard_MaxRenderCount	= 10000
+PRK_DrawDistance									= 3050
 PRK_Gen_SizeModifier							= 10
+PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter									= ""
 PRK_CursorSize										= 8
+PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 PRK_Plate_Size										= 47.45
 PRK_Speed											= 600
 PRK_Jump												= 0
@@ -46,8 +57,8 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 	ply:EmitSound(
 		"player/footsteps/gravel" .. math.random( 1, 4 ) .. ".wav",
 		75,
-		math.random( 90, 120 ),
-		0.2
+		( math.random( 90, 120 ) * ply:GetVelocity() / 600 ):Length(),
+		volume
 	)
 
 	-- if ( CLIENT ) then
@@ -87,30 +98,47 @@ function PRK_GetFrameTime()
 end
 
 -- Sounds with pitch asc/desc when played in a row
-PRK_PitchSounds = {}
+PRK_ChainPitchedSounds = {}
 hook.Add( "Think", "PRK_Think_PitchSounds", function()
-	for name, pitch in pairs( PRK_PitchSounds ) do
-		pitch.Current = Lerp( FrameTime() * pitch.Speed, pitch.Current, pitch.Default )
+	for name, pitch in pairs( PRK_ChainPitchedSounds ) do
+		-- pitch.Current = Lerp( FrameTime() * pitch.Speed, pitch.Current, pitch.Default )
+		-- pitch.Current = math.Approach( pitch.Current, pitch.Default, FrameTime() * pitch.Speed )
+
+		-- Works better based on time rather than old pitch attempt (shown above)
+		if ( pitch.Time_End <= CurTime() ) then
+			pitch.Current = pitch.Default
+			pitch.Chain = 0
+			if ( pitch.Callback_End ) then
+				pitch:Callback_End()
+				pitch.Callback_End = nil
+			end
+		end
 	end
 end )
 
-function PRK_EmitPitchedSound( name, ent, sound, level, vol, pitchdefault, pitchchange, pitchspeed )
+function PRK_EmitChainPitchedSound( name, ent, sound, level, vol, pitchdefault, pitchchange, pitchspeed, time_end, callback_end )
 	-- Initialise
-	if ( !PRK_PitchSounds[name] ) then
-		PRK_PitchSounds[name] = {
+	if ( !PRK_ChainPitchedSounds[name] ) then
+		PRK_ChainPitchedSounds[name] = {
 			Current = pitchdefault,
+			Chain = 0,
 		}
 	end
 	-- Update any values
-	PRK_PitchSounds[name].Default = pitchdefault
-	PRK_PitchSounds[name].Change = pitchchange
-	PRK_PitchSounds[name].Speed = pitchspeed
+	PRK_ChainPitchedSounds[name].Default = pitchdefault
+	PRK_ChainPitchedSounds[name].Change = pitchchange
+	PRK_ChainPitchedSounds[name].Speed = pitchspeed
+	PRK_ChainPitchedSounds[name].Time_End = CurTime() + ( time_end or 1000 )
+	PRK_ChainPitchedSounds[name].Callback_End = callback_end
 
 	-- Apply change
-	PRK_PitchSounds[name].Current = math.min( PRK_PitchSounds[name].Current + pitchchange, 255 )
+	PRK_ChainPitchedSounds[name].Current = math.Clamp( PRK_ChainPitchedSounds[name].Current + pitchchange, 0, 255 )
+	PRK_ChainPitchedSounds[name].Chain = PRK_ChainPitchedSounds[name].Chain + 1
 
 	-- Play audio
-	ent:EmitSound( sound, level, PRK_PitchSounds[name].Current, vol )
+	ent:EmitSound( sound, level, PRK_ChainPitchedSounds[name].Current, vol )
+
+	return PRK_ChainPitchedSounds[name].Chain
 end
 
 function PRK_GetAsCurrency( val )

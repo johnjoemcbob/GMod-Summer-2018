@@ -36,6 +36,32 @@ resource.AddDir( "gamemodes/prickly_summer_2018/content/" )
 print( "Finish resources..." )
 print( "-------------------" )
 
+-- Net
+util.AddNetworkString( "PRK_KeyValue" )
+util.AddNetworkString( "PRK_TakeDamage" )
+util.AddNetworkString( "PRK_Die" )
+
+function SendKeyValue( ply, key, val )
+	net.Start( "PRK_KeyValue" )
+		net.WriteString( key )
+		net.WriteString( val )
+	net.Send( ply )
+end
+
+function SendTakeDamage( ply, amount, dir )
+	net.Start( "PRK_TakeDamage" )
+		net.WriteFloat( amount )
+		net.WriteVector( dir )
+	net.Send( ply )
+end
+
+function SendDie( ply, pos, ang )
+	net.Start( "PRK_Die" )
+		net.WriteVector( pos )
+		net.WriteAngle( ang )
+	net.Send( ply )
+end
+
 ------------------------
   -- Gamemode Hooks --
 ------------------------
@@ -100,22 +126,56 @@ function GM:HandlePlayerJumping( ply, vel )
 	return true
 end
 
+local dmgnoises = {
+	"npc/zombie/zombie_pain1.wav",
+	"npc/zombie/zombie_pain2.wav",
+	"npc/zombie/zombie_pain3.wav",
+	"npc/zombie/zombie_pain4.wav",
+	"npc/zombie/zombie_pain5.wav",
+}
 function GM:EntityTakeDamage( target, dmginfo )
 	if ( target:IsPlayer() ) then
 		if ( !string.find( dmginfo:GetInflictor():GetClass(), "prk" ) ) then
 			dmginfo:ScaleDamage( 0.2 )
 		end
-		if ( dmginfo:GetDamageType() == DMG_CRUSH ) then
+		if ( dmginfo:GetDamageType() == DMG_CRUSH or dmginfo:GetDamageType() == DMG_FALL ) then
 			dmginfo:ScaleDamage( 0 )
 		end
+
+		if ( dmginfo:GetDamage() > 0 ) then
+			local dir = dmginfo:GetInflictor():GetPos() - target:GetPos()
+				dir:Normalize()
+			SendTakeDamage( target, dmginfo:GetDamage(), dir )
+
+			-- Play sound
+			PRK_EmitChainPitchedSound(
+				target:Nick() .. "_PRK_Hurt",
+				target,
+				dmgnoises[math.random( 1, #dmgnoises )],
+				75,
+				0.5 + ( 0.25 / 2 * dmginfo:GetDamage() ),
+				math.random( 230, 255 ),
+				-30 * dmginfo:GetDamage(),
+				nil,
+				1
+			)
+		end
 	end
+end
+
+function GM:DoPlayerDeath( ply, attacker, dmginfo )
+	SendDie( ply, ply:EyePos(), ply:EyeAngles() )
+	ply:SetPos( ply:EyePos() )
+end
+
+function GM:PlayerDeathSound()
+	return true
 end
 
 function GM:OnNPCKilled( npc, attacker, inflictor )
 	-- Testing / fun (only non-prickly NPCs)
 	if ( string.find( npc:GetClass(), "prk_" ) ) then return end
-	local mult = 0.1
-	local coins = npc:GetMaxHealth() * mult
+	local coins = npc:GetMaxHealth() * PRK_Enemy_CoinDropMult
 	for i = 1, coins do
 		PRK_CreateEnt( "prk_coin_heavy", nil, npc:GetPos(), AngleRand(), true )
 	end

@@ -17,7 +17,7 @@ sound.Add(
 local function trypickup( ent, colent )
 	if ( colent:IsPlayer() and colent:Alive() ) then --and colent == ent.Owner ) then
 		colent:SetNWInt( "PRK_ExtraAmmo", colent:GetNWInt( "PRK_ExtraAmmo" ) + 1 )
-		PRK_EmitPitchedSound(
+		local chain = PRK_EmitChainPitchedSound(
 			colent:Nick() .. "_PRK_Bullet_Pickup",
 			colent,
 			"garrysmod/content_downloaded.wav",
@@ -25,8 +25,15 @@ local function trypickup( ent, colent )
 			1,
 			80,
 			5,
-			3
+			3,
+			1,
+			function( self )
+				-- colent:EmitSound( "items/battery_pickup.wav", 75, 50 )
+				colent:EmitSound( "buttons/blip1.wav", 75, 255, 0.15 )
+				colent:SetNWInt( "PRK_ExtraAmmo_Add", 0 )
+			end
 		)
+		colent:SetNWInt( "PRK_ExtraAmmo_Add", chain )
 		ent:Remove()
 	end
 end
@@ -103,9 +110,7 @@ function ENT:Initialize()
 	)
 	self:SetSolid( SOLID_OBB )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
-	self:SetCollisionGroup( COLLISION_GROUP_PLAYER_MOVEMENT )
-	-- self:PhysicsInit( SOLID_VPHYSICS )
-	-- self:PhysicsInitSphere( dia )
+	self:SetCollisionGroup( COLLISION_GROUP_PASSABLE_DOOR )
 	self:PhysicsInitBox( min, max )
 	self:PhysWake()
 
@@ -116,7 +121,6 @@ function ENT:Initialize()
 	self.JumpDelay = 4
 
 	-- Precache missile noises
-	-- util.PrecacheSound( "weapons/physcannon/hold_loop.wav" )
 	util.PrecacheSound( "buttons/lever7.wav" )
 
 	-- Initialise

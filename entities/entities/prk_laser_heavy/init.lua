@@ -90,9 +90,13 @@ function ENT:CollideWithEnt( ent )
 	-- Count collisions before it becomes a pickup rather than a projectile
 	self.Collide = self.Collide + 1
 	if ( self.Collide == self.MaxDamageCollide ) then
-		if ( self.DamageEndCallback ) then
-			self:DamageEndCallback()
-		end
+		-- Callback after damaging (timer to avoid "Changing collision rules within a callback is likely to cause crashes!" warning)
+		self:SetNoDraw( true )
+		timer.Simple( 0.1, function()
+			if ( self and self:IsValid() and self.DamageEndCallback ) then
+				self:DamageEndCallback()
+			end
+		end )
 	end
 
 	-- Play sound

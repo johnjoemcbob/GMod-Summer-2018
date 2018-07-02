@@ -9,7 +9,7 @@ function ENT:Initialize()
 	self.Visual:SetModelScale( self.Scale, 0 )
 
 	-- Set Visual scale
-	local scale = Vector( 1, 1, 0.2 )
+	local scale = Vector( 2, 2, 0.4 )
 
 	local mat = Matrix()
 		mat:Scale( scale )
@@ -18,7 +18,7 @@ end
 
 -- Also update pos/ang here in case Draw wouldn't be called (if the entity is already out of view)
 function ENT:Think()
-	if ( !self.Visual ) then
+	if ( !self.Visual or !self.Visual:IsValid() ) then
 		self:Initialize()
 	end
 	self.Visual:SetPos( self:GetPos() )
@@ -26,10 +26,10 @@ function ENT:Think()
 end
 
 function ENT:Draw()
-	if ( !self.Visual ) then
+	if ( !self.Visual or !self.Visual:IsValid() ) then
 		self:Initialize()
 	end
-	self.Visual:SetPos( self:GetPos() )
+	self.Visual:SetPos( self:GetPos() + self:GetUp() * 3.5 )
 	self.Visual:SetAngles( self:GetAngles() + Angle( 0, 0, 0 ) )
 end
 

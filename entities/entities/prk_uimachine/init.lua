@@ -126,7 +126,7 @@ function ENT:Initialize()
 
 	-- Physics
 	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_NONE )
+	self:SetMoveType( MOVETYPE_VPHYSICS )
 	local phys = self:GetPhysicsObject()
 	if ( phys and phys:IsValid() ) then
 		phys:EnableMotion( false )

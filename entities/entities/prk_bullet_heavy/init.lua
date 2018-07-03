@@ -166,7 +166,7 @@ function ENT:CollideWithEnt( ent )
 
         -- BUFF SYSTEM: Calculate additive buff damage (e.g, 1 stack = 105% dmg)
         local buff_mult = 1.00
-        if(self.Owner != nil) then
+        if(self.Owner != nil and IsValid(self.Owner)) then
             buff_mult = buff_mult + (PRK_Buff_Get(self.Owner, PRK_BUFFTYPE_BULLET_DMG) * PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER)
         end
 		ent:TakeDamage( self.Damage * mult * buff_mult, self.Owner, self )

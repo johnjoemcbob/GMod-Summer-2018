@@ -87,7 +87,7 @@ function ENT:Initialize()
 	self:PhysWake()
 
 	-- Variables
-	self.JumpDelay = { 4, 8 }
+	self.JumpDelay = { 2, 4 }
 
 	-- Initialise
 	self:StartState( State.Pickup )

@@ -161,6 +161,8 @@ function GM:HUDPaint()
 		return
 	end
 
+	PRK_HUDPaint_Crosshair()
+
 	PRK_HUDPaint_Health()
 
 	PRK_HUDPaint_Money()
@@ -253,6 +255,34 @@ function PRK_HUDPaint_Death()
 		TEXT_ALIGN_CENTER,
 		96
 	)
+end
+
+function PRK_HUDPaint_Crosshair()
+	local x = ScrW() / 2
+	local y = ScrH() / 2
+	local size = 8
+
+	for i = 1, 3 do
+		-- Draw crosshair shadow with lag behind
+		local offx, offy = PRK_GetUIPosVelocity( x, y, 0, 0, PRK_HUD_Shadow_Effect * i )
+		local col = Color( PRK_HUD_Colour_Shadow.r, PRK_HUD_Colour_Shadow.g, PRK_HUD_Colour_Shadow.b, 35 )
+			col.a = col.a - i * 10
+		surface.SetDrawColor( col )
+		draw.NoTexture()
+		local size = size * i
+		surface.DrawTexturedRect( offx - ( size / 2 ), offy - ( size / 2 ), size, size )
+	end
+
+	-- Draw crosshair shadow with lag behind
+	local offx, offy = PRK_GetUIPosVelocity( x, y, 0, 0, PRK_HUD_Shadow_Effect * 2 )
+	surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+	draw.NoTexture()
+	surface.DrawTexturedRect( offx - ( size / 2 ), offy - ( size / 2 ), size, size )
+
+	-- Draw base crosshair always in the center
+	surface.SetDrawColor( PRK_HUD_Colour_Main )
+	draw.NoTexture()
+	surface.DrawTexturedRect( x - ( size / 2 ), y - ( size / 2 ), size, size )
 end
 
 function PRK_HUDPaint_Health()

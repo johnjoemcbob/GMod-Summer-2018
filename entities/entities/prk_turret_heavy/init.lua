@@ -76,10 +76,10 @@ function ENT:Initialize()
 
 	-- Variables
 	self.TimeAutoRemoveLaser	= 2
-	self.TimeFire				= 2
-	self.SpeedRotate			= 10
+	self.TimeFire					= 1.5
+	self.SpeedRotate			= 15 --10
 	self.SpeedFire				= 300--000
-	self.LookAtApprox			= 0.05
+	self.LookAtApprox			= 0.1 --0.05
 end
 
 function ENT:Think()

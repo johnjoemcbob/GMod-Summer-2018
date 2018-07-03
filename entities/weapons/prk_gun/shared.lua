@@ -27,7 +27,7 @@ SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
 SWEP.RequireAmmo			= true
-SWEP.MaxClip				= 3
+SWEP.MaxClip				= 6
 local dist = 3000
 SWEP.MaxDistance			= dist
 SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr

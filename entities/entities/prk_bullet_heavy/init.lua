@@ -163,9 +163,12 @@ function ENT:CollideWithEnt( ent )
 			if ( ent:IsNPC() or ent:GetClass() == "prop_physics" ) then
 				mult = 50
 			end
+
         -- BUFF SYSTEM: Calculate additive buff damage (e.g, 1 stack = 105% dmg)
-        -- local buff_mult = PRK_Buff_Get(self.Owner, PRK_BUFFTYPE_BULLET_DMG) * (1.0 + PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER)
-		local buff_mult = 1 -- This code doesn't work if the player has no stacks of the damage buff, also breaks with vending machine bullets (don't have owner)
+        local buff_mult = 1.00
+        if(self.Owner != nil) then
+            buff_mult = buff_mult + (PRK_Buff_Get(self.Owner, PRK_BUFFTYPE_BULLET_DMG) * PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER)
+        end
 		ent:TakeDamage( self.Damage * mult * buff_mult, self.Owner, self )
 
 		-- testing/fun

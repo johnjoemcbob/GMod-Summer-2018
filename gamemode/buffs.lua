@@ -85,6 +85,9 @@ end
 
 -- Get the stack level of a particular buff.
 function PRK_Buff_Get(ply, bufftype)
+	if ( !PRK_PLY_BUFFS_TABLE[ply] ) then
+		PRK_Buff_Register( ply )
+	end
     return PRK_PLY_BUFFS_TABLE[ply][bufftype]
 end
 

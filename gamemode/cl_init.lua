@@ -123,12 +123,20 @@ function GM:Initialize()
 end
 
 function GM:Think()
-	PRK_Think_RevolverChambers()
+	PRK_Think_Die()
 
+	PRK_Think_RevolverChambers()
+	PRK_Think_Punch()
+	PRK_Think_Use()
+end
+
+function PRK_Think_Punch()
 	if ( LocalPlayer().PunchHUD ) then
 		LocalPlayer().PunchHUD = LerpVector( FrameTime() * PRK_HUD_Punch_Speed, LocalPlayer().PunchHUD, Vector() )
 	end
+end
 
+function PRK_Think_Die()
 	if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
 		local speedpos = 5
 		local speedang = 5
@@ -154,6 +162,28 @@ function GM:Think()
 	end
 end
 
+function PRK_Think_Use()
+	-- Look at entity
+	local tr = LocalPlayer():GetEyeTrace()
+	if ( tr.Entity and tr.Entity:IsValid() and tr.Entity.MaxUseRange ) then
+		local dist = LocalPlayer():GetPos():Distance( tr.Entity:GetPos() )
+		if ( dist <= tr.Entity.MaxUseRange ) then
+			LocalPlayer().LookingAtUsable = tr.Entity
+		else
+			LocalPlayer().LookingAtUsable = nil
+		end
+	else
+		LocalPlayer().LookingAtUsable = nil
+	end
+
+	-- Look at UI
+	if ( LocalPlayer().LookingAtUI ) then
+		if ( !LocalPlayer().LookingAtUI:IsValid() ) then
+			LocalPlayer().LookingAtUI = nil
+		end
+	end
+end
+
 function GM:HUDPaint()
 	-- Don't draw HUD if dead
 	if ( !LocalPlayer():Alive() ) then
@@ -162,6 +192,7 @@ function GM:HUDPaint()
 	end
 
 	PRK_HUDPaint_Crosshair()
+	PRK_HUDPaint_CrosshairHelp()
 
 	PRK_HUDPaint_Health()
 
@@ -257,9 +288,23 @@ function PRK_HUDPaint_Death()
 	)
 end
 
+local CursorX, CursorY
 function PRK_HUDPaint_Crosshair()
-	local x = ScrW() / 2
-	local y = ScrH() / 2
+	local speed = 15
+	local targetx = ScrW() / 2
+	local targety = ScrH() / 2
+		if ( !CursorX ) then
+			CursorX = gui.MouseX()
+			CursorY = gui.MouseY()
+		end
+		if ( vgui.CursorVisible() ) then
+			targetx = gui.MouseX()
+			targety = gui.MouseY()
+		end
+		CursorX = Lerp( FrameTime() * speed, CursorX, targetx )
+		CursorY = Lerp( FrameTime() * speed, CursorY, targety )
+	local x = CursorX
+	local y = CursorY
 	local size = 8
 
 	for i = 1, 3 do
@@ -283,6 +328,69 @@ function PRK_HUDPaint_Crosshair()
 	surface.SetDrawColor( PRK_HUD_Colour_Main )
 	draw.NoTexture()
 	surface.DrawTexturedRect( x - ( size / 2 ), y - ( size / 2 ), size, size )
+end
+
+function PRK_HUDPaint_CrosshairHelp()
+	if ( !LocalPlayer().LookingAtUsable and !LocalPlayer().LookingAtUI ) then return end
+
+	local x = CursorX
+	local y = CursorY
+	-- local x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY, 2 )
+
+	local text = "USE"
+	local fontsize = 24
+	surface.SetFont( "HeavyHUD" .. fontsize )
+
+	local width, height = surface.GetTextSize( text )
+		width = width * 1.5
+		height = height * 1.25
+	local tri_width = width / 4
+	local tri_height = height / 2
+
+	x = x + tri_width / 2
+
+	local function drawlabel( x, y )
+		-- Draw label shape
+		local tri = {
+			{
+				x = x + tri_width,
+				y = y - tri_height,
+			},
+			{
+				x = x + tri_width,
+				y = y + tri_height,
+			},
+			{
+				x = x,
+				y = y,
+			},
+		}
+		surface.DrawPoly( tri )
+
+		draw.NoTexture()
+		surface.DrawTexturedRect( x + tri_width, y - tri_height, width, height )
+	end
+
+	-- Draw shadow label
+	surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+	local offx, offy = PRK_GetUIPosVelocity( x, y, LagX / 2, LagY / 2, 2 )
+	drawlabel( offx, offy )
+
+	-- Draw main label
+	surface.SetDrawColor( PRK_HUD_Colour_Main )
+	drawlabel( x, y )
+
+	-- Draw help text
+	PRK_DrawText(
+		text,
+		x + tri_width + width / 2,
+		y,
+		PRK_HUD_Colour_Shadow,
+		TEXT_ALIGN_CENTER,
+		TEXT_ALIGN_CENTER,
+		fontsize,
+		false
+	)
 end
 
 function PRK_HUDPaint_Health()
@@ -575,22 +683,25 @@ end
 ------------------
 
 -- View range limiter
-local function MyCalcView( ply, pos, angles, fov )
+-- Also handles death view
+local function PRK_CalcView( ply, pos, angles, fov )
 	local view = {}
-
-	view.origin = pos -- ( angles:Forward() * 100 )
-	view.angles = angles
-		if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
-			view.origin = LocalPlayer().DieEffect[1]
-			view.angles = LocalPlayer().DieEffect[2]
-		end
-	view.fov = fov
-	view.drawviewer = false
-	view.zfar = PRK_DrawDistance
-
+		view.origin = pos -- ( angles:Forward() * 100 )
+		view.angles = angles
+		view.fov = fov
+			if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
+				view.origin = LocalPlayer().DieEffect[1]
+				view.angles = LocalPlayer().DieEffect[2]
+				local off = PRK_HUD_DieEffect_MaxAlpha / 100 * 99
+				if ( LocalPlayer().DieEffect[3] > off ) then
+					view.fov = 90 - ( 89 / ( PRK_HUD_DieEffect_MaxAlpha - off ) * ( LocalPlayer().DieEffect[3] - off ) )
+				end
+			end
+		view.drawviewer = false
+		view.zfar = PRK_DrawDistance
 	return view
 end
-hook.Add( "CalcView", "PRK_CalcView_DrawDistance", MyCalcView )
+hook.Add( "CalcView", "PRK_CalcView_DrawDistance&Death", PRK_CalcView )
 
 concommand.Add( "prk_effect", function( ply, cmd, args )
 	local effectdata = EffectData()
@@ -789,6 +900,12 @@ function PRK_AddModel( mdl, pos, ang, scale, mat, col )
 		model.Ang = ang
 		-- model.RenderBoundsMin, model.RenderBoundsMax = model:GetRenderBounds()
 	return model
+end
+
+function PRK_RenderScale( ent, scale )
+	local mat = Matrix()
+		mat:Scale( scale )
+	ent:EnableMatrix( "RenderMultiply", mat )
 end
 ---------------
   -- /Util --

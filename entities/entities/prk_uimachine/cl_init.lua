@@ -137,13 +137,13 @@ function ENT:Initialize()
 			local function inner()
 				if ( self.Entity.InRange ) then-- and !self.Entity.ButtonHovered ) then
 					-- Small square cursor
-					CursorX = gui.MouseX()
-					CursorY = gui.MouseY()
-					if ( CursorX > 0 and CursorX < ui_w and CursorY > 0 and CursorY < ui_h ) then
-						local cursorw = PRK_CursorSize
-						local cursorh = cursorw
-						draw.Box( CursorX - cursorw / 2, CursorY - cursorh / 2, cursorw, cursorh, Color( 255, 255, 255, 255 ) )
-					end
+					-- CursorX = gui.MouseX()
+					-- CursorY = gui.MouseY()
+					-- if ( CursorX > 0 and CursorX < ui_w and CursorY > 0 and CursorY < ui_h ) then
+						-- local cursorw = PRK_CursorSize
+						-- local cursorh = cursorw
+						-- draw.Box( CursorX - cursorw / 2, CursorY - cursorh / 2, cursorw, cursorh, Color( 255, 255, 255, 255 ) )
+					-- end
 				end
 			end
 			draw.StencilBasic( mask, inner )
@@ -183,12 +183,23 @@ function ENT:Initialize()
 					self.Hovered = true
 					self.Entity.ButtonHovered = self
 					self.Entity:EmitSound( "hl1/fvox/blip.wav" )
+					LocalPlayer().LookingAtUI = self
 				end
 			end
 			function button:OnCursorExited()
 				if ( self.Entity.ButtonHovered == self ) then
 					self.Hovered = false
 					self.Entity.ButtonHovered = nil
+					LocalPlayer().LookingAtUI = nil
+				end
+			end
+			function button:Think()
+				if ( self.Entity.ButtonHovered == self ) then
+					if ( self.Entity.InRange ) then
+						LocalPlayer().LookingAtUI = self
+					else
+						LocalPlayer().LookingAtUI = nil
+					end
 				end
 			end
 			function button:Paint( w, h )
@@ -242,7 +253,10 @@ function ENT:Draw()
 end
 
 function ENT:OnRemove()
-	
+	if ( self.UI ) then
+		self.UI:Remove()
+		self.UI = nil
+	end
 end
 
 hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_UIMachine", function()

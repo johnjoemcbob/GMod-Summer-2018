@@ -87,9 +87,8 @@ function GM:PlayerSpawn( ply )
 	-- ply:SetMaterial( "models/shadertest/shader5" )
 
 	-- Init health
-	local health = 6
-	ply:SetMaxHealth( health )
-	ply:SetHealth( health )
+	ply:SetMaxHealth( PRK_Health )
+	ply:SetHealth( PRK_Health )
 
 	-- Init money
 	ply:SetNWInt( "PRK_Money", 0 )
@@ -134,7 +133,7 @@ local dmgnoises = {
 	"npc/zombie/zombie_pain5.wav",
 }
 function GM:EntityTakeDamage( target, dmginfo )
-	if ( target:IsPlayer() ) then
+	if ( target:IsPlayer() and target:Alive() ) then
 		if ( !string.find( dmginfo:GetInflictor():GetClass(), "prk" ) ) then
 			dmginfo:ScaleDamage( 0.2 )
 		end
@@ -148,6 +147,8 @@ function GM:EntityTakeDamage( target, dmginfo )
 			SendTakeDamage( target, dmginfo:GetDamage(), dir )
 
 			-- Play sound
+			local pitchhealth = 1 - ( target:Health() / target:GetMaxHealth() )
+			print( pitchhealth )
 			PRK_EmitChainPitchedSound(
 				target:Nick() .. "_PRK_Hurt",
 				target,
@@ -155,7 +156,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 				75,
 				0.5 + ( 0.25 / 2 * dmginfo:GetDamage() ),
 				math.random( 230, 255 ),
-				-30 * dmginfo:GetDamage(),
+				- ( math.random( 30, 50 ) * pitchhealth ) + 0 * dmginfo:GetDamage(),
 				nil,
 				1
 			)
@@ -176,13 +177,21 @@ function GM:OnNPCKilled( npc, attacker, inflictor )
 	-- Testing / fun (only non-prickly NPCs)
 	if ( string.find( npc:GetClass(), "prk_" ) ) then return end
 	local coins = npc:GetMaxHealth() * PRK_Enemy_CoinDropMult
-	for i = 1, coins do
-		PRK_CreateEnt( "prk_coin_heavy", nil, npc:GetPos(), AngleRand(), true )
-	end
+	self:SpawnCoins( npc:GetPos(), coins )
 end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+function GM:SpawnCoins( pos, coins )
+	-- Spawn upwards of position, to avoid falling through floor
+	local pos = pos + Vector( 0, 0, 10 )
+	local r = math.min( 32, 4 * coins )
+	local points = PRK_GetCirclePoints( 0, 0, r, coins, math.random( 0, 360 ) )
+	for i = 1, coins do
+		PRK_CreateEnt( "prk_coin_heavy", nil, pos + Vector( points[i].x, points[i].y, math.random( -5, 5 ) ), AngleRand(), true )
+	end
+end
 
 -- gateway
 -- lid				models/hunter/blocks/cube025x2x025.mdl
@@ -252,6 +261,68 @@ function GM:GenerateLobby()
 			createceil( x, y, 0 )
 		end
 	end
+end
+
+function PRK_Explosion( attacker, pos, radius )
+	-- Hurt players/push objects
+	for k, v in pairs( ents.FindInSphere( pos, radius ) ) do
+		if ( v:IsPlayer() or v:IsNPC() or string.find( v:GetClass(), "prk_" ) ) then
+			v:TakeDamage( 2, attacker )
+		end
+		if ( !v:IsPlayer() ) then
+			local phys = v:GetPhysicsObject()
+			if ( phys and phys:IsValid() ) then
+				local dir = ( v:GetPos() - pos ):GetNormalized()
+				phys:ApplyForceCenter( dir * 20000 )
+			end
+		end
+	end
+
+	-- Play sound
+	-- sound.Play( "ambient/explosions/explode_1.wav", pos, 95, 150, 1 )
+	sound.Play( "ambient/explosions/explode_4.wav", pos, 95, 255, 1 )
+
+	-- Show explosion sphere
+	local col = PRK_Colour_Explosion
+	local time = 0.1
+	local rad = 0.9
+	for i = 1, 2 do
+		local radius_visual = radius * rad
+		local top = PRK_CreateEnt(
+			"prk_debris",
+			"models/props_phx/construct/metal_dome360.mdl",
+			pos,
+			Angle( 0, 0, 0 )
+		)
+			top:SetMaterial( "models/debug/debugwhite", true )
+			top:SetColor( col )
+			top:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
+			top:SetModelScale( 0, time )
+		local bot = PRK_CreateEnt(
+			"prk_debris",
+			"models/props_phx/construct/metal_dome360.mdl",
+			pos,
+			Angle( 180, 0, 0 )
+		)
+			bot:SetMaterial( "models/debug/debugwhite", true )
+			bot:SetColor( col )
+			bot:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
+			bot:SetModelScale( 0, time )
+		timer.Simple( time, function()
+			if ( top and top:IsValid() ) then
+				top:Remove()
+			end
+			if ( bot and bot:IsValid() ) then
+				bot:Remove()
+			end
+		end )
+		col = Color( 0, 0, 0, 255 )
+		time = time + 0.1
+		rad = rad - 0.4
+	end
+
+	-- Play particle effect
+	
 end
 
 --------------

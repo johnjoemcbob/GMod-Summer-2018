@@ -77,7 +77,20 @@ util.AddNetworkString( "PRK_UIMachine_Select" )
 function ENT:SendStock()
 	net.Start( "PRK_UIMachine_Stock" )
 		net.WriteEntity( self )
-		net.WriteTable( self.Stock )
+		local clientstock = table.shallowcopy( self.Stock )
+			-- Remove non-number indexed entries before sending to client (quick fix so as not to send function values)
+			for _, item in pairs( clientstock ) do
+				local toremove = {}
+				for k, v in pairs( item ) do
+					if ( k != tonumber( k ) ) then
+						table.insert( toremove, k )
+					end
+				end
+				for k, v in pairs( toremove ) do
+					clientstock[_][v] = nil
+				end
+			end
+		net.WriteTable( clientstock )
 	net.Broadcast()
 end
 
@@ -149,11 +162,24 @@ function ENT:Initialize()
 	self:SetAngles( oldang )
 
 	-- Variables
+	-- Only sends data to client if index is a number
 	self.Stock = {
-		["BULLET"]		= { 10, "prk_bullet_heavy" },
-		["BACKPACK"]	= { 40, "prk_bullet_heavy" },
-		["BOMB"]		= { 10, "prk_bullet_heavy" },
-		["KNIFE"]		= { 30, "prk_bullet_heavy" },
+		["BULLET"]				= { 10, "prk_bullet_heavy" },
+		["POTION"]				= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Health Potion" )
+		end },
+		["GOLD POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Gold Potion" )
+		end },
+		["HEAL"]					= { 10, "", ExtraRequire = function( self, ply )
+			return ( ply:Health() != ply:GetMaxHealth() )
+		end,
+		Spawn = function( self, ent, ply )
+			local heal = 2 -- One full heart = 2hp
+			ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
+		end },
+		-- ["BOMB"]					= { 10, "prk_bullet_heavy" },
+		-- ["KNIFE"]					= { 30, "prk_bullet_heavy" },
 	}
 	timer.Simple( 0.1, function() self:SendStock() end )
 
@@ -200,6 +226,12 @@ function ENT:TryVend( ply, selection )
 		return
 	end
 
+	-- Check for any extra requirements
+	if ( data.ExtraRequire and !data:ExtraRequire( ply ) ) then
+		onfail()
+		return
+	end
+
 	-- Check player has enough money
 	local money = ply:GetNWInt( "PRK_Money" )
 	local price = data[1]
@@ -208,19 +240,24 @@ function ENT:TryVend( ply, selection )
 		ply:SetNWInt( "PRK_Money", money - price )
 
 		-- Spawn item
-		local ent = PRK_CreateEnt( data[2], nil, self:GetPos(), AngleRand(), true )
-		ent:PhysWake()
-		timer.Simple( 0.75, function()
-			if ( ent and ent:IsValid() ) then
-				local phys = ent:GetPhysicsObject()
-				if ( phys and phys:IsValid() ) then
-					local speed = 3
-					local dir = ( ply:GetPos() - ent:GetPos() )
-					local velocity = dir * phys:GetMass() * speed
-					phys:ApplyForceCenter( velocity )
+		local ent
+		if ( data[2] != "" ) then
+			ent = PRK_CreateEnt( data[2], nil, self:GetPos(), AngleRand(), true )
+			ent:PhysWake()
+			timer.Simple( 0.75, function()
+				if ( ent and ent:IsValid() ) then
+					local phys = ent:GetPhysicsObject()
+					if ( phys and phys:IsValid() ) then
+						local speed = 3
+						local dir = ( ply:GetPos() - ent:GetPos() )
+						local velocity = dir * phys:GetMass() * speed
+						phys:ApplyForceCenter( velocity )
+					end
 				end
-			end
-		end )
+			end )
+		end
+		-- Extra spawn functionality
+		data:Spawn( ent, ply )
 
 		self.Entity:EmitSound( "npc/scanner/combat_scan" .. math.random( 1, 2 ) .. ".wav" )
 	else

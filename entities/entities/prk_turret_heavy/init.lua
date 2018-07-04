@@ -187,10 +187,8 @@ function ENT:OnRemove()
 	end
 
 	-- Spawn money
-	local money = 4
-	for i = 1, money do
-		PRK_CreateEnt( "prk_coin_heavy", nil, self:GetPos(), AngleRand(), true )
-	end
+	local coins = 4
+	GAMEMODE:SpawnCoins( self:GetPos(), coins )
 end
 
 function ENT:CreateEnt( class, mod, pos, ang, mat, col, mov )

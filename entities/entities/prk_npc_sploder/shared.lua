@@ -3,15 +3,15 @@ AddCSLuaFile()
 ENT.Base 			= "base_nextbot"
 ENT.Spawnable		= true
 
-list.Set( "NPC", "prk_npc_biter", {
-	Name = "Prickly Biter",
-	Class = "prk_npc_biter",
+list.Set( "NPC", "prk_npc_sploder", {
+	Name = "Prickly Sploder",
+	Class = "prk_npc_sploder",
 	Category = "Prickly"
 } )
 
 function ENT:Initialize()
-	self:SetModel( "models/headcrabclassic.mdl" )
-	self:SetModelScale( 3.2, 0 )
+	self:SetModel( "models/headcrab.mdl" )
+	self:SetModelScale( 2, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 
@@ -21,66 +21,31 @@ function ENT:Initialize()
 
 		local forw_off = 12
 		self:SetAngles( Angle() )
-		for eye = -1, 1, 2 do
+		local baseheight = 35
+		local pos = {
+			Vector( 1, 10, baseheight ),
+			Vector( 1, -10, baseheight ),
+			Vector( 10, 1, baseheight ),
+			Vector( -10, 1, baseheight ),
+			Vector( 0, 0, baseheight + 20 ),
+		}
+		for k, v in pairs( pos ) do
 			local eye_mod = "models/XQM/Rails/gumball_1.mdl"
-			local eye_pos = self:GetPos() + Vector( 1, 10 * eye, 52 )
+			local eye_pos = v
 			local eye_ang = Angle()
-			local eye_sca = 0.3
+			local eye_sca = 0.8 + math.random( 10, 50 ) / 100
 			local eye_mat = "models/debug/debugwhite"
-			local eye_col = PRK_Colour_Enemy_Eye
+			local eye_col = Color(
+				PRK_Colour_Enemy_Eye.r * ( 0.7 + math.random( 10, 100 ) / 100 ),
+				PRK_Colour_Enemy_Eye.g,
+				PRK_Colour_Enemy_Eye.b,
+				PRK_Colour_Enemy_Eye.a
+			)
 
 			local vis = PRK_AddModel( eye_mod, eye_pos, eye_ang, eye_sca, eye_mat, eye_col )
 				vis:SetParent( self, 2 )
 			table.insert( self.Visuals, vis )
 		end
-
-		local teeth = {
-			{
-				Vector( 9, 10, 30 ),
-				Angle( 60, 200, 180 ),
-				0.5,
-			},
-			{
-				Vector( 7, -8, 30 ),
-				Angle( 60, 160, 90 ),
-				0.5,
-			},
-			{
-				Vector( 8, -2, 45 ),
-				Angle( -30, 180, 90 ),
-				0.4,
-			},
-			{
-				Vector( 9, 6, 45 ),
-				Angle( -30, 180, 180 ),
-				-- Vector( 7, 6, 46 ),
-				-- Angle( -50, 180, -90 ),
-				0.4,
-			},
-		}
-		for k, tooth in pairs( teeth ) do
-			local too_mod = "models/Gibs/helicopter_brokenpiece_02.mdl"
-			local too_pos = self:GetPos() + tooth[1] + Vector( forw_off, 0, 0 )
-			local too_ang = tooth[2]
-			local too_sca = tooth[3]
-			local too_mat = "models/debug/debugwhite"
-			local too_col = PRK_Colour_Enemy_Tooth
-
-			local vis = PRK_AddModel( too_mod, too_pos, too_ang, too_sca, too_mat, too_col )
-				vis:SetParent( self, 2 )
-			table.insert( self.Visuals, vis )
-		end
-
-		-- Mouth
-		local mou_mod = "models/combine_helicopter/bomb_debris_1.mdl"
-		local mou_pos = self:GetPos() + Vector( 10 + forw_off, 0, 37 )
-		local mou_ang = Angle( -10, -10, -30 )
-		local mou_sca = 1.2
-		local mou_mat = "models/debug/debugwhite"
-		local mou_col = PRK_Colour_Enemy_Mouth
-		local vis = PRK_AddModel( mou_mod, mou_pos, mou_ang, mou_sca, mou_mat, mou_col )
-			vis:SetParent( self, 2 )
-		table.insert( self.Visuals, vis )
 
 		-- Scale
 		local sca = Vector( 1, 1, 1.5 )
@@ -98,8 +63,7 @@ function ENT:Initialize()
 
 	self.Speed = 500
 	self.Coins = 3
-	self.BiteRange = 100
-	self.BiteBetween = 0.5
+	self.SplodeRange = 200
 
 end
 
@@ -117,16 +81,36 @@ function ENT:OnRemove()
 	end
 
 	if ( SERVER ) then
-		GAMEMODE:SpawnCoins( self:GetPos(), self.Coins )
+		local debris = math.random( 3, 5 )
+		for i = 1, debris do
+			local prop = PRK_CreateEnt(
+				"prk_debris", "models/XQM/Rails/gumball_1.mdl",
+				self:GetPos() + Vector( 0, 0, 35 ),
+				AngleRand(),
+				true
+			)
+				prop:SetMaterial( "models/debug/debugwhite", true )
+				prop:SetColor( PRK_Colour_Enemy_Eye )
+				local phys = prop:GetPhysicsObject()
+				if ( phys and phys:IsValid() ) then
+					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+				end
+			timer.Simple( 5, function() prop:Remove() end )
+		end
+
+		-- Only give coins if the player killed it before it exploded
+		if ( !self.ToRemove ) then
+			GAMEMODE:SpawnCoins( self:GetPos(), self.Coins )
+		end
 	end
 end
 
 if ( CLIENT ) then
 	function ENT:Draw()
-		-- self:SetAngles( self:GetAngles() + Angle( 0, 180, 0 ) )
-		-- for k, vis in pairs( self.Visuals ) do
-			-- vis:SetPos( vis:GetPos() + Vector( 0, 0, math.sin( CurTime() * 50 ) * 1 ) )
-		-- end
+		self:SetAngles( self:GetAngles() + Angle( 0, 180, 0 ) )
+		for k, vis in pairs( self.Visuals ) do
+			vis:SetPos( self:GetPos() + vis.Pos + Vector( 0, 0, ( ( math.random( 10, 100 ) / 100 ) + math.sin( CurTime() * 1 ) ) * 4 ) )
+		end
 		self:DrawModel()
 	end
 end
@@ -216,24 +200,14 @@ function ENT:RunBehaviour()
 			self.loco:SetDesiredSpeed( self.Speed )		-- Set the speed that we will be moving at. Don't worry, the animation will speed up/slow down to match
 			self.loco:SetAcceleration( self.Speed )			-- We are going to run at the enemy quickly, so we want to accelerate really fast
 			self:ChaseEnemy() 						-- The new function like MoveToPos.
-			self.loco:SetAcceleration( 400 )			-- Set this back to its default since we are done chasing the enemy
-			self:StartActivity( ACT_LEAP )			--We are done so go back to idle
-			-- Now once the above function is finished doing what it needs to do, the code will loop back to the start
-			-- unless you put stuff after the if statement. Then that will be run before it loops
-		else
-			-- Since we can't find an enemy, lets wander
-			-- Its the same code used in Garry's test bot
-			-- self:StartActivity( ACT_WALK )			-- Walk anmimation
-			-- self.loco:SetDesiredSpeed( 200 )		-- Walk speed
-			-- self:MoveToPos( self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 400 ) -- Walk to a random place within about 400 units ( yielding )
-			-- self:StartActivity( ACT_IDLE )
+			if ( self.ToRemove ) then
+				self:Remove()
+				return
+			end
 		end
-		-- At this point in the code the bot has stopped chasing the player or finished walking to a random spot
-		-- Using this next function we are going to wait 2 seconds until we go ahead and repeat it
-		coroutine.wait( self.BiteBetween )
 
+		coroutine.wait( 1 )
 	end
-
 end
 
 ----------------------------------------------------
@@ -271,7 +245,7 @@ function ENT:ChaseEnemy( options )
 		-- If near any enemy, bite
 		for k, v in pairs( player.GetAll() ) do
 			local dist = v:GetPos():Distance( self:GetPos() )
-			if ( dist <= self.BiteRange ) then
+			if ( dist <= self.SplodeRange ) then
 				self:SetEnemy( v )
 				self:Attack( v )
 				-- self:StartActivity( ACT_LEAP )
@@ -288,5 +262,9 @@ function ENT:ChaseEnemy( options )
 end
 
 function ENT:Attack( victim )
-	victim:TakeDamage( 1, self, self )
+	-- Spawn explosion
+	PRK_Explosion( self, self:GetPos() + Vector( 0, 0, 30 ), self.SplodeRange )
+
+	-- Flag for removal
+	self.ToRemove = true
 end

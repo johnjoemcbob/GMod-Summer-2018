@@ -99,6 +99,7 @@ net.Receive( "PRK_TakeDamage", function( len, ply )
 	local dir = net.ReadVector()
 
 	LocalPlayer().PunchHUD = dir * amount * PRK_HUD_Punch_Amount
+	LocalPlayer().HideHurtEffect = CurTime() + PRK_HurtEffect_ShowTime
 end )
 
 net.Receive( "PRK_Die", function( len, ply )
@@ -191,9 +192,6 @@ function GM:HUDPaint()
 		return
 	end
 
-	PRK_HUDPaint_Crosshair()
-	PRK_HUDPaint_CrosshairHelp()
-
 	PRK_HUDPaint_Health()
 
 	PRK_HUDPaint_Money()
@@ -207,6 +205,69 @@ function GM:HUDPaint()
 	end
 	LocalPlayer().LastEyeAngles = LerpAngle( FrameTime() * 10, LocalPlayer().LastEyeAngles, LocalPlayer():EyeAngles() )
 end
+
+function GM:RenderScreenspaceEffects()
+	if ( LocalPlayer().HideHurtEffect and LocalPlayer().HideHurtEffect > CurTime() ) then
+		DrawTexturize( LocalPlayer().PunchHUD:Length(), Material( PRK_Hurt_Material ) )
+	elseif ( !LocalPlayer():Alive() ) then
+		DrawTexturize( LocalPlayer().PunchHUD:Length(), Material( PRK_Death_Material ) )
+	end
+end
+
+-- This could be tidier but it works :)
+local lastlabelang = Angle()
+local lastcursorang = Angle()
+hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_LabelHelp", function()
+	-- Draw floating in front of the player for polish lerp rotation effects
+	local dist = 10
+	local dist_snap = 100
+	local scal = 0.0125
+	local speed = 7
+	local forward = LocalPlayer():GetEyeTraceNoCursor().Normal
+	local pos = LocalPlayer():EyePos() + ( forward * dist )
+
+	-- Get target rotation
+	local function gettarget( label )
+		local targetang = forward:Angle()
+			-- Use surface normal if close to something
+			local tr = LocalPlayer():GetEyeTrace()
+			local up, right
+			if ( tr.Hit and tr.HitPos:Distance( LocalPlayer():EyePos() ) <= dist_snap and LocalPlayer().LookingAtUI ) then
+				forward = -tr.HitNormal
+				targetang = forward:Angle()
+				up = Vector( 0, 0, 1 )
+				right = up:Cross( forward )
+			else
+				right = LocalPlayer():GetRight()
+				up = LocalPlayer():GetUp()
+			end
+			-- Label lerp in/out
+			if ( !label or LocalPlayer().LookingAtUsable or LocalPlayer().LookingAtUI ) then
+				targetang:RotateAroundAxis( forward, -90 )
+				if ( label ) then
+					LocalPlayer().LabelHideDelay = CurTime() + 0.3
+				end
+			end
+			targetang:RotateAroundAxis( right, 180 )
+			targetang:RotateAroundAxis( up, 90 )
+		return targetang
+	end
+
+	-- Draw label
+	local targetang = gettarget( true ) -- Must be outside of if to check for label shown
+	if ( LocalPlayer().LabelHideDelay and LocalPlayer().LabelHideDelay > CurTime() ) then
+		lastlabelang = LerpAngle( FrameTime() * speed, lastlabelang, targetang )
+		cam.Start3D2D( pos, lastlabelang, scal )
+			PRK_HUDPaint_CrosshairHelp()
+		cam.End3D2D()
+	end
+	-- Draw cursor
+	local targetang = gettarget( false )
+	lastcursorang = LerpAngle( FrameTime() * speed, lastcursorang, targetang )
+	cam.Start3D2D( pos, lastcursorang, scal )
+		PRK_HUDPaint_Crosshair()
+	cam.End3D2D()
+end )
 
 function GM:PostDrawHUD()
 	cam.Start3D()
@@ -303,8 +364,8 @@ function PRK_HUDPaint_Crosshair()
 		end
 		CursorX = Lerp( FrameTime() * speed, CursorX, targetx )
 		CursorY = Lerp( FrameTime() * speed, CursorY, targety )
-	local x = CursorX
-	local y = CursorY
+	local x = CursorX - ScrW() / 2
+	local y = CursorY - ScrH() / 2
 	local size = 8
 
 	for i = 1, 3 do
@@ -331,10 +392,12 @@ function PRK_HUDPaint_Crosshair()
 end
 
 function PRK_HUDPaint_CrosshairHelp()
-	if ( !LocalPlayer().LookingAtUsable and !LocalPlayer().LookingAtUI ) then return end
-
-	local x = CursorX
-	local y = CursorY
+	if ( !CursorX ) then
+		CursorX = gui.MouseX()
+		CursorY = gui.MouseY()
+	end
+	local x = CursorX - ScrW() / 2
+	local y = CursorY - ScrH() / 2
 	-- local x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY, 2 )
 
 	local text = "USE"

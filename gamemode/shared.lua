@@ -45,6 +45,9 @@ PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter									= ""
 PRK_CursorSize										= 8
+PRK_Hurt_Material									= "pp/texturize/pattern1.png"
+PRK_Hurt_ShowTime								= 0.2
+PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 PRK_Plate_Size										= 47.45
 PRK_Health											= 6
@@ -241,6 +244,14 @@ end
 -- end )
 -- PrintTable( T )
 
+function LerpAngleBasic( t, from, to )
+	local ret = from
+		ret.p = Lerp( t, from.p, to.p )
+		ret.y = Lerp( t, from.y, to.y )
+		ret.r = Lerp( t, from.r, to.r )
+	return ret
+end
+
 -- Negate a Vector without having 0 -> -0 issues
 function VectorNegate( V )
 	local ret = -V
@@ -254,4 +265,20 @@ function VectorNegate( V )
 			ret.z = 0
 		end
 	return ret
+end
+
+function VectorIsZero( V )
+	return (
+		( V.x == 0 or V.x == -0 ) and
+		( V.y == 0 or V.y == -0 ) and
+		( V.z == 0 or V.z == -0 )
+	)
+end
+
+function VectorIsApproximatelyZero( V )
+	local dec = 3
+	V.x = math.Round( V.x, dec )
+	V.y = math.Round( V.y, dec )
+	V.z = math.Round( V.z, dec )
+	return VectorIsZero( V )
 end

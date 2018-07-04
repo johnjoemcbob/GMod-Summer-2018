@@ -257,7 +257,9 @@ function ENT:TryVend( ply, selection )
 			end )
 		end
 		-- Extra spawn functionality
-		data:Spawn( ent, ply )
+		if ( data.Spawn ) then
+			data:Spawn( ent, ply )
+		end
 
 		self.Entity:EmitSound( "npc/scanner/combat_scan" .. math.random( 1, 2 ) .. ".wav" )
 	else

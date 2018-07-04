@@ -9,9 +9,20 @@ list.Set( "NPC", "prk_npc_sploder", {
 	Category = "Prickly"
 } )
 
+sound.Add(
+	{ 
+		name = "prk_sploder_loop",
+		channel = CHAN_ITEM,
+		level = 85,
+		volume = 0.25,
+		pitch = { 230, 255 },
+		sound = "npc/scanner/scanner_siren2.wav"
+	}
+)
+
 function ENT:Initialize()
 	self:SetModel( "models/headcrab.mdl" )
-	self:SetModelScale( 2, 0 )
+	self:SetModelScale( 3, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 
@@ -21,7 +32,7 @@ function ENT:Initialize()
 
 		local forw_off = 12
 		self:SetAngles( Angle() )
-		local baseheight = 35
+		local baseheight = 40
 		local pos = {
 			Vector( 1, 10, baseheight ),
 			Vector( 1, -10, baseheight ),
@@ -65,6 +76,16 @@ function ENT:Initialize()
 	self.Coins = 3
 	self.SplodeRange = 200
 
+	local length = 1.5
+	local function play()
+		if ( self and self:IsValid() ) then
+			self:EmitSound( "prk_sploder_loop" )
+			timer.Simple( length, function()
+				play()
+			end )
+		end
+	end
+	play()
 end
 
 function ENT:OnKilled( dmginfo )
@@ -103,11 +124,13 @@ function ENT:OnRemove()
 			GAMEMODE:SpawnCoins( self:GetPos(), self.Coins )
 		end
 	end
+
+	self:StopSound( "prk_sploder_loop" )
 end
 
 if ( CLIENT ) then
 	function ENT:Draw()
-		self:SetAngles( self:GetAngles() + Angle( 0, 180, 0 ) )
+		-- self:SetAngles( self:GetAngles() + Angle( 0, 180, 0 ) )
 		for k, vis in pairs( self.Visuals ) do
 			vis:SetPos( self:GetPos() + vis.Pos + Vector( 0, 0, ( ( math.random( 10, 100 ) / 100 ) + math.sin( CurTime() * 1 ) ) * 4 ) )
 		end

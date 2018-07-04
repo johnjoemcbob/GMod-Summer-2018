@@ -9,4 +9,4 @@ ENT.Spawnable = true
 ENT.AdminSpawnable = true
 
 -- Player must be within this range to use item
-ENT.MaxUseRange = 150
+ENT.MaxUseRange = 80

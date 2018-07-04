@@ -148,7 +148,6 @@ function GM:EntityTakeDamage( target, dmginfo )
 
 			-- Play sound
 			local pitchhealth = 1 - ( target:Health() / target:GetMaxHealth() )
-			print( pitchhealth )
 			PRK_EmitChainPitchedSound(
 				target:Nick() .. "_PRK_Hurt",
 				target,

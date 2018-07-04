@@ -10,6 +10,7 @@ PRK_PotionTypes = {
 			if ( ply:Health() != ply:GetMaxHealth() ) then
 				local heal = 2 -- One full heart = 2hp
 				ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
+				ply:EmitSound( "npc/combine_gunship/gunship_moan.wav", 75, math.random( 220, 235 ) )
 				return true
 			end
 		end,
@@ -63,6 +64,8 @@ function ENT:Think()
 end
 
 function ENT:Use( ply, caller, useType, value )
+	if ( self:GetPos():Distance( ply:GetPos() ) > self.MaxUseRange ) then return end
+
 	local consumed = self.PotionType:Drink( ply )
 	if ( consumed ) then
 		self:Remove()

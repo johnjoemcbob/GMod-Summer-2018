@@ -26,6 +26,13 @@ PRK_PotionTypes = {
 			-- end
 		end,
 	},
+	["Chamber Potion"] = {
+		Colour = Color( 100, 255, 255, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Buff_Add( ply, PRK_BUFFTYPE_PLAYER_CHAMBERS, 1 )
+			return true
+		end,
+	},
 	["Speed Potion"] = {
 		Colour = Color( 100, 255, 100, 255 ),
 		Drink = function( self, ent, ply )

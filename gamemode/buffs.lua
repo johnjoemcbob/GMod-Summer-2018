@@ -36,9 +36,10 @@ function BuffCallback( ply, buff, stack )
     -- Additional Revolver Chambers Buff
     if(buff == PRK_BUFFTYPE_PLAYER_CHAMBERS) then
         -- Get Amt of Chambers 
-        local chambers_amt = 6 + (stack * PRK_BUFF_PLAYER_CHAMBERS_ADD)
+        local chambers_amt = PRK_BaseClip + (stack * PRK_BUFF_PLAYER_CHAMBERS_ADD)
         
         local gun = ply:GetActiveWeapon()
+		gun.MaxClip = chambers_amt
         gun:SendNumChambers(chambers_amt)
     end
 end

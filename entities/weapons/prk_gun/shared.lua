@@ -27,7 +27,7 @@ SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
 SWEP.RequireAmmo			= true
-SWEP.MaxClip				= 6
+SWEP.MaxClip					= PRK_BaseClip
 local dist = 3000
 SWEP.MaxDistance			= dist
 SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
@@ -106,11 +106,11 @@ if ( CLIENT ) then
 		PRK_Gun_NoAmmoWarning()
 	end )
     
-    net.Receive( "PRK_Gun_SetNumChambers", function( len, ply )
+	net.Receive( "PRK_Gun_SetNumChambers", function( len, ply )
 		local self = net.ReadEntity()
-        local chambers = net.ReadFloat()
-        self.MaxClip = chambers;
-        
+		local chambers = net.ReadFloat()
+
+		self.TargetMaxClip = chambers
 	end )
 end
 
@@ -131,6 +131,11 @@ function SWEP:Think()
 	if ( self.FOVPunch and self.FOVPunch <= CurTime() ) then
 		self.Owner:SetFOV( 0, self.TimeBackFOVPunch )
 		self.FOVPunch = nil
+	end
+
+	if ( self.TargetMaxClip ) then
+		local speed = 5
+		self.MaxClip = math.Approach( self.MaxClip, self.TargetMaxClip, FrameTime() * speed )
 	end
 
 	self:NextThink( CurTime() + 1 )

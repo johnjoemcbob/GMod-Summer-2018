@@ -165,8 +165,11 @@ function ENT:Initialize()
 	-- Only sends data to client if index is a number
 	self.Stock = {
 		["BULLET"]				= { 10, "prk_bullet_heavy" },
-		["POTION"]				= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Health Potion" )
+		-- ["POTION"]				= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Health Potion" )
+		-- end },
+		["CHAMBERS POTION"]	= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Chamber Potion" )
 		end },
 		-- ["GOLD POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
 			-- ent:SetPotionType( "Gold Potion" )

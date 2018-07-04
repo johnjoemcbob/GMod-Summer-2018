@@ -210,7 +210,7 @@ function GM:RenderScreenspaceEffects()
 	if ( LocalPlayer().HideHurtEffect and LocalPlayer().HideHurtEffect > CurTime() ) then
 		DrawTexturize( LocalPlayer().PunchHUD:Length(), Material( PRK_Hurt_Material ) )
 	elseif ( !LocalPlayer():Alive() ) then
-		DrawTexturize( LocalPlayer().PunchHUD:Length(), Material( PRK_Death_Material ) )
+		DrawTexturize( 1, Material( PRK_Death_Material ) )
 	end
 end
 

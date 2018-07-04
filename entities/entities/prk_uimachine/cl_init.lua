@@ -183,22 +183,22 @@ function ENT:Initialize()
 					self.Hovered = true
 					self.Entity.ButtonHovered = self
 					self.Entity:EmitSound( "hl1/fvox/blip.wav" )
-					LocalPlayer().LookingAtUI = self
+					PRK_LookAtUsable( self, "BUY" )
 				end
 			end
 			function button:OnCursorExited()
 				if ( self.Entity.ButtonHovered == self ) then
 					self.Hovered = false
 					self.Entity.ButtonHovered = nil
-					LocalPlayer().LookingAtUI = nil
+					PRK_LookAwayFromUsable()
 				end
 			end
 			function button:Think()
 				if ( self.Entity.ButtonHovered == self ) then
 					if ( self.Entity.InRange ) then
-						LocalPlayer().LookingAtUI = self
+						PRK_LookAtUsable( self, "BUY" )
 					else
-						LocalPlayer().LookingAtUI = nil
+						PRK_LookAwayFromUsable()
 					end
 				end
 			end

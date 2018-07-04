@@ -168,8 +168,21 @@ function ENT:Initialize()
 		["POTION"]				= { 0, "prk_potion", Spawn = function( self, ent, ply )
 			ent:SetPotionType( "Health Potion" )
 		end },
-		["GOLD POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Gold Potion" )
+		-- ["GOLD POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Gold Potion" )
+		-- end },
+		-- ["SPEED POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Speed Potion" )
+		-- end },
+		-- ["DAMAGE POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Damage Potion" )
+		-- end },
+		["INSTA DEATH POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Instant Death" )
+		end },
+		["MYSTERY POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType()
+			ent:SetColor( ColorRand() )
 		end },
 		["HEAL"]					= { 10, "", ExtraRequire = function( self, ply )
 			return ( ply:Health() != ply:GetMaxHealth() )

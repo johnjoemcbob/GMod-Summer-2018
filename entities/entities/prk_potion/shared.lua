@@ -9,4 +9,5 @@ ENT.Spawnable = true
 ENT.AdminSpawnable = true
 
 -- Player must be within this range to use item
+ENT.UseLabel = "DRINK"
 ENT.MaxUseRange = 80

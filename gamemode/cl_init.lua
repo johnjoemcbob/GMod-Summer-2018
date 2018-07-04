@@ -99,7 +99,7 @@ net.Receive( "PRK_TakeDamage", function( len, ply )
 	local dir = net.ReadVector()
 
 	LocalPlayer().PunchHUD = dir * amount * PRK_HUD_Punch_Amount
-	LocalPlayer().HideHurtEffect = CurTime() + PRK_HurtEffect_ShowTime
+	LocalPlayer().HideHurtEffect = CurTime() + PRK_Hurt_ShowTime
 end )
 
 net.Receive( "PRK_Die", function( len, ply )
@@ -166,22 +166,45 @@ end
 function PRK_Think_Use()
 	-- Look at entity
 	local tr = LocalPlayer():GetEyeTrace()
-	if ( tr.Entity and tr.Entity:IsValid() and tr.Entity.MaxUseRange ) then
+	if ( tr.Entity and tr.Entity:IsValid() and tr.Entity.UseLabel and tr.Entity.MaxUseRange ) then
 		local dist = LocalPlayer():GetPos():Distance( tr.Entity:GetPos() )
 		if ( dist <= tr.Entity.MaxUseRange ) then
-			LocalPlayer().LookingAtUsable = tr.Entity
+			PRK_LookAtUsable( tr.Entity )
 		else
-			LocalPlayer().LookingAtUsable = nil
+			PRK_LookAwayFromUsable()
 		end
-	else
-		LocalPlayer().LookingAtUsable = nil
+	elseif ( LocalPlayer().LookingAtUsable and IsEntity( LocalPlayer().LookingAtUsable ) ) then
+		PRK_LookAwayFromUsable()
 	end
 
-	-- Look at UI
-	if ( LocalPlayer().LookingAtUI ) then
-		if ( !LocalPlayer().LookingAtUI:IsValid() ) then
-			LocalPlayer().LookingAtUI = nil
+	-- Failsafe for looking at
+	if ( LocalPlayer().LookingAtUsable and !LocalPlayer().LookingAtUsable:IsValid() ) then
+		PRK_LookAwayFromUsable()
+	end
+end
+
+function PRK_LookAtUsable( ent, text )
+	if ( !LocalPlayer().LookingAtUsable ) then
+		LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
+	end
+
+	if ( LocalPlayer().LookingAtUsable != ent ) then
+		LocalPlayer().LookingAtUsable = ent
+
+		if ( text ) then
+			LocalPlayer().LabelText = text
+		elseif ( ent.UseLabel ) then
+			LocalPlayer().LabelText = ent.UseLabel
+		else
+			LocalPlayer().LabelText = "USE"
 		end
+	end
+end
+
+function PRK_LookAwayFromUsable()
+	if ( LocalPlayer().LookingAtUsable ) then
+		LocalPlayer().LookingAtUsable = nil
+		LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
 	end
 end
 
@@ -222,6 +245,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 	local dist = 10
 	local dist_snap = 100
 	local scal = 0.0125
+	local speed_cursor = 10
 	local speed = 7
 	local forward = LocalPlayer():GetEyeTraceNoCursor().Normal
 	local pos = LocalPlayer():EyePos() + ( forward * dist )
@@ -232,7 +256,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 			-- Use surface normal if close to something
 			local tr = LocalPlayer():GetEyeTrace()
 			local up, right
-			if ( tr.Hit and tr.HitPos:Distance( LocalPlayer():EyePos() ) <= dist_snap and LocalPlayer().LookingAtUI ) then
+			if ( tr.Hit and tr.HitPos:Distance( LocalPlayer():EyePos() ) <= dist_snap and LocalPlayer().LookingAtUsable and !IsEntity( LocalPlayer().LookingAtUsable ) ) then
 				forward = -tr.HitNormal
 				targetang = forward:Angle()
 				up = Vector( 0, 0, 1 )
@@ -242,7 +266,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 				up = LocalPlayer():GetUp()
 			end
 			-- Label lerp in/out
-			if ( !label or LocalPlayer().LookingAtUsable or LocalPlayer().LookingAtUI ) then
+			if ( !label or LocalPlayer().LookingAtUsable ) then
 				targetang:RotateAroundAxis( forward, -90 )
 				if ( label ) then
 					LocalPlayer().LabelHideDelay = CurTime() + 0.3
@@ -263,7 +287,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 	end
 	-- Draw cursor
 	local targetang = gettarget( false )
-	lastcursorang = LerpAngle( FrameTime() * speed, lastcursorang, targetang )
+	lastcursorang = LerpAngle( FrameTime() * speed_cursor, lastcursorang, targetang )
 	cam.Start3D2D( pos, lastcursorang, scal )
 		PRK_HUDPaint_Crosshair()
 	cam.End3D2D()
@@ -400,7 +424,7 @@ function PRK_HUDPaint_CrosshairHelp()
 	local y = CursorY - ScrH() / 2
 	-- local x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY, 2 )
 
-	local text = "USE"
+	local text = LocalPlayer().LabelText or "USE"
 	local fontsize = 24
 	surface.SetFont( "HeavyHUD" .. fontsize )
 

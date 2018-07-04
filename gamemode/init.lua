@@ -134,7 +134,7 @@ local dmgnoises = {
 }
 function GM:EntityTakeDamage( target, dmginfo )
 	if ( target:IsPlayer() and target:Alive() ) then
-		if ( !string.find( dmginfo:GetInflictor():GetClass(), "prk" ) ) then
+		if ( !target:IsPlayer() and !string.find( dmginfo:GetInflictor():GetClass(), "prk" ) ) then
 			dmginfo:ScaleDamage( 0.2 )
 		end
 		if ( dmginfo:GetDamageType() == DMG_CRUSH or dmginfo:GetDamageType() == DMG_FALL ) then

@@ -62,7 +62,7 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 	ply:EmitSound(
 		"player/footsteps/gravel" .. math.random( 1, 4 ) .. ".wav",
 		75,
-		( math.random( 90, 120 ) * ply:GetVelocity() / 600 ):Length(),
+		math.Clamp( ( math.random( 90, 120 ) * ply:GetVelocity() / 600 ):Length(), 0, 255 ),
 		volume
 	)
 

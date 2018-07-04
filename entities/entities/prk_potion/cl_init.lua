@@ -4,7 +4,7 @@ net.Receive( "PRK_Potion_Type", function( len, ply )
 	local ent = net.ReadEntity()
 	local type = net.ReadString()
 
-	if ( ent and ent:IsValid() ) then
+	if ( ent and ent:IsValid() and ent.Initialize ) then
 		ent:Initialize()
 	end
 end )

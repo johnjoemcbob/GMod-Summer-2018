@@ -6,23 +6,74 @@ include( "shared.lua" )
 PRK_PotionTypes = {
 	["Health Potion"] = {
 		Colour = Color( 255, 100, 100, 255 ),
-		Drink = function( self, ply )
-			if ( ply:Health() != ply:GetMaxHealth() ) then
+		Drink = function( self, ent, ply )
+			-- if ( ply:Health() != ply:GetMaxHealth() ) then
 				local heal = 2 -- One full heart = 2hp
 				ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
 				ply:EmitSound( "npc/combine_gunship/gunship_moan.wav", 75, math.random( 220, 235 ) )
 				return true
-			end
+			-- end
 		end,
 	},
 	["Gold Potion"] = {
 		Colour = Color( 255, 215, 0, 255 ),
-		Drink = function( self, ply )
-			if ( ply:Health() != ply:GetMaxHealth() ) then
+		Drink = function( self, ent, ply )
+			-- if ( ply:Health() != ply:GetMaxHealth() ) then
 				local heal = 4 -- One full heart = 2hp
 				ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
+				ply:EmitSound( "npc/combine_gunship/gunship_moan.wav", 75, math.random( 200, 215 ) )
 				return true
-			end
+			-- end
+		end,
+	},
+	["Speed Potion"] = {
+		Colour = Color( 100, 255, 100, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Buff_Add( ply, PRK_BUFFTYPE_PLAYER_SPEED, 1 )
+			return true
+		end,
+	},
+	["Speed Poison"] = {
+		Colour = Color( 100, 255, 100, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Buff_Remove( ply, PRK_BUFFTYPE_PLAYER_SPEED, 1 )
+			return true
+		end,
+	},
+	["Damage Potion"] = {
+		Colour = Color( 255, 100, 255, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Buff_Add( ply, PRK_BUFFTYPE_BULLET_DMG, 1 )
+			return true
+		end,
+	},
+	["Damage Poison"] = {
+		Colour = Color( 100, 255, 100, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Buff_Remove( ply, PRK_BUFFTYPE_BULLET_DMG, 1 )
+			return true
+		end,
+	},
+	["Poison"] = {
+		Colour = Color( 40, 40, 40, 255 ),
+		Drink = function( self, ent, ply )
+			ply:TakeDamage( 1, ent, ent )
+			return true
+		end,
+	},
+	["Greater Poison"] = {
+		Colour = Color( 10, 10, 10, 255 ),
+		Drink = function( self, ent, ply )
+			ply:TakeDamage( 2, ent, ent )
+			return true
+		end,
+	},
+	["Instant Death"] = {
+		Colour = Color( 0, 0, 0, 255 ),
+		Drink = function( self, ent, ply )
+			PRK_Explosion( ent, ent:GetPos(), 200 )
+			ply:TakeDamage( ply:GetMaxHealth(), ent, ent )
+			return true
 		end,
 	},
 }
@@ -66,8 +117,9 @@ end
 function ENT:Use( ply, caller, useType, value )
 	if ( self:GetPos():Distance( ply:GetPos() ) > self.MaxUseRange ) then return end
 
-	local consumed = self.PotionType:Drink( ply )
+	local consumed = self.PotionType:Drink( self, ply )
 	if ( consumed ) then
+		ply:EmitSound( "npc/barnacle/barnacle_gulp1.wav", 75, math.random( 150, 200 ) )
 		self:Remove()
 	end
 end
@@ -102,6 +154,21 @@ function ENT:CollideWithEnt( ent )
 end
 
 function ENT:SetPotionType( type )
+	if ( !type ) then
+		-- Choose a random one if not set
+		local count = 0
+			for k, v in pairs( PRK_PotionTypes ) do
+				count = count + 1
+			end
+		local rnd = math.random( 1, count )
+		local index = 1
+		for k, v in pairs( PRK_PotionTypes ) do
+			if ( index == rnd ) then
+				type = k
+			end
+			index = index + 1
+		end
+	end
 	self.PotionType = PRK_PotionTypes[type]
 	self:SetColor( self.PotionType.Colour )
 	self:SendPotionType( type )

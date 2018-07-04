@@ -51,6 +51,7 @@ if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
 	util.AddNetworkString( "PRK_Gun_Reload" )
 	util.AddNetworkString( "PRK_Gun_NoAmmo" )
+    util.AddNetworkString( "PRK_Gun_SetNumChambers" )
 
 	function SWEP:SendFire()
 		net.Start( "PRK_Gun_Fire" )
@@ -69,6 +70,13 @@ if ( SERVER ) then
 			net.WriteEntity( self )
 		net.Send( self.Owner )
 	end
+    
+    function SWEP:SendNumChambers( chambers )
+        net.Start( "PRK_Gun_SetNumChambers" )
+            net.WriteEntity( self )
+            net.WriteFloat( chambers )
+        net.Send( self.Owner )
+    end
 end
 
 if ( CLIENT ) then
@@ -96,6 +104,13 @@ if ( CLIENT ) then
 		local self = net.ReadEntity()
 
 		PRK_Gun_NoAmmoWarning()
+	end )
+    
+    net.Receive( "PRK_Gun_SetNumChambers", function( len, ply )
+		local self = net.ReadEntity()
+        local chambers = net.ReadFloat()
+        self.MaxClip = chambers;
+        
 	end )
 end
 

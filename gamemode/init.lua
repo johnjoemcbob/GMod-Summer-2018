@@ -55,10 +55,11 @@ function SendTakeDamage( ply, amount, dir )
 	net.Send( ply )
 end
 
-function SendDie( ply, pos, ang )
+function SendDie( ply, pos, ang, killname )
 	net.Start( "PRK_Die" )
 		net.WriteVector( pos )
 		net.WriteAngle( ang )
+		net.WriteString( killname )
 	net.Send( ply )
 end
 
@@ -71,6 +72,17 @@ end
 
 function GM:InitPostEntity()
 	self:GenerateLobby()
+end
+
+function GM:PlayerInitialSpawn( ply )
+	ply:Say( "I have now joined the game" )
+
+	print( "looking for any ent data to send to the client..." )
+	for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
+		if ( v.InitializeNewClient ) then
+			v:InitializeNewClient()
+		end
+	end
 end
 
 function GM:PlayerSpawn( ply )
@@ -164,7 +176,19 @@ function GM:EntityTakeDamage( target, dmginfo )
 end
 
 function GM:DoPlayerDeath( ply, attacker, dmginfo )
-	SendDie( ply, ply:EyePos(), ply:EyeAngles() )
+	local killname = attacker.KillName
+		if ( killname == "OWNER" ) then
+			attacker = attacker.Owner
+		end
+		if ( attacker:IsPlayer() ) then
+			killname = attacker:Nick()
+		elseif ( attacker.KillName ) then
+			killname = attacker.KillName
+		end
+		if ( !killname ) then
+			killname = attacker:GetClass()
+		end
+	SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
 	ply:SetPos( ply:EyePos() )
 end
 

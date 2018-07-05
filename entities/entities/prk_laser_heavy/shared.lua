@@ -9,3 +9,4 @@ ENT.Spawnable = true
 ENT.AdminSpawnable = true
 
 ENT.Scale = 1
+ENT.KillName = "OWNER"

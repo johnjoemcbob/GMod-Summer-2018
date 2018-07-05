@@ -1,7 +1,8 @@
 AddCSLuaFile()
 
 ENT.Base 			= "base_nextbot"
-ENT.Spawnable		= true
+ENT.Spawnable	= true
+ENT.KillName		= "Sploder"
 
 list.Set( "NPC", "prk_npc_sploder", {
 	Name = "Prickly Sploder",

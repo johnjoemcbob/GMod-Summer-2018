@@ -4,9 +4,17 @@ net.Receive( "PRK_Potion_Type", function( len, ply )
 	local ent = net.ReadEntity()
 	local type = net.ReadString()
 
-	if ( ent and ent:IsValid() and ent.Initialize ) then
-		ent:Initialize()
+	local function try()
+		if ( ent and ent:IsValid() and ent.Initialize ) then
+			ent:Initialize()
+		else
+			-- Try again after the ent is available to the client
+			timer.Simple( 1, function()
+				try()
+			end )
+		end
 	end
+	try()
 end )
 
 function ENT:Initialize()

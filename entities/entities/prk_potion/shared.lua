@@ -8,6 +8,6 @@ ENT.Instructions = ""
 ENT.Spawnable = true
 ENT.AdminSpawnable = true
 
--- Player must be within this range to use item
+ENT.KillName = "POTION"
 ENT.UseLabel = "DRINK"
-ENT.MaxUseRange = 80
+ENT.MaxUseRange = 80 -- Player must be within this range to use item

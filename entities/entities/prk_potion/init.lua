@@ -30,6 +30,7 @@ PRK_PotionTypes = {
 		Colour = Color( 100, 255, 255, 255 ),
 		Drink = function( self, ent, ply )
 			PRK_Buff_Add( ply, PRK_BUFFTYPE_PLAYER_CHAMBERS, 1 )
+				ply:EmitSound( "npc/combine_soldier/vo/readyweapons.wav", 75, math.random( 170, 190 ) )
 			return true
 		end,
 	},
@@ -114,6 +115,11 @@ function ENT:Initialize()
 	-- self.
 end
 
+function ENT:InitializeNewClient()
+	self:SendPotionType( table.KeyFromValue( PRK_PotionTypes, self.PotionType ) )
+	print( "init potion late!" )
+end
+
 function ENT:Think()
 	
 
@@ -161,6 +167,7 @@ function ENT:CollideWithEnt( ent )
 end
 
 function ENT:SetPotionType( type )
+	-- Could use table.GetKeys instead, but this is already working this way
 	if ( !type ) then
 		-- Choose a random one if not set
 		local count = 0

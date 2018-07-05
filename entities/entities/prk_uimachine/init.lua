@@ -202,6 +202,11 @@ function ENT:Initialize()
 	self:EmitSound( "prk_uimachine_hum" )
 end
 
+function ENT:InitializeNewClient()
+	self:SendStock()
+	print( "init late vendor!!" )
+end
+
 function ENT:Think()
 	
 

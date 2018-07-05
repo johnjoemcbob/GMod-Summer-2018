@@ -144,7 +144,7 @@ function ENT:Think()
 				bullet.DamageEndCallback = function( self )
 					self:Remove()
 				end
-			bullet.Owner = self.Owner
+			bullet.Owner = self
 			timer.Simple( self.TimeAutoRemoveLaser, function()
 				if ( bullet and bullet:IsValid() ) then
 					bullet:Remove()

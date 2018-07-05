@@ -35,7 +35,8 @@ local function loadfonts()
 		36,
 		48,
 		64,
-		96
+		96,
+		128
 	}
 	for k, size in pairs( fontsizes ) do
 		surface.CreateFont( "HeavyHUD" .. size, {
@@ -105,11 +106,13 @@ end )
 net.Receive( "PRK_Die", function( len, ply )
 	local pos = net.ReadVector()
 	local ang = net.ReadAngle()
+	local killname = net.ReadString()
 
 	LocalPlayer().DieEffect = {
 		pos,
 		ang,
 		0,
+		killname,
 		TimeMin = CurTime() + 1,
 	}
 
@@ -184,7 +187,12 @@ function PRK_Think_Use()
 end
 
 function PRK_LookAtUsable( ent, text )
-	if ( !LocalPlayer().LookingAtUsable ) then
+	-- Only play sound if actually has to rotate
+	-- (i.e. wasn't already looking at something, and wasn't looking at something very recently)
+	if (
+		!LocalPlayer().LookingAtUsable and
+		( !LocalPlayer().LookingAtLastTime or LocalPlayer().LookingAtLastTime + 0.04 <= CurTime() )
+	) then
 		LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
 	end
 
@@ -199,12 +207,19 @@ function PRK_LookAtUsable( ent, text )
 			LocalPlayer().LabelText = "USE"
 		end
 	end
+
+	LocalPlayer().LookingAtLastTime = CurTime()
 end
 
 function PRK_LookAwayFromUsable()
 	if ( LocalPlayer().LookingAtUsable ) then
 		LocalPlayer().LookingAtUsable = nil
-		LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
+		-- Allow some time to look at another usable before playing the disappear sound
+		timer.Simple( 0.04, function()
+			if ( !LocalPlayer().LookingAtUsable ) then
+				LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
+			end
+		end )
 	end
 end
 
@@ -360,17 +375,42 @@ function PRK_HUDPaint_Death()
 	draw.NoTexture()
 	surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
 
+	local b = 16
 	local x = ScrW() / 2
 	local y = Lerp( 1 - ( LocalPlayer().DieEffect[3] / PRK_HUD_DieEffect_MaxAlpha ), ScrH() / 2, ScrH() + 100 )
-	PRK_DrawText(
+	local w, h = PRK_DrawText(
 		"YOU DIED",
 		x,
 		y,
 		PRK_HUD_Colour_Shadow,
 		TEXT_ALIGN_CENTER,
 		TEXT_ALIGN_CENTER,
-		96
+		128
 	)
+
+	if ( LocalPlayer().DieEffect[4] ) then
+		local y = y + ScrH() / 2 - b
+		local w, h = PRK_DrawText(
+			LocalPlayer().DieEffect[4],
+			x,
+			y,
+			PRK_HUD_Colour_Shadow,
+			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_BOTTOM,
+			36
+		)
+
+		y = y - h / 2 - b
+		local w, h = PRK_DrawText(
+			"KILLED BY",
+			x,
+			y,
+			PRK_HUD_Colour_Shadow,
+			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_BOTTOM,
+			36
+		)
+	end
 end
 
 local CursorX, CursorY
@@ -769,6 +809,11 @@ end
   -- /PRK Gun --
 ------------------
 
+-- Don't draw map outside of generated PRK stuff
+function GM:PreDrawOpaqueRenderables()
+	render.Clear( 0, 0, 0, 255, true, true )
+end
+
 -- View range limiter
 -- Also handles death view
 local function PRK_CalcView( ply, pos, angles, fov )
@@ -796,6 +841,7 @@ concommand.Add( "prk_effect", function( ply, cmd, args )
 	util.Effect( "prk_grass", effectdata )
 end )
 
+-- Resolution changing
 local LastScrW = ScrW()
 local LastScrH = ScrH()
 timer.Create( "DetectResolutionChange", 1, 0, function()
@@ -804,6 +850,154 @@ timer.Create( "DetectResolutionChange", 1, 0, function()
 		LastScrH = ScrH()
 		hook.Call( "OnResolutionChange", GAMEMODE )
 	end 
+end )
+
+-- Mesh tests
+local mat = Material( "editor/wireframe" ) -- The material ( a wireframe )
+-- local mat = Material( "prk_gradient.png" ) -- The material ( a wireframe )
+
+local pos = Vector( 267, -587, -12220 )
+local x = 0
+local y = 0
+local angle = 0
+local a = 2
+local b = 2
+local maxPoints = 400
+local angleadd = 0.2
+local width = 6.3
+
+local verts = {}
+	-- This generates a line spiral
+		-- for i = 0, maxPoints do
+			-- angle = 0.1 * i
+			-- x = ( a + b * angle ) * math.cos( angle )
+			-- y = ( a + b * angle ) * math.sin( angle )
+
+			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
+		-- end
+	-- This generates a cool rune-like shape
+		-- for i = 0, maxPoints do
+			-- angle = 0.1 * i
+			-- local angle = angle
+				-- if ( i % 4 != 0 ) then
+					-- angle = angle + 0.5
+				-- end
+			-- x = ( a + b * angle ) * math.cos( angle )
+			-- y = ( a + b * angle ) * math.sin( angle )
+
+			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
+		-- end
+	-- Another interesting shape
+		-- for i = 0, maxPoints do
+			-- angle = 0.1 * i
+			-- local size = angle
+				-- if ( i % 3 != 0 ) then
+					-- size = size + 4
+				-- end
+			-- x = ( a + b * size ) * math.cos( angle )
+			-- y = ( a + b * size ) * math.sin( angle )
+
+			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
+		-- end
+	-- Now try to generate a thick spiral
+		for i = 0, maxPoints do
+			-- Calculate this inner point
+			angle = angleadd * i
+			local size = angle
+			x = ( a + b * size ) * math.cos( angle )
+			y = ( a + b * size ) * math.sin( angle )
+			local firstpoint = { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 }
+
+			-- First connect with the last triangle
+			if ( i != 0 ) then
+				local i = #verts
+				table.insert( verts, verts[i - 2] )
+				table.insert( verts, verts[i] )
+				table.insert( verts, firstpoint )
+			end
+
+			-- Add the inner point after adding the joiner
+			table.insert( verts, firstpoint )
+
+			-- Add first outer triangle
+			local size = size + width
+			x = ( a + b * size ) * math.cos( angle )
+			y = ( a + b * size ) * math.sin( angle )
+
+			table.insert( verts, { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 } )
+
+			local angle = angle + angleadd
+			size = size + angleadd
+			x = ( a + b * size ) * math.cos( angle )
+			y = ( a + b * size ) * math.sin( angle )
+
+			table.insert( verts, { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 } )
+		end
+		local oldindices = #verts
+		-- for i, v in pairs( verts ) do
+			-- if ( i > oldindices ) then
+				-- break
+			-- end
+			-- if ( i % 3 == 0 and i + 1 < oldindices ) then
+				-- table.insert( verts, verts[i - 2] )
+				-- table.insert( verts, verts[i] )
+				-- table.insert( verts, verts[i + 1] )
+
+				-- temp
+											-- debugoverlay.Sphere(
+												-- pos + verts[i - 2].pos,
+												-- 1,
+												-- 10,
+												-- Color( 255, 0, 0, 255 ),
+												-- true
+											-- )
+											-- debugoverlay.Sphere(
+												-- pos + verts[i].pos,
+												-- 1,
+												-- 10,
+												-- Color( 0, 255, 0, 255 ),
+												-- true
+											-- )
+											-- debugoverlay.Sphere(
+												-- pos + verts[i + 1].pos,
+												-- 1,
+												-- 10,
+												-- Color( 0, 0, 255, 255 ),
+												-- true
+											-- )
+											-- break
+			-- end
+		-- end
+-- local verts = { -- A table of 3 vertices that form a triangle
+	-- { pos = Vector( 0, 0, 0 ), u = 0, v = 0 }, -- Vertex 1
+	-- { pos = Vector( 10, 0, 0 ), u = 1, v = 0 }, -- Vertex 2
+	-- { pos = Vector( 10, 0, 10 ), u = 1, v = 1 }, -- Vertex 3
+-- }
+
+local obj = Mesh()
+mesh.Begin( obj, MATERIAL_TRIANGLES, maxPoints ) -- Begin writing to the dynamic mesh
+	for i = 1, #verts do
+		mesh.Position( pos + verts[i].pos ) -- Set the position
+		mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
+		mesh.AdvanceVertex() -- Write the vertex
+	end
+mesh.End() -- Finish writing the mesh and draw it
+
+hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
+	render.SetMaterial( mat ) -- Apply the material
+
+	-- render.SetLightingMode( 1 )
+	-- render.SuppressEngineLighting( true )
+		obj:Draw()
+		-- mesh.Begin( MATERIAL_TRIANGLES, #verts / 3 ) -- Begin writing to the dynamic mesh
+			-- for i = 1, #verts do
+				-- mesh.Position( pos + verts[i].pos ) -- Set the position
+				-- mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
+				-- mesh.AdvanceVertex() -- Write the vertex
+			-- end
+		-- mesh.End()
+	-- render.SuppressEngineLighting( false )
+	-- render.SetLightingMode( 0 )
 end )
 
 --------------

@@ -34,7 +34,17 @@ net.Receive( "PRK_UIMachine_Stock", function( len, ply )
 
 	print( "receive stock" )
 	self.Stock = stock
-	self:Initialize()
+	local function try()
+		if ( self and self:IsValid() and self.Initialize ) then
+			self:Initialize()
+		else
+			-- Try again after the ent is available to the client
+			timer.Simple( 1, function()
+				try()
+			end )
+		end
+	end
+	try()
 end )
 
 function ENT:SendSelection( selection )

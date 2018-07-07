@@ -15,6 +15,7 @@ PRK_PLY_BUFFS_TABLE = {}
 PRK_BUFFTYPE_BULLET_DMG = "Bullet Damage"
 PRK_BUFFTYPE_PLAYER_SPEED = "Run Speed"
 PRK_BUFFTYPE_PLAYER_CHAMBERS = "Additional Revolver Chambers"
+PRK_BUFFTYPE_PLAYER_WEALTH = "Wealth Multiplier"
 
 -- Any buff-specific values
 PRK_BUFF_BULLET_DMG_ADD_MULTIPLIER = 0.05
@@ -51,6 +52,7 @@ function PRK_Buff_Register(ply)
     PRK_PLY_BUFFS_TABLE[ply][PRK_BUFFTYPE_BULLET_DMG] = 0
     PRK_PLY_BUFFS_TABLE[ply][PRK_BUFFTYPE_PLAYER_SPEED] = 0
     PRK_PLY_BUFFS_TABLE[ply][PRK_BUFFTYPE_PLAYER_CHAMBERS] = 0
+    PRK_PLY_BUFFS_TABLE[ply][PRK_BUFFTYPE_PLAYER_WEALTH] = 0
     -- etc
     
     ply.BuffCallback = BuffCallback

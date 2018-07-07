@@ -104,6 +104,8 @@ function GM:PlayerSpawn( ply )
 
 	-- Init money
 	ply:SetNWInt( "PRK_Money", 0 )
+    -- Init money fractional value (for multiplier purposes)
+    ply:SetNWFloat( "PRK_MoneyFract", 0.0 )
 
 	-- Init gun
 	local wep = ply:Give( "prk_gun", true )

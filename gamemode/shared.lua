@@ -122,7 +122,7 @@ hook.Add( "Think", "PRK_Think_PitchSounds", function()
 	end
 end )
 
-function PRK_EmitChainPitchedSound( name, ent, sound, level, vol, pitchdefault, pitchchange, pitchspeed, time_end, callback_end )
+function PRK_EmitChainPitchedSound( name, ent, sound, level, vol, pitchdefault, pitchchange, pitchspeed, time_end, callback_end, chain_add )
 	-- Initialise
 	if ( !PRK_ChainPitchedSounds[name] ) then
 		PRK_ChainPitchedSounds[name] = {
@@ -139,7 +139,7 @@ function PRK_EmitChainPitchedSound( name, ent, sound, level, vol, pitchdefault, 
 
 	-- Apply change
 	PRK_ChainPitchedSounds[name].Current = math.Clamp( PRK_ChainPitchedSounds[name].Current + pitchchange, 0, 255 )
-	PRK_ChainPitchedSounds[name].Chain = PRK_ChainPitchedSounds[name].Chain + 1
+	PRK_ChainPitchedSounds[name].Chain = PRK_ChainPitchedSounds[name].Chain + (chain_add or 1)
 
 	-- Play audio
 	ent:EmitSound( sound, level, PRK_ChainPitchedSounds[name].Current, vol )

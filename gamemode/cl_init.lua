@@ -85,6 +85,7 @@ sound.Add(
 -- Variables
 local LagX = 10
 local LagY = 5
+local CursorX, CursorY, LastCursorX, LastCursorY
 
 -- Net
 PRK_NetKeyValues = {}
@@ -244,6 +245,11 @@ function GM:HUDPaint()
 	LocalPlayer().LastEyeAngles = LerpAngle( FrameTime() * 10, LocalPlayer().LastEyeAngles, LocalPlayer():EyeAngles() )
 end
 
+function GM:PostRender()
+	LastCursorX = CursorX
+	LastCursorY = CursorY
+end
+
 function GM:RenderScreenspaceEffects()
 	if ( LocalPlayer().HideHurtEffect and LocalPlayer().HideHurtEffect > CurTime() ) then
 		DrawTexturize( LocalPlayer().PunchHUD:Length(), Material( PRK_Hurt_Material ) )
@@ -260,7 +266,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 	local dist = 10
 	local dist_snap = 100
 	local scal = 0.0125
-	local speed_cursor = 10
+	local speed_cursor = 20
 	local speed = 7
 	local forward = LocalPlayer():GetEyeTraceNoCursor().Normal
 	local pos = LocalPlayer():EyePos() + ( forward * dist )
@@ -279,6 +285,24 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 			else
 				right = LocalPlayer():GetRight()
 				up = LocalPlayer():GetUp()
+				-- Emphasise lag horizontally if not using surface normal
+				if ( LocalPlayer().LastEyeAngles ) then
+					local x = ( LocalPlayer():EyeAngles() - LocalPlayer().LastEyeAngles ).y
+					targetang:RotateAroundAxis( right, x * 4 )
+				end
+				if ( LastCursorX ) then
+					local x = CursorX - LastCursorX
+					targetang:RotateAroundAxis( right, x * 8 )
+				end
+			end
+			-- Always emphasise lag vertically
+			if ( LocalPlayer().LastEyeAngles ) then
+				local y = ( LocalPlayer():EyeAngles() - LocalPlayer().LastEyeAngles ).x
+				targetang:RotateAroundAxis( up, y * 4 )
+			end
+			if ( LastCursorX ) then
+				local y = CursorY - LastCursorY
+				targetang:RotateAroundAxis( up, y * 8 )
 			end
 			-- Label lerp in/out
 			if ( !label or LocalPlayer().LookingAtUsable ) then
@@ -413,7 +437,6 @@ function PRK_HUDPaint_Death()
 	end
 end
 
-local CursorX, CursorY
 function PRK_HUDPaint_Crosshair()
 	local speed = 15
 	local targetx = ScrW() / 2
@@ -656,18 +679,43 @@ function PRK_HUDPaint_RevolverChambers()
 	surface.SetDrawColor( PRK_HUD_Colour_Shadow )
 	draw.Circle( offx, offy, r, chambers, ang )
 
+	-- Get chamber positions
+	local cham_rad = math.min( 32, ( r_def / chambers * 1.5 ) )
+	local points = PRK_GetCirclePoints( x, y, r - cham_rad * 1.5, chambers, ang )
+		-- Remove middle point
+		table.remove( points, 1 )
+
 	-- Draw background
 	surface.SetDrawColor( 230, 230, 240, 255 )
 	if ( PRK_RevolverChambers.NoAmmoWarning ) then
 		surface.SetDrawColor( 230, 130, 130, 255 )
 	end
-	draw.Circle( x, y, r, chambers, ang )
+	-- Special cases
+	local specialcase = {
+		[1] = function()
+			local segs = 6
+			local mult = 0.75
+			draw.Circle( x, y, r * mult, segs, ang )
+			points = {
+				{ x = x, y = y }
+			}
+			-- cham_rad = r * mult
+		end,
+		[2] = function()
+			local segs = 5
+			local mult = 0.75
+			local dif = ( r * mult ) / 2
+			draw.Circle( x, y - dif, r * mult, segs, ang )
+			draw.Circle( x, y + dif, r * mult, segs, ang + 180 )
+		end,
+	}
+	if ( specialcase[chambers] ) then
+		specialcase[chambers]()
+	else
+		draw.Circle( x, y, r, chambers, ang )
+	end
 
 	-- Draw individual chambers
-	local cham_rad = math.min( 32, ( r_def / chambers * 1.5 ) + r_add )
-	local points = PRK_GetCirclePoints( x, y, r - cham_rad * 1.5, chambers, ang )
-		-- Remove middle point
-		table.remove( points, 1 )
 	local ammo = LocalPlayer():GetNWInt( "PRK_Clip" )
 	for k, point in pairs( points ) do
 		local id = k -- #points - k + 1
@@ -679,7 +727,8 @@ function PRK_HUDPaint_RevolverChambers()
 		if ( id == 1 ) then
 			-- surface.SetDrawColor( 255, 20, 20, 255 )
 		end
-		draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 )
+		-- draw.Circle( point.x, point.y, cham_rad, 32, 0 )
+		draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 ) -- TODO; fix this for all resolutions (only current problem is large size on 3 chambers?)
 		PRK_DrawText(
 			id,
 			point.x,
@@ -853,53 +902,24 @@ timer.Create( "DetectResolutionChange", 1, 0, function()
 end )
 
 -- Mesh tests
-local mat = Material( "editor/wireframe" ) -- The material ( a wireframe )
--- local mat = Material( "prk_gradient.png" ) -- The material ( a wireframe )
+-- local mat = Material( "editor/wireframe" ) -- The material ( a wireframe )
+local mat = Material( "prk_gradient.png" ) -- The material ( a wireframe )
 
-local pos = Vector( 267, -587, -12220 )
+local pos = Vector( 267, -757.5, -12200 )
 local x = 0
 local y = 0
 local angle = 0
 local a = 2
 local b = 2
-local maxPoints = 400
-local angleadd = 0.2
-local width = 6.3
+local maxPoints = 200
+local angleadd = 0.1
+local width = 10
+local forward = Vector( 0, -1, 0 )
+local maxdepth = 500
+local depth = 0
 
 local verts = {}
-	-- This generates a line spiral
-		-- for i = 0, maxPoints do
-			-- angle = 0.1 * i
-			-- x = ( a + b * angle ) * math.cos( angle )
-			-- y = ( a + b * angle ) * math.sin( angle )
-
-			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
-		-- end
-	-- This generates a cool rune-like shape
-		-- for i = 0, maxPoints do
-			-- angle = 0.1 * i
-			-- local angle = angle
-				-- if ( i % 4 != 0 ) then
-					-- angle = angle + 0.5
-				-- end
-			-- x = ( a + b * angle ) * math.cos( angle )
-			-- y = ( a + b * angle ) * math.sin( angle )
-
-			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
-		-- end
-	-- Another interesting shape
-		-- for i = 0, maxPoints do
-			-- angle = 0.1 * i
-			-- local size = angle
-				-- if ( i % 3 != 0 ) then
-					-- size = size + 4
-				-- end
-			-- x = ( a + b * size ) * math.cos( angle )
-			-- y = ( a + b * size ) * math.sin( angle )
-
-			-- table.insert( verts, { pos = Vector( x, 0, y ), u = 0, v = 0	 } )
-		-- end
-	-- Now try to generate a thick spiral
+	-- Generate a thick spiral
 		for i = 0, maxPoints do
 			-- Calculate this inner point
 			angle = angleadd * i
@@ -933,71 +953,88 @@ local verts = {}
 
 			table.insert( verts, { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 } )
 		end
-		local oldindices = #verts
-		-- for i, v in pairs( verts ) do
-			-- if ( i > oldindices ) then
-				-- break
-			-- end
-			-- if ( i % 3 == 0 and i + 1 < oldindices ) then
-				-- table.insert( verts, verts[i - 2] )
-				-- table.insert( verts, verts[i] )
-				-- table.insert( verts, verts[i + 1] )
-
-				-- temp
-											-- debugoverlay.Sphere(
-												-- pos + verts[i - 2].pos,
-												-- 1,
-												-- 10,
-												-- Color( 255, 0, 0, 255 ),
-												-- true
-											-- )
-											-- debugoverlay.Sphere(
-												-- pos + verts[i].pos,
-												-- 1,
-												-- 10,
-												-- Color( 0, 255, 0, 255 ),
-												-- true
-											-- )
-											-- debugoverlay.Sphere(
-												-- pos + verts[i + 1].pos,
-												-- 1,
-												-- 10,
-												-- Color( 0, 0, 255, 255 ),
-												-- true
-											-- )
-											-- break
-			-- end
-		-- end
--- local verts = { -- A table of 3 vertices that form a triangle
-	-- { pos = Vector( 0, 0, 0 ), u = 0, v = 0 }, -- Vertex 1
-	-- { pos = Vector( 10, 0, 0 ), u = 1, v = 0 }, -- Vertex 2
-	-- { pos = Vector( 10, 0, 10 ), u = 1, v = 1 }, -- Vertex 3
--- }
-
 local obj = Mesh()
-mesh.Begin( obj, MATERIAL_TRIANGLES, maxPoints ) -- Begin writing to the dynamic mesh
-	for i = 1, #verts do
-		mesh.Position( pos + verts[i].pos ) -- Set the position
-		mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
-		mesh.AdvanceVertex() -- Write the vertex
-	end
-mesh.End() -- Finish writing the mesh and draw it
+-- mesh.Begin( obj, MATERIAL_TRIANGLES, maxPoints ) -- Begin writing to the dynamic mesh
+	-- for i = 1, #verts do
+		-- mesh.Position( pos + verts[i].pos ) -- Set the position
+		-- mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
+		-- mesh.AdvanceVertex() -- Write the vertex
+	-- end
+-- mesh.End() -- Finish writing the mesh and draw it
 
+local tunnel
+local nextparticle = 0
 hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
+	if ( !tunnel ) then
+		tunnel = PRK_AddModel(
+			"models/props_phx/construct/metal_plate_curve360x2.mdl",
+			pos + forward * PRK_Plate_Size * 4,
+			Angle( 90, 90, 0 ),
+			1,
+			"models/debug/debugwhite",
+			Color( 0, 200, 0, 255 )
+		)
+		tunnel:SetNoDraw( true )
+	end
+
 	render.SetMaterial( mat ) -- Apply the material
 
-	-- render.SetLightingMode( 1 )
-	-- render.SuppressEngineLighting( true )
-		obj:Draw()
-		-- mesh.Begin( MATERIAL_TRIANGLES, #verts / 3 ) -- Begin writing to the dynamic mesh
-			-- for i = 1, #verts do
-				-- mesh.Position( pos + verts[i].pos ) -- Set the position
-				-- mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
-				-- mesh.AdvanceVertex() -- Write the vertex
-			-- end
-		-- mesh.End()
-	-- render.SuppressEngineLighting( false )
-	-- render.SetLightingMode( 0 )
+	local scale = math.Clamp( math.sin( CurTime() / 2 ) * 2, 0.5, 1 ) * 3
+	local length = scale * 100
+
+	-- Particles
+	if ( !PRK_Gateway_Emitters ) then
+		PRK_Gateway_Emitters = {}
+	end
+	if ( nextparticle <= CurTime() ) then
+		local effectdata = EffectData()
+			effectdata:SetOrigin( pos + forward * scale * 5 )
+			effectdata:SetNormal( forward )
+			effectdata:SetRadius( scale * 4 )
+		util.Effect( "prk_gateway", effectdata )
+		nextparticle = CurTime() + 0.1
+		-- print( "part" )
+	end
+
+	local tunnelscalemult = 1
+	PRK_RenderScale( tunnel, Vector( scale * tunnelscalemult, scale * tunnelscalemult, length ) )
+	tunnel:SetPos( pos + forward * PRK_Plate_Size * length )
+	local function inner()
+		-- Center
+		cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
+			surface.SetDrawColor( 0, 0, 0, 255 )
+			draw.Circle( 0, 0, 24, 24, 0 )
+		cam.End3D2D()
+
+		local function inner_mask()
+			-- Center
+			cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
+				surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+				draw.Circle( 0, 0, 24, 24, 0 )
+			cam.End3D2D()
+		end
+		local function inner_inner()
+			-- tunnel:DrawModel()
+			for k, v in pairs( PRK_Gateway_Emitters ) do
+				if ( v:IsValid() ) then
+					v:Draw()
+				end
+			end
+		end
+		draw.StencilBasic( inner_inner, inner_mask )
+	end
+	local function mask()
+		tunnel:DrawModel()
+
+		-- Back wall
+		cam.Start3D2D( pos + forward * 100, Angle( 90, 90, 0 ), 1000 )
+			surface.DrawRect( -8, -8, 16, 16 )
+		cam.End3D2D()
+	end
+	draw.StencilBasic( mask, inner )
+	-- draw.StencilCut( mask, inner )
+	-- inner()
+		-- tunnel:DrawModel()
 end )
 
 --------------
@@ -1166,6 +1203,23 @@ function draw.StencilBasic( mask, inner )
 			mask()
 		render.SetBlend(1)
 		render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_EQUAL)
+			inner()
+	render.SetStencilEnable(false)
+end
+
+function draw.StencilCut( mask, inner )
+	render.ClearStencil()
+	render.SetStencilEnable(true)
+		render.SetStencilWriteMask(255)
+		render.SetStencilTestMask(255)
+		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilZFailOperation(STENCIL_REPLACE)
+		render.SetStencilPassOperation(STENCIL_REPLACE)
+		render.SetStencilCompareFunction(STENCIL_NEVER)
+		render.SetStencilReferenceValue(1)
+			mask()
+		render.SetStencilCompareFunction(STENCIL_NOTEQUAL)
+		render.SetStencilFailOperation(STENCIL_KEEP)
 			inner()
 	render.SetStencilEnable(false)
 end

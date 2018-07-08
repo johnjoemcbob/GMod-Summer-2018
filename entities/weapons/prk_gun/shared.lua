@@ -47,6 +47,17 @@ SWEP.SoundPitchReloadBase = 80
 SWEP.SoundPitchReloadIncrease = 10
 SWEP.SoundPitchReloadSpeed = 0.4
 
+sound.Add(
+	{ 
+		name = "prk_gun_spin",
+		channel = CHAN_ITEM,
+		level = 75,
+		volume = 0.25,
+		pitch = { 40, 51 },
+		sound = "weapons/357/357_spin1.wav"
+	}
+)
+
 if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Fire" )
 	util.AddNetworkString( "PRK_Gun_Reload" )
@@ -178,6 +189,7 @@ function SWEP:PrimaryAttack( right )
 		75,
 		self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( ammo / self.MaxClip ) ) )
 	)
+	self:SpinSound()
 	-- print( self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ammo / self.MaxClip ) )
 
 	-- Play animation
@@ -305,6 +317,7 @@ function SWEP:Reload()
 					end
 				end
 			)
+			self:SpinSound()
 
 			-- Delay next shoot until reload finished
 			self:SetNextPrimaryFire( CurTime() + 0.5 )
@@ -337,6 +350,19 @@ function SWEP:OnRemove()
 		local vm = self.Owner:GetViewModel()
 		if ( IsValid( vm ) ) then vm:SetMaterial( "" ) end
 	end
+end
+
+function SWEP:SpinSound()
+	timer.Simple( 0.01, function()
+		if ( self and self:IsValid() ) then
+			self:EmitSound( "prk_gun_spin" )
+			timer.Simple( 0.2, function()
+				if ( self and self:IsValid() ) then
+					self:StopSound( "prk_gun_spin" )
+				end
+			end )
+		end
+	end )
 end
 
 if ( CLIENT ) then

@@ -155,6 +155,8 @@ end )
 
 local LastSortPos = Vector()
 hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Grass", function()
+	if ( !PRK_ShouldDraw() ) then return end
+
 	-- Sort grass by furthest from player first, to avoid depth issues (better way to do this?)
 	if ( PRK_Grass_Billboard_MaxSortCount != 0 ) then
 		local distply = LocalPlayer():GetPos():Distance( LastSortPos )

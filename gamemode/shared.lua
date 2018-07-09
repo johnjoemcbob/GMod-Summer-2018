@@ -10,10 +10,25 @@ GM.Author = "johnjoemcbob & DrMelon"
 GM.Email = ""
 GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 
---DeriveGamemode( "base" )
+PRK_SANDBOX = true
+if PRK_SANDBOX then
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
+else
+DeriveGamemode( "base" )
+end
 
--- Globals
+-----------------
+  -- Globals --
+-----------------
+-- HUD
+PRK_HUD_Shadow_DistX						= -2
+PRK_HUD_Shadow_DistY						= 2
+PRK_HUD_Shadow_Effect						= 4
+PRK_HUD_Punch_Amount						= 5
+PRK_HUD_Punch_Speed							= 10
+PRK_HUD_DieEffect_MaxAlpha				= 230
+
+-- Colours
 PRK_HUD_Colour_Main							= Color( 255, 255, 255, 255 )
 PRK_HUD_Colour_Dark							= Color( 0, 0, 0, 255 )
 PRK_HUD_Colour_Money						= Color( 255, 255, 50, 255 )
@@ -21,17 +36,14 @@ PRK_HUD_Colour_Shadow						= Color( 255, 100, 150, 255 )
 PRK_HUD_Colour_Highlight					= Color( 100, 190, 190, 255 )
 PRK_HUD_Colour_Heart_Dark					= Color( 70, 20, 30, 255 )
 PRK_HUD_Colour_Heart_Light					= Color( 150, 20, 70, 255 )
-PRK_HUD_Shadow_DistX						= -2
-PRK_HUD_Shadow_DistY						= 2
-PRK_HUD_Shadow_Effect						= 4
-PRK_HUD_Punch_Amount						= 5
-PRK_HUD_Punch_Speed							= 10
-PRK_HUD_DieEffect_MaxAlpha				= 230
+
 PRK_Colour_Enemy_Skin						= Color( 0, 0, 5, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
 PRK_Colour_Enemy_Tooth						= PRK_HUD_Colour_Main
 PRK_Colour_Enemy_Mouth						= Color( 100, 100, 100, 255 )
 PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
+
+-- Grass
 PRK_Grass_Mesh_CountRange				= { 1, 6 } -- { 0, 2 }
 PRK_Grass_Billboard_Count					= 100
 PRK_Grass_Billboard_DrawRange			= 1000
@@ -39,22 +51,50 @@ PRK_Grass_Billboard_SortRange				= 10
 PRK_Grass_Billboard_ShouldDrawTime	= 1
 PRK_Grass_Billboard_MaxSortCount		= 0
 PRK_Grass_Billboard_MaxRenderCount	= 4000
+
+-- Visuals
+PRK_Epsilon											= 0.001
+PRK_Plate_Size										= 47.45
 PRK_DrawDistance									= 4000
-PRK_Gen_SizeModifier							= 10
-PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
+PRK_MaxAverageFrameTimes					= 50
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter									= ""
 PRK_CursorSize										= 8
-PRK_BaseClip										= 1
+
+-- Editor
+PRK_Editor_MoveSpeed							= 2
+PRK_Editor_Zoom_Step							= 30
+PRK_Editor_Zoom_Speed						= 10
+PRK_Editor_Zoom_Min							= 50
+PRK_Editor_Zoom_Max							= 1000
+PRK_Editor_Grid_Scale							= 0.5
+PRK_Editor_Grid_Size							= 1024
+PRK_Editor_Square_Size						= PRK_Plate_Size
+PRK_Editor_Square_Border_Min				= 8
+PRK_Editor_Square_Border_Add				= 4
+
+-- Level Generation
+PRK_Gen_SizeModifier							= 10
+
+-- Damage/Death
 PRK_Hurt_Material									= "pp/texturize/pattern1.png"
 PRK_Hurt_ShowTime								= 0.2
 PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
-PRK_Plate_Size										= 47.45
+
+-- Enemy
+PRK_Enemy_Types									= {
+																	["Biter"] = "prk_npc_biter",
+																	["Sploder"] = "prk_npc_sploder",
+																	["Turret"] = "prk_turret_heavy",
+}
+PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
+
+-- Player
+PRK_BaseClip										= 1
 PRK_Health											= 6
 PRK_Speed											= 600
 PRK_Jump												= 0
-PRK_MaxAverageFrameTimes					= 50
 
 ------------------------
   -- Gamemode Hooks --
@@ -149,6 +189,10 @@ end
 
 function PRK_GetAsCurrency( val )
 	return PRK_CurrencyBefore .. tostring( val ) .. PRK_CurrencyAfter
+end
+
+function PRK_InEditor( ply )
+	return ( ply.PRK_Editor or ply.PRK_Editor_Room )
 end
 
 -- Easier for testing than writing out the whole function each time
@@ -282,4 +326,42 @@ function VectorIsApproximatelyZero( V )
 	V.y = math.Round( V.y, dec )
 	V.z = math.Round( V.z, dec )
 	return VectorIsZero( V )
+end
+
+-- http://stackoverflow.com/a/23976134/1190664
+-- ray.position is a vector
+-- ray.direction is a vector
+-- plane.position is a vector
+-- plane.normal is a vector
+function intersect_ray_plane( ray, plane )
+	local denom = plane.normal:Dot( ray.direction )
+
+	-- Ray does not intersect plane
+	if math.abs( denom ) < PRK_Epsilon then
+		return false
+	end
+
+	-- Distance of direction
+	local d = plane.position - ray.position
+	local t = d:Dot( plane.normal ) / denom
+
+	if t < PRK_Epsilon then
+		return false
+	end
+
+	-- Return collision point and distance from ray origin
+	return ray.position + ray.direction * t, t
+end
+
+-- point is a vector
+-- square is a table
+function intersect_point_square( point, square )
+	local min = Vector( math.min( square.x[1], square.x[2] ), math.min( square.y[1], square.y[2] ), 0 )
+	local max = Vector( math.max( square.x[1], square.x[2] ), math.max( square.y[1], square.y[2] ), 0 )
+	return (
+		point.x >= min.x and
+		point.x <= max.x and
+		point.y >= min.y and
+		point.y <= max.y
+	)
 end

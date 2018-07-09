@@ -7,6 +7,8 @@
 
 include( "shared.lua" )
 
+include( "cl_editor_room.lua" )
+
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
 
@@ -268,7 +270,7 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 	local scal = 0.0125
 	local speed_cursor = 20
 	local speed = 7
-	local forward = LocalPlayer():GetEyeTraceNoCursor().Normal
+	local forward = LocalPlayer():GetEyeTrace().Normal -- LocalPlayer():GetEyeTraceNoCursor().Normal
 	local pos = LocalPlayer():EyePos() + ( forward * dist )
 
 	-- Get target rotation
@@ -353,7 +355,60 @@ function GM:HUDShouldDraw( name )
 	-- print( name )
 	if ( hide[ name ] ) then return false end
 
-	return true
+	return PRK_ShouldDraw()
+end
+
+if ( !PRK_SANDBOX ) then
+function CreateContextMenu()
+	-- Destroy any old
+	DestroyContextMenu()
+
+	-- Create new
+	g_ContextMenu = vgui.Create( "EditablePanel" )
+		function g_ContextMenu:Paint( w, h )
+			
+		end
+		g_ContextMenu:SetPos( 0, 0 )
+		g_ContextMenu:SetSize( ScrW(), ScrH() )
+		--
+		-- We're blocking clicks to the world - but we don't want to
+		-- so feed clicks to the proper functions..
+		--
+		g_ContextMenu.OnMousePressed = function( p, code )
+			hook.Run( "GUIMousePressed", code, gui.ScreenToVector( gui.MousePos() ) )
+		end
+		g_ContextMenu.OnMouseReleased = function( p, code )
+			hook.Run( "GUIMouseReleased", code, gui.ScreenToVector( gui.MousePos() ) )
+		end
+		g_ContextMenu:RequestFocus()
+		g_ContextMenu:MouseCapture()
+		g_ContextMenu:MakePopup()
+		g_ContextMenu:SetKeyboardInputEnabled( false )
+		g_ContextMenu:SetMouseInputEnabled( true )
+		g_ContextMenu:SetWorldClicker( true )
+	LocalPlayer().ContextMenu = g_ContextMenu
+end
+
+function DestroyContextMenu()
+	if ( IsValid( g_ContextMenu ) ) then
+		g_ContextMenu:Remove()
+		g_ContextMenu = nil
+	end
+end
+
+function GM:ContextMenuOpen()
+	return ( CurTime() >= 1 )
+end
+
+function GM:OnContextMenuOpen()
+	if ( !hook.Call( "ContextMenuOpen", GAMEMODE ) ) then return end
+
+	CreateContextMenu()
+end
+
+function GM:OnContextMenuClose()
+	DestroyContextMenu()
+end
 end
 
 -- Blocking jump/crouch with overrides
@@ -385,6 +440,13 @@ hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bi
 		if ( string.find( bind, v ) ) then
 			return true
 		end
+	end
+end )
+
+hook.Add( "StartCommand", "PRK_StartCommand", function( ply, cmd )
+	local wheel = cmd:GetMouseWheel()
+	if ( wheel != 0 ) then
+		hook.Call( "WhileMouseWheeling", nil, wheel )
 	end
 end )
 
@@ -451,8 +513,8 @@ function PRK_HUDPaint_Crosshair()
 		end
 		CursorX = Lerp( FrameTime() * speed, CursorX, targetx )
 		CursorY = Lerp( FrameTime() * speed, CursorY, targety )
-	local x = CursorX - ScrW() / 2
-	local y = CursorY - ScrH() / 2
+	local x = 0 --CursorX - ScrW() / 2
+	local y = 0 --CursorY - ScrH() / 2
 	local size = 8
 
 	for i = 1, 3 do
@@ -483,8 +545,8 @@ function PRK_HUDPaint_CrosshairHelp()
 		CursorX = gui.MouseX()
 		CursorY = gui.MouseY()
 	end
-	local x = CursorX - ScrW() / 2
-	local y = CursorY - ScrH() / 2
+	local x = 0 -- CursorX - ScrW() / 2
+	local y = 0 -- CursorY - ScrH() / 2
 	-- local x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY, 2 )
 
 	local text = LocalPlayer().LabelText or "USE"
@@ -638,7 +700,7 @@ function PRK_Initialise_RevolverChambers()
 end
 
 function PRK_Think_RevolverChambers()
-	local speed = FrameTime() * 10
+	local speed = FrameTime() * 5
 	local old = PRK_RevolverChambers.Ang
 	PRK_RevolverChambers.Ang = Lerp( speed, PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng )
 	PRK_RevolverChambers.LastChange = math.abs( old - PRK_RevolverChambers.Ang )
@@ -705,8 +767,7 @@ function PRK_HUDPaint_RevolverChambers()
 			local segs = 5
 			local mult = 0.75
 			local dif = ( r * mult ) / 2
-			draw.Circle( x, y - dif, r * mult, segs, ang )
-			draw.Circle( x, y + dif, r * mult, segs, ang + 180 )
+			draw.Ellipses( x, y, r * mult * 1.25, r * mult, 8, ang )
 		end,
 	}
 	if ( specialcase[chambers] ) then
@@ -861,28 +922,43 @@ end
 -- Don't draw map outside of generated PRK stuff
 function GM:PreDrawOpaqueRenderables()
 	render.Clear( 0, 0, 0, 255, true, true )
+
+	return !PRK_ShouldDraw()
+end
+
+function GM:PreDrawTranslucentRenderables()
+	return !PRK_ShouldDraw()
+end
+
+function PRK_ShouldDraw()
+	return !( LocalPlayer().PRK_Editor_Room )
 end
 
 -- View range limiter
 -- Also handles death view
 local function PRK_CalcView( ply, pos, angles, fov )
-	local view = {}
-		view.origin = pos -- ( angles:Forward() * 100 )
-		view.angles = angles
-		view.fov = fov
-			if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
-				view.origin = LocalPlayer().DieEffect[1]
-				view.angles = LocalPlayer().DieEffect[2]
-				local off = PRK_HUD_DieEffect_MaxAlpha / 100 * 99
-				if ( LocalPlayer().DieEffect[3] > off ) then
-					view.fov = 90 - ( 89 / ( PRK_HUD_DieEffect_MaxAlpha - off ) * ( LocalPlayer().DieEffect[3] - off ) )
+	local editor = PRK_CalcView_Editor_Room( ply, origin, angles, fov )
+	if ( !editor ) then
+		local view = {}
+			view.origin = pos -- ( angles:Forward() * 100 )
+			view.angles = angles
+			view.fov = fov
+				if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
+					view.origin = LocalPlayer().DieEffect[1]
+					view.angles = LocalPlayer().DieEffect[2]
+					local off = PRK_HUD_DieEffect_MaxAlpha / 100 * 99
+					if ( LocalPlayer().DieEffect[3] > off ) then
+						view.fov = 90 - ( 89 / ( PRK_HUD_DieEffect_MaxAlpha - off ) * ( LocalPlayer().DieEffect[3] - off ) )
+					end
 				end
-			end
-		view.drawviewer = false
-		view.zfar = PRK_DrawDistance
-	return view
+			view.drawviewer = false
+			view.zfar = PRK_DrawDistance
+		return view
+	else
+		return editor
+	end
 end
-hook.Add( "CalcView", "PRK_CalcView_DrawDistance&Death", PRK_CalcView )
+hook.Add( "CalcView", "PRK_CalcView", PRK_CalcView )
 
 concommand.Add( "prk_effect", function( ply, cmd, args )
 	local effectdata = EffectData()
@@ -981,6 +1057,7 @@ hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
 
 	local scale = math.Clamp( math.sin( CurTime() / 2 ) * 2, 0.5, 1 ) * 3
 	local length = scale * 100
+	local segs = 48--24
 
 	-- Particles
 	if ( !PRK_Gateway_Emitters ) then
@@ -991,6 +1068,7 @@ hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
 			effectdata:SetOrigin( pos + forward * scale * 5 )
 			effectdata:SetNormal( forward )
 			effectdata:SetRadius( scale * 4 )
+			effectdata:SetFlags( segs )
 		util.Effect( "prk_gateway", effectdata )
 		nextparticle = CurTime() + 0.1
 		-- print( "part" )
@@ -1003,14 +1081,14 @@ hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
 		-- Center
 		cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
 			surface.SetDrawColor( 0, 0, 0, 255 )
-			draw.Circle( 0, 0, 24, 24, 0 )
+			draw.Circle( 0, 0, 24, segs, 0 )
 		cam.End3D2D()
 
 		local function inner_mask()
 			-- Center
 			cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
 				surface.SetDrawColor( PRK_HUD_Colour_Shadow )
-				draw.Circle( 0, 0, 24, 24, 0 )
+				draw.Circle( 0, 0, 24, segs, 0 )
 			cam.End3D2D()
 		end
 		local function inner_inner()
@@ -1141,6 +1219,38 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 	return x, y
 end
 
+function surface.DrawRectBorder( x, y, w, h, border )
+	-- Top
+	surface.DrawRect(
+		x - border,
+		y - border,
+		w + border * 2,
+		border
+	)
+	-- Bottom
+	surface.DrawRect(
+		x - border,
+		y + h,
+		w + border * 2,
+		border
+	)
+
+	-- Left
+	surface.DrawRect(
+		x - border,
+		y,
+		border,
+		h
+	)
+	-- Right
+	surface.DrawRect(
+		x + w,
+		y,
+		border,
+		h
+	)
+end
+
 function draw.Box( x, y, w, h, color )
 	if ( color ) then
 		draw.SetDrawColor( color )
@@ -1181,6 +1291,37 @@ function draw.Heart( x, y, radius, seg )
 		},
 	}
 	surface.DrawPoly( tri )
+end
+
+-- From: https://codea.io/talk/discussion/3430/has-somebody-an-ellipse-mesh-code
+function draw.Ellipses( x, y, radius, width, seg, rotate )
+    local offx = 0
+	local offy = 0
+	local rotate = -math.rad( rotate )
+    local verts = {}
+	local add = 360 / seg
+    for i = 1, seg do
+		local i = i * add
+        table.insert( verts, { x = x + offx, y = y + offy } )
+
+        angle = math.rad(i-add)
+        offx = width*math.cos(angle) 
+        offy = radius*math.sin(angle)
+			local newx = offx * math.cos( rotate ) - offy * math.sin( rotate );
+			local newy = offx * math.sin( rotate ) + offy * math.cos( rotate );
+        table.insert( verts, { x = x + newx, y = y + newy } )
+
+        angle = math.rad(i)
+        offx = width*math.cos(angle) 
+        offy = radius*math.sin(angle)
+			local newx = offx * math.cos( rotate ) - offy * math.sin( rotate );
+			local newy = offx * math.sin( rotate ) + offy * math.cos( rotate );
+        table.insert( verts, { x = x + newx, y = y + newy } )
+
+		offx = newx
+		offy = newy
+    end
+	surface.DrawPoly( verts )
 end
 
 -- More in shared.lua

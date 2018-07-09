@@ -7,6 +7,7 @@
 
 -- LUA Downloads
 AddCSLuaFile( "cl_init.lua" )
+AddCSLuaFile( "cl_editor_room.lua" )
 AddCSLuaFile( "shared.lua" )
 
 -- LUA Includes
@@ -40,6 +41,7 @@ print( "-------------------" )
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
 util.AddNetworkString( "PRK_Die" )
+util.AddNetworkString( "PRK_Editor" )
 
 function SendKeyValue( ply, key, val )
 	net.Start( "PRK_KeyValue" )
@@ -62,6 +64,24 @@ function SendDie( ply, pos, ang, killname )
 		net.WriteString( killname )
 	net.Send( ply )
 end
+
+net.Receive( "PRK_Editor", function( len, ply )
+	local toggle = net.ReadBool()
+
+	ply.PRK_Editor = toggle
+	if ( ply.PRK_Editor ) then
+		ply.PRK_Editor_OldPos = ply:GetPos()
+		ply:SetPos( Vector( 0, 0, -20000 ) )
+	else
+		ply:SetPos( ply.PRK_Editor_OldPos )
+	end
+	-- ply:Freeze( toggle )
+	-- if ( toggle ) then
+		-- ply:Lock()
+	-- else
+		-- ply:UnLock()
+	-- end
+end )
 
 ------------------------
   -- Gamemode Hooks --
@@ -134,6 +154,10 @@ end
 function GM:Think()
 	
 end
+
+-- function GM:PlayerDeathThink( ply )
+	-- return !ply.PRK_Editor
+-- end
 
 function GM:HandlePlayerJumping( ply, vel )
 	return true

@@ -139,6 +139,8 @@ function SWEP:Initialize()
 end
 
 function SWEP:Think()
+	if ( PRK_InEditor( self.Owner ) ) then return end
+
 	if ( self.FOVPunch and self.FOVPunch <= CurTime() ) then
 		self.Owner:SetFOV( 0, self.TimeBackFOVPunch )
 		self.FOVPunch = nil
@@ -158,6 +160,8 @@ function SWEP:PreDrawViewModel( vm, wep, ply )
 end
 
 function SWEP:PrimaryAttack( right )
+	if ( PRK_InEditor( self.Owner ) ) then return end
+
 	-- Make sure we can shoot first
 	local ammo = self.Owner:GetNWInt( "PRK_Clip" )
 	if ( self.RequireAmmo and ammo <= 0 ) then
@@ -281,6 +285,8 @@ function SWEP:SecondaryAttack()
 end
 
 function SWEP:Reload()
+	if ( PRK_InEditor( self.Owner ) ) then return end
+
 	if ( !self.NextReload or self.NextReload <= CurTime() ) then
 		local ammo = self.Owner:GetNWInt( "PRK_Clip" )
 		local extraammo = self.Owner:GetNWInt( "PRK_ExtraAmmo" )
@@ -384,6 +390,8 @@ if ( CLIENT ) then
 
 	local curpos = Vector()
 	function SWEP:GetViewModelPosition( pos, ang )
+		if ( PRK_InEditor( self.Owner ) ) then return end
+
 		if ( !self.GunModel or !self.GunModel:IsValid() ) then
 			self:Initialize()
 		end

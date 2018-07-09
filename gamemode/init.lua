@@ -98,11 +98,13 @@ function GM:PlayerInitialSpawn( ply )
 	ply:Say( "I have now joined the game" )
 
 	print( "looking for any ent data to send to the client..." )
-	for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
-		if ( v.InitializeNewClient ) then
-			v:InitializeNewClient()
+	timer.Simple( 2, function()
+		for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
+			if ( v.InitializeNewClient ) then
+				v:InitializeNewClient()
+			end
 		end
-	end
+	end )
 end
 
 function GM:PlayerSpawn( ply )

@@ -35,12 +35,15 @@ net.Receive( "PRK_UIMachine_Stock", function( len, ply )
 	print( "receive stock" )
 	self.Stock = stock
 	local function try()
+		print( "try to init..." )
 		if ( self and self:IsValid() and self.Initialize ) then
 			self:Initialize()
 		else
 			-- Try again after the ent is available to the client
 			timer.Simple( 1, function()
-				try()
+				if ( !self.UI ) then
+					try()
+				end
 			end )
 		end
 	end
@@ -55,7 +58,12 @@ function ENT:SendSelection( selection )
 end
 
 function ENT:Initialize()
+	print( "initialising..." )
 	if ( self.UI ) then self.UI:Remove() self.UI = nil end
+	print( "creating ui..." )
+	if ( self.Stock ) then
+		PrintTable( self.Stock )
+	end
 
 	local ui_w = PRK_Plate_Size / scale * hori
 	local ui_h = PRK_Plate_Size / scale * vert

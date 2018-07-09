@@ -66,6 +66,7 @@ PRK_Editor_MoveSpeed							= 2
 PRK_Editor_Zoom_Step							= 30
 PRK_Editor_Zoom_Speed						= 10
 PRK_Editor_Zoom_Min							= 50
+PRK_Editor_Zoom_Default						= 500
 PRK_Editor_Zoom_Max							= 1000
 PRK_Editor_Grid_Scale							= 0.5
 PRK_Editor_Grid_Size							= 1024

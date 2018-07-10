@@ -388,6 +388,11 @@ if ( CLIENT ) then
 		self.GunModel:SetParent( LocalPlayer():GetViewModel() )
 	end
 
+	function SWEP:Think()
+		-- print( !PRK_ShouldDraw() )
+		self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
+	end
+
 	local curpos = Vector()
 	function SWEP:GetViewModelPosition( pos, ang )
 		if ( PRK_InEditor( self.Owner ) ) then return end

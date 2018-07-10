@@ -61,13 +61,26 @@ PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter									= ""
 PRK_CursorSize										= 8
 
+-- Gateway
+PRK_Gateway_StartOpenRange				= 500
+PRK_Gateway_MaxScale							= 5
+PRK_Gateway_PullRange						= 300
+PRK_Gateway_PullForce							= 100
+PRK_Gateway_EnterRange						= 50
+PRK_Gateway_OpenSpeed						= 5
+PRK_Gateway_TravelTime						= 5
+PRK_Gateway_FlashSpeed						= 5
+PRK_Gateway_ParticleDelay					= 0.1
+PRK_Gateway_ParticleDelayTravel			= 0.05
+PRK_Gateway_Segments						= 48
+
 -- Editor
 PRK_Editor_MoveSpeed							= 2
 PRK_Editor_Zoom_Step							= 30
 PRK_Editor_Zoom_Speed						= 10
 PRK_Editor_Zoom_Min							= 50
 PRK_Editor_Zoom_Default						= 500
-PRK_Editor_Zoom_Max							= 1000
+PRK_Editor_Zoom_Max							= 2000
 PRK_Editor_Grid_Scale							= 0.5
 PRK_Editor_Grid_Size							= 1024
 PRK_Editor_Square_Size						= PRK_Plate_Size
@@ -96,6 +109,9 @@ PRK_BaseClip										= 1
 PRK_Health											= 6
 PRK_Speed											= 600
 PRK_Jump												= 0
+
+-- Misc
+PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 
 ------------------------
   -- Gamemode Hooks --
@@ -365,4 +381,29 @@ function intersect_point_square( point, square )
 		point.y >= min.y and
 		point.y <= max.y
 	)
+end
+
+-- From: https://gamedev.stackexchange.com/questions/29786/a-simple-2d-rectangle-collision-algorithm-that-also-determines-which-sides-that
+-- a is a table
+-- b is a table
+function intersect_squares( a, b )
+	local a_min = Vector( math.min( a.x[1], a.x[2] ), math.min( a.y[1], a.y[2] ), 0 )
+	local a_max = Vector( math.max( a.x[1], a.x[2] ), math.max( a.y[1], a.y[2] ), 0 )
+	local b_min = Vector( math.min( b.x[1], b.x[2] ), math.min( b.y[1], b.y[2] ), 0 )
+	local b_max = Vector( math.max( b.x[1], b.x[2] ), math.max( b.y[1], b.y[2] ), 0 )
+
+	local a_width = a_max.x - a_min.x
+	local a_height = a_max.y - a_min.y
+	local b_width = b_max.x - b_min.x
+	local b_height = b_max.y - b_min.y
+
+	local a_center = a_min + ( a_max - a_min ) / 2
+	local b_center = b_min + ( b_max - b_min ) / 2
+
+	local w = 0.5 * ( a_width + b_width )
+	local h = 0.5 * ( a_height + b_height )
+	local dx = a_center.x - b_center.x
+	local dy = a_center.y - b_center.y
+
+	return ( math.abs( dx ) <= w and math.abs( dy ) <= h )
 end

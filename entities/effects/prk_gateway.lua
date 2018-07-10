@@ -6,16 +6,25 @@ function EFFECT:Init( data )
 	local origin = data:GetOrigin()
 	local dir = data:GetNormal()
 	local radius = data:GetRadius()
-	local segs = data:GetFlags()
+	local segs = data:GetMagnitude()
+	local instream = data:GetFlags() == 1
+
+	local up = Vector( 0, 0, 1 )
+	local right = up:Cross( dir )
 
 	local speed = 400
 	local size = radius * 0.75
 	local dietime = 1.5
+		if ( instream ) then
+			local mult = PRK_Gateway_TravelTime * 2
+			speed = speed / mult
+			dietime = dietime * mult
+		end
 	local particles = segs
 	local circ = PRK_GetCirclePoints( 0, 0, radius, particles, math.random( 0, 360 ) )
 	local emitter = ParticleEmitter( origin, true )
 		for i = 1, particles do
-			local pos = Vector( circ[i].x, 0, circ[i].y )
+			local pos = right * circ[i].x + up * circ[i].y
 
 			local particle = emitter:Add( PRK_Material_Square, origin + pos * 6 )
 			if ( particle ) then
@@ -38,12 +47,13 @@ function EFFECT:Init( data )
 
 				particle:SetColor( 255, 255, 255 )
 
-				particle:SetAngles( -pos:GetNormalized():Angle() ) -- Woah
-				particle:SetAngles( -pos:GetNormalized():Angle() + Angle( 0, 180, 0 ) ) -- WOAH
-				-- particle:SetAngleVelocity( Angle( math.Rand( -160, 160 ), math.Rand( -160, 160 ), math.Rand( -160, 160 ) ) )
+				particle:SetAngles( -pos:GetNormalized():Angle() + Angle( 0, 180, 0 ) )
+				if ( right:Distance( Vector( 0, 1, 0 ) ) < 0.1 ) or ( right:Distance( Vector( 0, -1, 0 ) ) < 0.1 ) then
+					particle:SetAngles( -pos:GetNormalized():Angle() )
+				end
 			end
 		end
-	emitter:SetNoDraw( true )
+		emitter:SetNoDraw( true )
 	timer.Simple( dietime, function()
 		emitter:Finish()
 	end )
@@ -56,4 +66,5 @@ function EFFECT:Think()
 end
 
 function EFFECT:Render()
+	
 end

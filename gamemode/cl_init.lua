@@ -121,7 +121,9 @@ net.Receive( "PRK_Die", function( len, ply )
 
 	LocalPlayer():EmitSound( "prk_death" )
 
+	-- Reset everything
 	PRK_Initialise_RevolverChambers()
+	LocalPlayer().PRK_Gateway = nil
 end )
 
 -- Gamemode Hooks
@@ -240,6 +242,8 @@ function GM:HUDPaint()
 	PRK_HUDPaint_ExtraAmmo()
 	PRK_HUDPaint_RevolverChambers()
 
+	PRK_HUDPaint_Crosshair()
+
 	-- Must be last!
 	if ( !LocalPlayer().LastEyeAngles ) then
 		LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
@@ -327,11 +331,11 @@ hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_
 		cam.End3D2D()
 	end
 	-- Draw cursor
-	local targetang = gettarget( false )
-	lastcursorang = LerpAngle( FrameTime() * speed_cursor, lastcursorang, targetang )
-	cam.Start3D2D( pos, lastcursorang, scal )
-		PRK_HUDPaint_Crosshair()
-	cam.End3D2D()
+	-- local targetang = gettarget( false )
+	-- lastcursorang = LerpAngle( FrameTime() * speed_cursor, lastcursorang, targetang )
+	-- cam.Start3D2D( pos, lastcursorang, scal )
+		-- PRK_HUDPaint_Crosshair()
+	-- cam.End3D2D()
 end )
 
 function GM:PostDrawHUD()
@@ -513,9 +517,11 @@ function PRK_HUDPaint_Crosshair()
 		end
 		CursorX = Lerp( FrameTime() * speed, CursorX, targetx )
 		CursorY = Lerp( FrameTime() * speed, CursorY, targety )
-	local x = 0 --CursorX - ScrW() / 2
-	local y = 0 --CursorY - ScrH() / 2
-	local size = 8
+	local x = 0
+	local y = 0
+	local x = CursorX
+	local y = CursorY
+	local size = 6
 
 	for i = 1, 3 do
 		-- Draw crosshair shadow with lag behind
@@ -931,14 +937,20 @@ function GM:PreDrawTranslucentRenderables()
 end
 
 function PRK_ShouldDraw()
-	return !( LocalPlayer().PRK_Editor_Room )
+	return !( LocalPlayer().PRK_Editor_Room or LocalPlayer().PRK_Gateway )
 end
 
 -- View range limiter
 -- Also handles death view
 local function PRK_CalcView( ply, pos, angles, fov )
-	local editor = PRK_CalcView_Editor_Room( ply, origin, angles, fov )
-	if ( !editor ) then
+	-- Editor first
+	local override = PRK_CalcView_Editor_Room( ply, origin, angles, fov )
+	-- Then gateway
+	if ( !override ) then
+		override = PRK_CalcView_Gateway( ply, origin, angles, fov )
+	end
+	-- Then normal/death
+	if ( !override ) then
 		local view = {}
 			view.origin = pos -- ( angles:Forward() * 100 )
 			view.angles = angles
@@ -955,7 +967,7 @@ local function PRK_CalcView( ply, pos, angles, fov )
 			view.zfar = PRK_DrawDistance
 		return view
 	else
-		return editor
+		return override
 	end
 end
 hook.Add( "CalcView", "PRK_CalcView", PRK_CalcView )
@@ -975,144 +987,6 @@ timer.Create( "DetectResolutionChange", 1, 0, function()
 		LastScrH = ScrH()
 		hook.Call( "OnResolutionChange", GAMEMODE )
 	end 
-end )
-
--- Mesh tests
--- local mat = Material( "editor/wireframe" ) -- The material ( a wireframe )
-local mat = Material( "prk_gradient.png" ) -- The material ( a wireframe )
-
-local pos = Vector( 267, -757.5, -12200 )
-local x = 0
-local y = 0
-local angle = 0
-local a = 2
-local b = 2
-local maxPoints = 200
-local angleadd = 0.1
-local width = 10
-local forward = Vector( 0, -1, 0 )
-local maxdepth = 500
-local depth = 0
-
-local verts = {}
-	-- Generate a thick spiral
-		for i = 0, maxPoints do
-			-- Calculate this inner point
-			angle = angleadd * i
-			local size = angle
-			x = ( a + b * size ) * math.cos( angle )
-			y = ( a + b * size ) * math.sin( angle )
-			local firstpoint = { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 }
-
-			-- First connect with the last triangle
-			if ( i != 0 ) then
-				local i = #verts
-				table.insert( verts, verts[i - 2] )
-				table.insert( verts, verts[i] )
-				table.insert( verts, firstpoint )
-			end
-
-			-- Add the inner point after adding the joiner
-			table.insert( verts, firstpoint )
-
-			-- Add first outer triangle
-			local size = size + width
-			x = ( a + b * size ) * math.cos( angle )
-			y = ( a + b * size ) * math.sin( angle )
-
-			table.insert( verts, { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 } )
-
-			local angle = angle + angleadd
-			size = size + angleadd
-			x = ( a + b * size ) * math.cos( angle )
-			y = ( a + b * size ) * math.sin( angle )
-
-			table.insert( verts, { pos = Vector( x, 0, y ), u = i % 3, v = i % 3 } )
-		end
-local obj = Mesh()
--- mesh.Begin( obj, MATERIAL_TRIANGLES, maxPoints ) -- Begin writing to the dynamic mesh
-	-- for i = 1, #verts do
-		-- mesh.Position( pos + verts[i].pos ) -- Set the position
-		-- mesh.TexCoord( 0, verts[i].u, verts[i].v ) -- Set the texture UV coordinates
-		-- mesh.AdvanceVertex() -- Write the vertex
-	-- end
--- mesh.End() -- Finish writing the mesh and draw it
-
-local tunnel
-local nextparticle = 0
-hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
-	if ( !tunnel ) then
-		tunnel = PRK_AddModel(
-			"models/props_phx/construct/metal_plate_curve360x2.mdl",
-			pos + forward * PRK_Plate_Size * 4,
-			Angle( 90, 90, 0 ),
-			1,
-			"models/debug/debugwhite",
-			Color( 0, 200, 0, 255 )
-		)
-		tunnel:SetNoDraw( true )
-	end
-
-	render.SetMaterial( mat ) -- Apply the material
-
-	local scale = math.Clamp( math.sin( CurTime() / 2 ) * 2, 0.5, 1 ) * 3
-	local length = scale * 100
-	local segs = 48--24
-
-	-- Particles
-	if ( !PRK_Gateway_Emitters ) then
-		PRK_Gateway_Emitters = {}
-	end
-	if ( nextparticle <= CurTime() ) then
-		local effectdata = EffectData()
-			effectdata:SetOrigin( pos + forward * scale * 5 )
-			effectdata:SetNormal( forward )
-			effectdata:SetRadius( scale * 4 )
-			effectdata:SetFlags( segs )
-		util.Effect( "prk_gateway", effectdata )
-		nextparticle = CurTime() + 0.1
-		-- print( "part" )
-	end
-
-	local tunnelscalemult = 1
-	PRK_RenderScale( tunnel, Vector( scale * tunnelscalemult, scale * tunnelscalemult, length ) )
-	tunnel:SetPos( pos + forward * PRK_Plate_Size * length )
-	local function inner()
-		-- Center
-		cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
-			surface.SetDrawColor( 0, 0, 0, 255 )
-			draw.Circle( 0, 0, 24, segs, 0 )
-		cam.End3D2D()
-
-		local function inner_mask()
-			-- Center
-			cam.Start3D2D( pos + forward * 0, Angle( 90, 90, 0 ), scale )
-				surface.SetDrawColor( PRK_HUD_Colour_Shadow )
-				draw.Circle( 0, 0, 24, segs, 0 )
-			cam.End3D2D()
-		end
-		local function inner_inner()
-			-- tunnel:DrawModel()
-			for k, v in pairs( PRK_Gateway_Emitters ) do
-				if ( v:IsValid() ) then
-					v:Draw()
-				end
-			end
-		end
-		draw.StencilBasic( inner_inner, inner_mask )
-	end
-	local function mask()
-		tunnel:DrawModel()
-
-		-- Back wall
-		cam.Start3D2D( pos + forward * 100, Angle( 90, 90, 0 ), 1000 )
-			surface.DrawRect( -8, -8, 16, 16 )
-		cam.End3D2D()
-	end
-	draw.StencilBasic( mask, inner )
-	-- draw.StencilCut( mask, inner )
-	-- inner()
-		-- tunnel:DrawModel()
 end )
 
 --------------

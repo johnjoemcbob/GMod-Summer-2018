@@ -71,7 +71,7 @@ net.Receive( "PRK_Editor", function( len, ply )
 	ply.PRK_Editor = toggle
 	if ( ply.PRK_Editor ) then
 		ply.PRK_Editor_OldPos = ply:GetPos()
-		ply:SetPos( Vector( 0, 0, -20000 ) )
+		ply:SetPos( PRK_Position_Nowhere )
 	else
 		ply:SetPos( ply.PRK_Editor_OldPos )
 	end

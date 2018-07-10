@@ -242,9 +242,18 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 			for k, dragging in pairs( LocalPlayer().PRK_Editor_RoomData.DraggingModel ) do
 				if ( dragging ) then
 					local model = LocalPlayer().PRK_Editor_RoomData.Models[k]
-					local pos = pos + Vector( model.preposx, model.preposy, 0 )
-						if LocalPlayer():KeyDown( IN_SPEED ) then
-							pos = PRK_Editor_Room_GetClosestGrid( pos ) * PRK_Editor_Square_Size
+					local pos = pos
+						if ( LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap ) then
+							pos = PRK_Editor_Room_GetClosestGrid( pos )
+							print( model.preposx )
+							pos.x = model.preposx + ( pos.x * PRK_Editor_Square_Size )
+							pos.y = model.preposy + ( pos.y * PRK_Editor_Square_Size )
+						else
+							pos = pos + Vector( model.preposx, model.preposy, 0 )
+							if LocalPlayer():KeyDown( IN_SPEED ) then
+								pos = PRK_Editor_Room_GetClosestGrid( pos ) * PRK_Editor_Square_Size
+							end
+							pos = pos
 						end
 					model:SetPos( pos + PlaceableEnts[model.PRK_Editor_Ent].Offset )
 				end
@@ -319,11 +328,27 @@ function PRK_Editor_Room_RayToPlane( aim )
 	return pos
 end
 
-function PRK_Editor_Room_StartDrag()
+function PRK_Editor_Room_StopDrag()
+	LocalPlayer().PRK_Editor_RoomData.Dragging = nil
+	LocalPlayer().PRK_Editor_RoomData.DraggingModel = nil
+	LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap = nil
+end
+
+function PRK_Editor_Room_HandleDrag()
 	local pos_raw = PRK_Editor_Room_RayToPlane( LocalPlayer():GetEyeTrace().Normal )
 	if ( pos_raw ) then
 		local draggingsomething = false
 
+		-- End drag if was already dragging
+		if (
+			( LocalPlayer().PRK_Editor_RoomData.Dragging and #LocalPlayer().PRK_Editor_RoomData.Dragging > 0 ) or
+			( LocalPlayer().PRK_Editor_RoomData.DraggingModel and #LocalPlayer().PRK_Editor_RoomData.DraggingModel > 0 )
+		) then
+			PRK_Editor_Room_StopDrag()
+			return
+		end
+
+		-- Models
 		local pos = PRK_Editor_Room_GetClosestGrid( pos_raw )
 		LocalPlayer().PRK_Editor_RoomData.DraggingModel = table.shallowcopy( LocalPlayer().PRK_Editor_RoomData.HighlightedModel )
 			-- Store predrag cursor/models offset
@@ -335,6 +360,7 @@ function PRK_Editor_Room_StartDrag()
 					draggingsomething = true
 				end
 			end
+		-- Floors
 		LocalPlayer().PRK_Editor_RoomData.Dragging = table.shallowcopy( LocalPlayer().PRK_Editor_RoomData.Highlighted )
 			-- Store predrag sizes
 			for k, draggable in pairs( LocalPlayer().PRK_Editor_RoomData.Dragging ) do
@@ -351,9 +377,14 @@ function PRK_Editor_Room_StartDrag()
 		LocalPlayer().PRK_Editor_RoomData.DragStart = pos
 
 		-- If not dragging, make a rectangle selector instead
-		if ( !draggingsomething and !LocalPlayer().PRK_Editor_RoomData.RectangleSelector ) then
-			LocalPlayer().PRK_Editor_RoomData.RectangleSelector = { Start = pos_raw }
-			LocalPlayer().PRK_Editor_RoomData.Highlighted = {}
+		if ( !draggingsomething ) then
+			if ( !LocalPlayer().PRK_Editor_RoomData.RectangleSelector ) then
+				LocalPlayer().PRK_Editor_RoomData.RectangleSelector = { Start = pos_raw }
+				LocalPlayer().PRK_Editor_RoomData.Highlighted = {}
+			else
+				PRK_Editor_Room_StopDrag()
+				return
+			end
 		end
 	end
 end
@@ -371,7 +402,7 @@ hook.Add( "GUIMousePressed", "PRK_GUIMousePressed_Editor_Room", function( code, 
 	-- Mouse clicks
 	if ( code == MOUSE_LEFT ) then
 		-- Start dragging any highlighted edges
-		PRK_Editor_Room_StartDrag()
+		PRK_Editor_Room_HandleDrag()
 	elseif ( code == MOUSE_RIGHT ) then
 		local pos = PRK_Editor_Room_RayToPlane( aim )
 
@@ -465,8 +496,18 @@ hook.Add( "GUIMouseReleased", "PRK_GUIMouseReleased_Editor_Room", function( code
 	if ( LocalPlayer().PRK_Editor_RoomData.RectangleSelector ) then
 		-- Find all parts and models inside this range
 		for k, v in pairs( LocalPlayer().PRK_Editor_RoomData.Parts ) do
+			local squarefloor = {
+				x = {
+					v.position.x,
+					v.position.x + v.width,
+				},
+				y = {
+					v.position.y,
+					v.position.y - v.breadth,
+				},
+			}
 			local rect = LocalPlayer().PRK_Editor_RoomData.RectangleSelector
-			local square = {
+			local squarerect = {
 				x = {
 					rect.Start.x,
 					rect.End.x,
@@ -476,11 +517,45 @@ hook.Add( "GUIMouseReleased", "PRK_GUIMouseReleased_Editor_Room", function( code
 					rect.End.y,
 				},
 			}
-			v.Highlighted = intersect_point_square( v.position, square )
+			v.Highlighted = intersect_squares( squarefloor, squarerect )
 			LocalPlayer().PRK_Editor_RoomData.Highlighted[k] = {}
 			LocalPlayer().PRK_Editor_RoomData.Highlighted[k][5] = v.Highlighted
 		end
-		PRK_Editor_Room_StartDrag()
+		for k, model in pairs( LocalPlayer().PRK_Editor_RoomData.Models ) do
+			if ( model.PRK_Editor_Ent ) then
+				local data = PlaceableEnts[model.PRK_Editor_Ent]
+				if ( data and data.ClickCollision ) then
+					local x = model:GetPos().x
+					local y = model:GetPos().y
+					local c = data.ClickCollision
+					local squareobj = {
+						x = {
+							x + c[1].x,
+							x + c[2].x,
+						},
+						y = {
+							y + c[1].y,
+							y + c[2].y,
+						},
+					}
+					local rect = LocalPlayer().PRK_Editor_RoomData.RectangleSelector
+					local squarerect = {
+						x = {
+							rect.Start.x,
+							rect.End.x,
+						},
+						y = {
+							rect.Start.y,
+							rect.End.y,
+						},
+					}
+					model.Highlighted = intersect_squares( squareobj, squarerect )
+					LocalPlayer().PRK_Editor_RoomData.HighlightedModel[k] = model.Highlighted
+					LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap = true
+				end
+			end
+		end
+		PRK_Editor_Room_HandleDrag()
 
 		LocalPlayer().PRK_Editor_RoomData.RectangleSelector = nil
 	end
@@ -608,7 +683,6 @@ function PRK_Editor_Room_Export()
 	file.Write( dir .. filename .. ".txt", content )
 end
 
-local view_origin, view_angles
 function PRK_CalcView_Editor_Room( ply, origin, angles, fov )
 	if LocalPlayer().PRK_Editor_Room then
 		local view = {}
@@ -626,7 +700,7 @@ function PRK_CalcView_Editor_Room( ply, origin, angles, fov )
 end
 
 hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Editor", function()
-	if ( PRK_ShouldDraw() ) then return end
+	if !LocalPlayer().PRK_Editor_Room then return end
 
 	-- Draw all editor models
 	cam.Start3D()

@@ -130,6 +130,13 @@ end
 function ENT:Think()
 	self:ThinkState()
 
+	-- Check for fallen out of world
+	if ( self:GetPos().z < -12300 ) then
+		print( "Prickly: Bullet fell out of world, resetting to first position" )
+		self:SetPos( self.StartPos )
+		self:SetVelocity( Vector() )
+	end
+
 	self:NextThink( CurTime() )
 	return true
 end
@@ -209,7 +216,7 @@ function ENT:Launch( startpos, velocity, gravity )
 		gravity = true
 	end
 
-	self.launch_vector = velocity
+	self.StartPos = startpos
 	self:SetPos( startpos )
 	-- self:SetVelocity( velocity * 1000000000 )
 	local phys = self:GetPhysicsObject()

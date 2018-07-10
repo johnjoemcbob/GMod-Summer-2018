@@ -151,6 +151,10 @@ function SWEP:Think()
 		self.MaxClip = math.Approach( self.MaxClip, self.TargetMaxClip, FrameTime() * speed )
 	end
 
+	if ( CLIENT ) then
+		self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
+	end
+
 	self:NextThink( CurTime() + 1 )
 	return true
 end
@@ -161,6 +165,7 @@ end
 
 function SWEP:PrimaryAttack( right )
 	if ( PRK_InEditor( self.Owner ) ) then return end
+	if ( self.Owner:JustSpawned() ) then return end
 
 	-- Make sure we can shoot first
 	local ammo = self.Owner:GetNWInt( "PRK_Clip" )
@@ -386,11 +391,6 @@ if ( CLIENT ) then
 		self.GunModel:EnableMatrix( "RenderMultiply", mat )
 
 		self.GunModel:SetParent( LocalPlayer():GetViewModel() )
-	end
-
-	function SWEP:Think()
-		-- print( !PRK_ShouldDraw() )
-		self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
 	end
 
 	local curpos = Vector()

@@ -7,6 +7,7 @@ function ENT:Initialize()
 	self.Bullet:SetMaterial( "models/shiny", true )
 	self.Bullet:SetColor( Color( 150, 150, 200, 255 ) )
 	self.Bullet:SetModelScale( self.Scale, 0 )
+	self.Bullet:SetNoDraw( true )
 
 	-- Set bullet scale
 	local scale = Vector( 0.6, 1.5, 1.5 )
@@ -16,21 +17,15 @@ function ENT:Initialize()
 	self.Bullet:EnableMatrix( "RenderMultiply", mat )
 end
 
--- Also update pos/ang here in case Draw wouldn't be called (if the entity is already out of view)
-function ENT:Think()
-	if ( !self.Bullet ) then
-		self:Initialize()
-	end
-	self.Bullet:SetPos( self:GetPos() )
-	self.Bullet:SetAngles( self:GetAngles() )
-end
-
 function ENT:Draw()
 	if ( !self.Bullet ) then
 		self:Initialize()
 	end
 	self.Bullet:SetPos( self:GetPos() )
 	self.Bullet:SetAngles( self:GetAngles() )
+	render.SetColorModulation( 0.75, 0.75, 0.8 )
+		self.Bullet:DrawModel()
+	render.SetColorModulation( 0, 0, 0 )
 end
 
 function ENT:OnRemove()

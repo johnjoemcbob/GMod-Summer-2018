@@ -41,6 +41,7 @@ print( "-------------------" )
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
 util.AddNetworkString( "PRK_Die" )
+util.AddNetworkString( "PRK_Spawn" )
 util.AddNetworkString( "PRK_Editor" )
 
 function SendKeyValue( ply, key, val )
@@ -62,6 +63,12 @@ function SendDie( ply, pos, ang, killname )
 		net.WriteVector( pos )
 		net.WriteAngle( ang )
 		net.WriteString( killname )
+	net.Send( ply )
+end
+
+function SendSpawn( ply, time )
+	net.Start( "PRK_Spawn" )
+		net.WriteFloat( time )
 	net.Send( ply )
 end
 
@@ -95,9 +102,7 @@ function GM:InitPostEntity()
 end
 
 function GM:PlayerInitialSpawn( ply )
-	ply:Say( "I have now joined the game" )
-
-	print( "looking for any ent data to send to the client..." )
+	-- Send any required client data to the new client
 	timer.Simple( 2, function()
 		for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
 			if ( v.InitializeNewClient ) then
@@ -150,7 +155,11 @@ function GM:PlayerSpawn( ply )
 	ply:CrosshairDisable()
     
     -- Reset buffs
-    PRK_Buff_Register(ply)
+    PRK_Buff_Register( ply )
+
+	-- Store spawn time
+	ply.SpawnTime = CurTime()
+	SendSpawn( ply, ply.SpawnTime )
 end
 
 function GM:Think()

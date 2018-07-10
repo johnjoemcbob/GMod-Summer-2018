@@ -87,7 +87,7 @@ local function tryjump( ent )
 		if ( phys and phys:IsValid() ) then
 			local horizontal	= 50
 			local vertical		= 200
-			local angle			= 5000
+			local angle		= 5000
 			phys:ApplyForceCenter( Vector( math.random( -1, 1 ) * horizontal, math.random( -1, 1 ) * horizontal, vertical ) )
 			phys:AddAngleVelocity( VectorRand() * angle )
 		end
@@ -134,6 +134,7 @@ function ENT:Initialize()
 
 	-- Variables
 	self.JumpDelay = { 2, 4 }
+	self.StartPos = self:GetPos()
 
 	-- Initialise
 	self:StartState( State.Pickup )
@@ -141,6 +142,13 @@ end
 
 function ENT:Think()
 	self:ThinkState()
+
+	-- Check for fallen out of world
+	if ( self:GetPos().z < -12300 ) then
+		print( "Prickly: Coin fell out of world, resetting to first position" )
+		self:SetPos( self.StartPos )
+		self:SetVelocity( Vector() )
+	end
 
 	self:NextThink( CurTime() )
 	return true

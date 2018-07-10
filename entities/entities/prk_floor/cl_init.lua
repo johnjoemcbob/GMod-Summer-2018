@@ -90,20 +90,10 @@ local colours = {
 
 local reload = true
 
-function ENT:Think()
-	-- Autoreload helper
-	if ( reload ) then
-		self:OnRemove()
-		self:Initialize()
-		reload = false
-	end
-
-	return true
-end
-
 local Grasses = {}
 
 function ENT:Initialize()
+	-- Plant models
 	local min = self:OBBMins()
 	local max = self:OBBMaxs()
 	self.Models = {}
@@ -122,32 +112,130 @@ function ENT:Initialize()
 		local sca = rnd[4]
 		local mat = Matrix()
 			mat:Scale( sca )
+		ent.Scale = sca
 		ent:EnableMatrix( "RenderMultiply", mat )
 	end
 
-	local grasses = PRK_Grass_Billboard_Count
-	-- Grasses = {}
-	for i = 1, grasses do
-		table.insert( Grasses,	{
+	-- Grass billboards
+	local grasscount = PRK_Grass_Billboard_Count
+	local grasses = {}
+	for i = 1, grasscount do
+		table.insert( grasses,	{
 			self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
 			Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
 			math.random( 10, 50 ) / 10,
 			Entity = self.Entity
 		} )
 	end
+	Grasses[self:GetPos()] = grasses
 end
 
 function ENT:Draw()
 	self:DrawModel()
 end
 
+function ENT:Think()
+	-- Disrupt plants if close
+	for _, ply in pairs( player.GetAll() ) do
+		local speed = ply:GetVelocity():Length()
+		-- print( speed )
+		local moving = speed > 100
+		if ( moving ) then
+			for k, v in pairs( self.Models ) do
+				if ( !v.NextTouch or v.NextTouch <= CurTime() ) then
+					local dist = ply:GetPos():Distance( v:GetPos() )
+					local maxdist = 50
+					local close = dist < maxdist
+					if ( close ) then
+						-- Sound effect
+						ply:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
+
+						-- Lean away from player
+						local forward = ( ply:GetPos() + ply:GetVelocity() - v:GetPos() ):GetNormal()
+						local up = Vector( 0, 0, 1 )
+						local right = up:Cross( forward )
+						local ang = Angle( v.Ang.p, v.Ang.y, v.Ang.r )
+							ang:RotateAroundAxis( right, dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
+						v.TargetAngles = ang
+
+						-- Bounce up/down scale
+						v.TargetScaleOffset = 3
+
+						-- Delay next
+						-- v.NextTouch = CurTime() + 1
+					end
+				end
+			end
+		end
+	end
+
+	-- Lerp plants
+	for k, v in pairs( self.Models ) do
+		-- Lerp angles
+		if ( v.TargetAngles ) then
+			local speed = 5
+			local ang = LerpAngle( FrameTime() * speed, v:GetAngles(), v.TargetAngles )
+			v:SetAngles( ang )
+			v.TargetAngles = v.Ang
+		end
+
+		-- Lerp scale
+		if ( v.TargetScaleOffset ) then
+			local speed = 10
+			local scalemulthori = 0.1
+			local scalemultvert = 0.2
+			v.TargetScaleOffset = math.Approach( v.TargetScaleOffset, 0, FrameTime() * speed )
+			local scaleoffset = v.TargetScaleOffset - 2
+				if ( scaleoffset < -1 ) then
+					scaleoffset = ( 1 - scaleoffset ) - 3
+				end
+			local sca = v.Scale + Vector( scaleoffset * scalemulthori, scaleoffset * scalemulthori, scaleoffset * scalemultvert )
+			local mat = Matrix()
+				mat:Scale( sca )
+			v:EnableMatrix( "RenderMultiply", mat )
+
+			-- End scale
+			if ( v.TargetScaleOffset == 0 ) then
+				v.TargetScaleOffset = nil
+			end
+		end
+	end
+
+	-- Autoreload helper
+	if ( reload ) then
+		self:OnRemove()
+		self:Initialize()
+		reload = false
+	end
+
+	return true
+end
+
+function ENT:OnRemove()
+	-- Remove grass
+	local toremove = {}
+	for k, grass in pairs( Grasses ) do
+		if ( grass.Entity == self.Entity ) then
+			table.insert( toremove, grass )
+		end
+	end
+	for k, remove in pairs( toremove ) do
+		table.RemoveByValue( Grasses, grass )
+	end
+
+	-- Remove visuals
+	for k, v in pairs( self.Models ) do
+		v:Remove()
+	end
+end
+
 local nextthink = 0
 hook.Add( "Think", "PRK_Think_Grass", function()
 	if ( CurTime() < nextthink ) then return end
 
-	for k, grass in pairs( Grasses ) do
-		local dist = grass[1]:Distance( LocalPlayer():GetPos() )
-		grass.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
+	for k, grasses in pairs( Grasses ) do
+		local dist = k:Distance( LocalPlayer():GetPos() )
+		grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
 	end
 
 	nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime
@@ -178,40 +266,26 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Gr
 	render.SetMaterial( material_grass )
 	local size = 16
 	local rendercount = 0
-	for k, grass in pairs( Grasses ) do
-		if ( grass.ShouldDraw ) then
-			render.DrawQuadEasy(
-				grass[1] + Vector( 0, 0, size / 2 ),
-				grass[2],
-				size, size + grass[3],
-				Color( 40, 40, 40, 255 ),
-				180
-			)
-			rendercount = rendercount + 1
-			if ( rendercount >= PRK_Grass_Billboard_MaxRenderCount ) then
-				break
+	for k, grasses in pairs( Grasses ) do
+		if ( grasses.ShouldDraw ) then
+			for _, grass in pairs( grasses ) do
+				if ( _ == tonumber( _ ) ) then
+					render.DrawQuadEasy(
+						grass[1] + Vector( 0, 0, size / 2 ),
+						grass[2],
+						size, size + grass[3],
+						Color( 40, 40, 40, 255 ),
+						180
+					)
+					rendercount = rendercount + 1
+					if ( rendercount >= PRK_Grass_Billboard_MaxRenderCount ) then
+						break
+					end
+				end
 			end
 		end
 	end
 end )
-
-function ENT:OnRemove()
-	-- Remove grass
-	local toremove = {}
-	for k, grass in pairs( Grasses ) do
-		if ( grass.Entity == self.Entity ) then
-			table.insert( toremove, grass )
-		end
-	end
-	for k, remove in pairs( toremove ) do
-		table.RemoveByValue( Grasses, grass )
-	end
-
-	-- Remove visuals
-	for k, v in pairs( self.Models ) do
-		v:Remove()
-	end
-end
 
 function ENT:AddModel( mdl, pos, ang, scale, mat, col )
 	local model = ClientsideModel( mdl )

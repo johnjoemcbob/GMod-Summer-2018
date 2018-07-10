@@ -2,6 +2,28 @@ include( "shared.lua" )
 
 local reload = true
 
+sound.Add(
+	{ 
+		name = "prk_gateway_travel",
+		channel = CHAN_ITEM,
+		level = 95,
+		volume = 1.0,
+		pitch = { 140, 180 },
+		sound = "ambience/wind1.wav"
+	}
+)
+
+sound.Add(
+	{ 
+		name = "prk_gateway_travel2",
+		channel = CHAN_AUTO,
+		level = 95,
+		volume = 0.5,
+		pitch = { 140, 180 },
+		sound = "ambient/machines/machine_whine1.wav"
+	}
+)
+
 local material = CreateMaterial(
 	"PRK_Material_Gateway_Destination",
 	"UnlitGeneric",
@@ -96,6 +118,13 @@ function ENT:Enter( ply )
 		-- LocalPlayer().PRK_Gateway_DestinationRendering = false
 		material:SetTexture( "$basetexture", texture )
 
+		-- Play sound
+		LocalPlayer():EmitSound( "hl1/ambience/port_suckin1.wav", 75, 250, 1 )
+		timer.Simple( 0.2, function()
+			LocalPlayer():EmitSound( "prk_gateway_travel" )
+			LocalPlayer():EmitSound( "prk_gateway_travel2" )
+		end )
+
 		-- Init flash screen
 		LocalPlayer().PRK_Gateway_Flash = 1
 		LocalPlayer().PRK_Gateway_FlashTime = CurTime() + PRK_Gateway_FlashHoldTime
@@ -128,6 +157,14 @@ function ENT:Exit( ply )
 		-- Init FOV
 		LocalPlayer().PRK_Gateway_FOVTarget = LocalPlayer():GetFOV()
 		LocalPlayer().PRK_Gateway_FOVSpeed = PRK_Gateway_FOVSpeedExit
+
+		-- Stop sound
+		LocalPlayer():StopSound( "prk_gateway_travel" )
+		LocalPlayer():StopSound( "prk_gateway_travel2" )
+		LocalPlayer():EmitSound( "npc/strider/fire.wav", 75, 150, 1 )
+		-- timer.Simple( 0.2, function()
+			LocalPlayer():EmitSound( "ambient/atmosphere/cave_hit1.wav", 75, 250, 1 )
+		-- end )
 
 		-- Flag so nothing renders
 		LocalPlayer().PRK_Gateway = nil

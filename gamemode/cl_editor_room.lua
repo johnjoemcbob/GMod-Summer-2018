@@ -233,7 +233,7 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 	local pos = PRK_Editor_Room_RayToPlane( LocalPlayer():GetEyeTrace().Normal )
 	if ( pos ) then
 		-- Move the rectangle selector
-		if ( LocalPlayer().PRK_Editor_RoomData.RectangleSelector ) then
+		if ( LocalPlayer().PRK_Editor_RoomData.RectangleSelector and !LocalPlayer().PRK_Editor_RoomData.RectangleSelector.Menu ) then
 			LocalPlayer().PRK_Editor_RoomData.RectangleSelector.End = pos
 		end
 
@@ -245,7 +245,6 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 					local pos = pos
 						if ( LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap ) then
 							pos = PRK_Editor_Room_GetClosestGrid( pos )
-							print( model.preposx )
 							pos.x = model.preposx + ( pos.x * PRK_Editor_Square_Size )
 							pos.y = model.preposy + ( pos.y * PRK_Editor_Square_Size )
 						else
@@ -493,71 +492,101 @@ hook.Add( "GUIMouseReleased", "PRK_GUIMouseReleased_Editor_Room", function( code
 	LocalPlayer().PRK_Editor_RoomData.Dragging = nil
 	LocalPlayer().PRK_Editor_RoomData.DraggingModel = nil
 
-	if ( LocalPlayer().PRK_Editor_RoomData.RectangleSelector ) then
-		-- Find all parts and models inside this range
-		for k, v in pairs( LocalPlayer().PRK_Editor_RoomData.Parts ) do
-			local squarefloor = {
-				x = {
-					v.position.x,
-					v.position.x + v.width,
-				},
-				y = {
-					v.position.y,
-					v.position.y - v.breadth,
-				},
-			}
-			local rect = LocalPlayer().PRK_Editor_RoomData.RectangleSelector
-			local squarerect = {
-				x = {
-					rect.Start.x,
-					rect.End.x,
-				},
-				y = {
-					rect.Start.y,
-					rect.End.y,
-				},
-			}
-			v.Highlighted = intersect_squares( squarefloor, squarerect )
-			LocalPlayer().PRK_Editor_RoomData.Highlighted[k] = {}
-			LocalPlayer().PRK_Editor_RoomData.Highlighted[k][5] = v.Highlighted
-		end
-		for k, model in pairs( LocalPlayer().PRK_Editor_RoomData.Models ) do
-			if ( model.PRK_Editor_Ent ) then
-				local data = PlaceableEnts[model.PRK_Editor_Ent]
-				if ( data and data.ClickCollision ) then
-					local x = model:GetPos().x
-					local y = model:GetPos().y
-					local c = data.ClickCollision
-					local squareobj = {
-						x = {
-							x + c[1].x,
-							x + c[2].x,
-						},
-						y = {
-							y + c[1].y,
-							y + c[2].y,
-						},
-					}
-					local rect = LocalPlayer().PRK_Editor_RoomData.RectangleSelector
-					local squarerect = {
-						x = {
-							rect.Start.x,
-							rect.End.x,
-						},
-						y = {
-							rect.Start.y,
-							rect.End.y,
-						},
-					}
-					model.Highlighted = intersect_squares( squareobj, squarerect )
-					LocalPlayer().PRK_Editor_RoomData.HighlightedModel[k] = model.Highlighted
-					LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap = true
+	local rect = LocalPlayer().PRK_Editor_RoomData.RectangleSelector
+	if ( rect ) then
+		local function selection()
+			-- Find all parts and models inside this range
+			for k, v in pairs( LocalPlayer().PRK_Editor_RoomData.Parts ) do
+				local squarefloor = {
+					x = {
+						v.position.x,
+						v.position.x + v.width,
+					},
+					y = {
+						v.position.y,
+						v.position.y - v.breadth,
+					},
+				}
+				local squarerect = {
+					x = {
+						rect.Start.x,
+						rect.End.x,
+					},
+					y = {
+						rect.Start.y,
+						rect.End.y,
+					},
+				}
+				v.Highlighted = intersect_squares( squarefloor, squarerect )
+				LocalPlayer().PRK_Editor_RoomData.Highlighted[k] = {}
+				LocalPlayer().PRK_Editor_RoomData.Highlighted[k][5] = v.Highlighted
+			end
+			for k, model in pairs( LocalPlayer().PRK_Editor_RoomData.Models ) do
+				if ( model.PRK_Editor_Ent ) then
+					local data = PlaceableEnts[model.PRK_Editor_Ent]
+					if ( data and data.ClickCollision ) then
+						local x = model:GetPos().x
+						local y = model:GetPos().y
+						local c = data.ClickCollision
+						local squareobj = {
+							x = {
+								x + c[1].x,
+								x + c[2].x,
+							},
+							y = {
+								y + c[1].y,
+								y + c[2].y,
+							},
+						}
+						local squarerect = {
+							x = {
+								rect.Start.x,
+								rect.End.x,
+							},
+							y = {
+								rect.Start.y,
+								rect.End.y,
+							},
+						}
+						model.Highlighted = intersect_squares( squareobj, squarerect )
+						LocalPlayer().PRK_Editor_RoomData.HighlightedModel[k] = model.Highlighted
+						LocalPlayer().PRK_Editor_RoomData.DraggingModelSelectorSnap = true
+					end
 				end
 			end
-		end
-		PRK_Editor_Room_HandleDrag()
 
+			-- Move cursor to mid point
+			-- local mid = rect.Start + ( rect.End - rect.Start ) / 2
+			-- print( mid )
+			-- input.SetCursorPos( ScrW() / 2, ScrH() / 2 )
+
+			-- Start dragging these
+			PRK_Editor_Room_HandleDrag()
+		end
+		local function createfloor()
+			
+		end
+
+		-- local menu = vgui.Create( "DMenu", LocalPlayer().ContextMenu )
+			-- menu:SetPos( gui.MouseX(), gui.MouseY() )
+			-- menu:AddOption(
+				-- "Select",
+				-- function()
+					-- selection()
+					-- LocalPlayer().PRK_Editor_RoomData.RectangleSelector = nil
+				-- end
+			-- )
+			-- menu:AddOption(
+				-- "Create Floor",
+				-- function()
+					-- createfloor()
+					-- LocalPlayer().PRK_Editor_RoomData.RectangleSelector = nil
+				-- end
+			-- )
+		-- menu:Open()
+		selection()
 		LocalPlayer().PRK_Editor_RoomData.RectangleSelector = nil
+		-- LocalPlayer().PRK_Editor_RoomData.RectangleSelector.Menu = menu
 	end
 end )
 

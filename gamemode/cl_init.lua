@@ -126,6 +126,12 @@ net.Receive( "PRK_Die", function( len, ply )
 	LocalPlayer().PRK_Gateway = nil
 end )
 
+net.Receive( "PRK_Spawn", function( len, ply )
+	local time = net.ReadFloat()
+
+	LocalPlayer().SpawnTime = time
+end )
+
 -- Gamemode Hooks
 function GM:Initialize()
 	PRK_Initialise_RevolverChambers()
@@ -146,6 +152,7 @@ function PRK_Think_Punch()
 end
 
 function PRK_Think_Die()
+	-- Die effects
 	if ( !LocalPlayer():Alive() and LocalPlayer().DieEffect ) then
 		local speedpos = 5
 		local speedang = 5

@@ -46,7 +46,7 @@ PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 -- Grass
 PRK_Grass_Mesh_CountRange				= { 1, 6 } -- { 0, 2 }
 PRK_Grass_Billboard_Count					= 100
-PRK_Grass_Billboard_DrawRange			= 1000
+PRK_Grass_Billboard_DrawRange			= 5000
 PRK_Grass_Billboard_SortRange				= 10
 PRK_Grass_Billboard_ShouldDrawTime	= 1
 PRK_Grass_Billboard_MaxSortCount		= 0
@@ -56,7 +56,7 @@ PRK_Grass_Billboard_MaxRenderCount	= 4000
 PRK_Epsilon											= 0.001
 PRK_Plate_Size										= 47.45
 PRK_DrawDistance									= 4000
-PRK_MaxAverageFrameTimes					= 50
+PRK_MaxAverageFrameTimes					= 10
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter									= ""
 PRK_CursorSize										= 8
@@ -66,7 +66,7 @@ PRK_Gateway_StartOpenRange				= 500
 PRK_Gateway_MaxScale							= 5
 PRK_Gateway_PullRange						= 300
 PRK_Gateway_PullForce							= 100
-PRK_Gateway_EnterRange						= 75
+PRK_Gateway_EnterRange						= 100
 PRK_Gateway_OpenSpeed						= 5
 PRK_Gateway_TravelTime						= 5
 PRK_Gateway_FlashHoldTime					= 0.2
@@ -127,19 +127,23 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 		volume
 	)
 
-	-- if ( CLIENT ) then
-		local effectdata = EffectData()
-			local pos = pos
-			effectdata:SetOrigin( pos )
-			effectdata:SetNormal( Vector( 0, 0, 1 ) )
-		util.Effect( "prk_hit", effectdata )
-	-- end
+	-- Dust effect
+	local effectdata = EffectData()
+		local pos = pos
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal( Vector( 0, 0, 1 ) )
+	util.Effect( "prk_hit", effectdata )
 
 	return true
 end
 ------------------------
   -- /Gamemode Hooks --
 ------------------------
+
+local meta_ply = FindMetaTable( "Player" )
+function meta_ply:JustSpawned()
+	return ( !self.SpawnTime or ( CurTime() - self.SpawnTime ) < 0.4 )
+end
 
 -- Average the frametime over a few frames to stop viewmodel jittering when lerping
 PRK_AverageFrameTimes = {}

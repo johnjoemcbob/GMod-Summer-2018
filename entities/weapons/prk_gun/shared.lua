@@ -26,26 +26,26 @@ SWEP.Secondary.DefaultClip	= -1
 SWEP.Secondary.Automatic	= true
 SWEP.Secondary.Ammo			= "none"
 
-SWEP.RequireAmmo			= true
-SWEP.MaxClip					= PRK_BaseClip
+SWEP.RequireAmmo					= true
+SWEP.MaxClip							= PRK_BaseClip
 local dist = 3000
-SWEP.MaxDistance			= dist
-SWEP.MaxDistanceSqr			= dist * dist -- Store extra as sqr
-SWEP.RightHanded			= 1
-SWEP.TimeFire				= 0.2
-SWEP.TimeReload				= 0.2
-SWEP.TimeFOVPunch			= 0.1
-SWEP.TimeBackFOVPunch		= 0.2
-SWEP.TimeHoldFOVPunch		= 0.1
-SWEP.DistFOVPunch			= 10
-SWEP.LerpSpeedPunch		= 1
-SWEP.LerpSpeed				= 10
-SWEP.SoundPitchFireBase = 100
-SWEP.SoundPitchFireIncrease = -50 --  -3
-SWEP.SoundPitchFireSpeed = 0.2
-SWEP.SoundPitchReloadBase = 80
-SWEP.SoundPitchReloadIncrease = 10
-SWEP.SoundPitchReloadSpeed = 0.4
+SWEP.MaxDistance						= dist
+SWEP.MaxDistanceSqr				= dist * dist -- Store extra as sqr
+SWEP.RightHanded					= 1
+SWEP.TimeFire							= 0.2
+SWEP.TimeReload						= 0.2
+SWEP.TimeFOVPunch					= 0.1
+SWEP.TimeBackFOVPunch			= 0.2
+SWEP.TimeHoldFOVPunch			= 0.1
+SWEP.DistFOVPunch					= 10
+SWEP.LerpSpeedPunch				= 1
+SWEP.LerpSpeed						= 10
+SWEP.SoundPitchFireBase			= 100
+SWEP.SoundPitchFireIncrease		= -50 --  -3
+SWEP.SoundPitchFireSpeed		= 0.2
+SWEP.SoundPitchReloadBase		= 80
+SWEP.SoundPitchReloadIncrease	= 10
+SWEP.SoundPitchReloadSpeed	= 0.4
 
 sound.Add(
 	{ 

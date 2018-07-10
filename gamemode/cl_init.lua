@@ -521,7 +521,7 @@ function PRK_HUDPaint_Crosshair()
 	local y = 0
 	local x = CursorX
 	local y = CursorY
-	local size = 6
+	local size = PRK_CursorSize
 
 	for i = 1, 3 do
 		-- Draw crosshair shadow with lag behind

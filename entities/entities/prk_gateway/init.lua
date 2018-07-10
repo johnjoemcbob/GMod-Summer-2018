@@ -11,6 +11,7 @@ function ENT:SendEnterExit( ply, enter )
 		net.WriteEntity( self )
 		net.WriteEntity( ply )
 		net.WriteBool( enter )
+		net.WriteVector( self.Destination )
 	net.Broadcast()
 end
 
@@ -56,7 +57,9 @@ end
 
 function ENT:Enter( ply )
 	-- Move the player elsewhere
+	ply:SetMoveType( MOVETYPE_NOCLIP )
 	ply:SetPos( PRK_Position_Nowhere )
+	ply:Freeze( true )
 
 	-- Request client effects
 	self:SendEnterExit( ply, true )
@@ -68,7 +71,9 @@ end
 
 function ENT:Exit( ply )
 	-- Move the player to destination
+	ply:SetMoveType( MOVETYPE_WALK )
 	ply:SetPos( self.Destination )
+	ply:Freeze( false )
 
 	-- Request client effects
 	self:SendEnterExit( ply, false )

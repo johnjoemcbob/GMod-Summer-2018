@@ -15,10 +15,14 @@ function EFFECT:Init( data )
 	local speed = 400
 	local size = radius * 0.75
 	local dietime = 1.5
+	local startsize = size
+	local endsize = 0
+	local close = 1
 		if ( instream ) then
-			local mult = PRK_Gateway_TravelTime * 2
-			speed = speed / mult
-			dietime = dietime * mult
+			startsize = 0
+			endsize = size
+			close = -10
+			radius = 1
 		end
 	local particles = segs
 	local circ = PRK_GetCirclePoints( 0, 0, radius, particles, math.random( 0, 360 ) )
@@ -28,24 +32,24 @@ function EFFECT:Init( data )
 
 			local particle = emitter:Add( PRK_Material_Square, origin + pos * 6 )
 			if ( particle ) then
-				particle:SetVelocity( -pos * math.random( 5, 15 ) / dietime + dir * speed )
+				particle:SetVelocity( -close * pos * math.random( 5, 15 ) / dietime + dir * speed )
 
 				particle:SetLifeTime( 0 )
 				particle:SetDieTime( dietime )
 
-				particle:SetStartAlpha( 0 )
+				particle:SetStartAlpha( 255 )
 				particle:SetEndAlpha( 255 )
 
-				local Size = size
-				particle:SetStartSize( Size )
-				particle:SetEndSize( 0 )
+				particle:SetStartSize( startsize )
+				particle:SetEndSize( endsize )
 
 				particle:SetRoll( math.Rand( 0, 360 ) )
 				particle:SetRollDelta( math.Rand( -2, 2 ) )
 
 				particle:SetAirResistance( 10 )
 
-				particle:SetColor( 255, 255, 255 )
+				local col = PRK_HUD_Colour_Shadow
+				particle:SetColor( col.r, col.g, col.b )
 
 				particle:SetAngles( -pos:GetNormalized():Angle() + Angle( 0, 180, 0 ) )
 				if ( right:Distance( Vector( 0, 1, 0 ) ) < 0.1 ) or ( right:Distance( Vector( 0, -1, 0 ) ) < 0.1 ) then
@@ -55,7 +59,10 @@ function EFFECT:Init( data )
 		end
 		emitter:SetNoDraw( true )
 	timer.Simple( dietime, function()
-		emitter:Finish()
+		if ( emitter and emitter:IsValid() ) then
+			table.RemoveByValue( PRK_Gateway_Emitters, emitter )
+			emitter:Finish()
+		end
 	end )
 
 	table.insert( PRK_Gateway_Emitters, emitter )

@@ -2,11 +2,22 @@ include( "shared.lua" )
 
 local reload = true
 
+local material = CreateMaterial(
+	"PRK_Material_Gateway_Destination",
+	"UnlitGeneric",
+	{
+		["$basetexture"] = "color/white",
+	}
+ )
+local texture = GetRenderTarget( "PRK_Gateway_Destination", ScrW(), ScrH() )
+
 net.Receive( "PRK_Gateway_EnterExit", function( len, ply )
 	local self = net.ReadEntity()
 	local ply = net.ReadEntity()
 	local enter = net.ReadBool()
+	local dest = net.ReadVector()
 
+	self.Destination = dest
 	if ( enter ) then
 		self:Enter( ply )
 	else
@@ -16,6 +27,7 @@ end )
 
 function ENT:Initialize()
 	self.Scale = 0
+	self.Travellers = {}
 end
 
 function ENT:Think()
@@ -45,11 +57,19 @@ end
 local function createparticle_inside( off )
 	local pos = LocalPlayer():EyePos()
 	local forward = Vector( 1, 0, 0 )
+	local right = Vector( 0, 1, 0 )
+	local up = Vector( 0, 0, 1 )
 	local scale = PRK_Gateway_MaxScale
+	local bend = Vector()
+		if ( off == 0 ) then
+			local r = ( math.cos( CurTime() ) + math.sin( CurTime() / 10 ) ) / 2
+			local u = math.cos( CurTime() )
+			bend = right * r * 10 + up * u * 30
+		end
+	LocalPlayer().PRK_GatewayDir = ( -forward - bend / 120 ):GetNormal()
 	local effectdata = EffectData()
-		effectdata:SetOrigin( pos + forward * scale * 5 + forward * scale * 15 * off )
-		print( pos + forward * scale * 5 + forward * scale * 30 * off )
-		effectdata:SetNormal( forward )
+		effectdata:SetOrigin( pos + forward * scale * 50 + forward * scale * -15 * off + bend )
+		effectdata:SetNormal( LocalPlayer().PRK_GatewayDir )
 		effectdata:SetRadius( scale * 4 )
 		effectdata:SetMagnitude( PRK_Gateway_Segments )
 		effectdata:SetFlags( 1 )
@@ -58,8 +78,32 @@ end
 
 function ENT:Enter( ply )
 	if ( ply == LocalPlayer() ) then
+		-- Draw destination to texture
+		-- LocalPlayer().PRK_Gateway_DestinationRendering = true
+			render.PushRenderTarget( texture )
+			render.OverrideAlphaWriteEnable( true, true )
+				render.ClearDepth()
+				render.Clear( 0, 0, 0, 0 )
+				render.RenderView(
+					{
+						origin = self.Destination,
+						drawhud = false,
+						-- angles = Angle( 0, 0, 0 ),
+					}
+				)
+			render.OverrideAlphaWriteEnable( false )
+			render.PopRenderTarget()
+		-- LocalPlayer().PRK_Gateway_DestinationRendering = false
+		material:SetTexture( "$basetexture", texture )
+
 		-- Init flash screen
 		LocalPlayer().PRK_Gateway_Flash = 1
+		LocalPlayer().PRK_Gateway_FlashTime = CurTime() + PRK_Gateway_FlashHoldTime
+
+		-- Init FOV
+		LocalPlayer().PRK_Gateway_FOV = 30 -- LocalPlayer():GetFOV()
+		LocalPlayer().PRK_Gateway_FOVTarget = 150
+		LocalPlayer().PRK_Gateway_FOVSpeed = PRK_Gateway_FOVSpeedEnter
 
 		-- Flag so nothing renders
 		LocalPlayer().PRK_Gateway = self
@@ -70,27 +114,40 @@ function ENT:Enter( ply )
 				createparticle_inside( i )
 			end
 		end )
-	else
-		self.Travellers[ply] = CurTime() -- PRK_Gateway_TravelTime
 	end
+
+	self.Travellers[ply] = CurTime() -- PRK_Gateway_TravelTime
 end
 
 function ENT:Exit( ply )
 	if ( ply == LocalPlayer() ) then
 		-- Init flash screen
 		LocalPlayer().PRK_Gateway_Flash = 1
+		LocalPlayer().PRK_Gateway_FlashTime = CurTime() + PRK_Gateway_FlashHoldTime
+
+		-- Init FOV
+		LocalPlayer().PRK_Gateway_FOVTarget = LocalPlayer():GetFOV()
+		LocalPlayer().PRK_Gateway_FOVSpeed = PRK_Gateway_FOVSpeedExit
 
 		-- Flag so nothing renders
 		LocalPlayer().PRK_Gateway = nil
-	else
-		self.Travellers[ply] = nil
 	end
+
+	self.Travellers[ply] = nil
 end
 
 hook.Add( "Think", "PRK_Think_Gateway", function()
 	-- Flash screen
-	LocalPlayer().PRK_Gateway_Flash = Lerp( FrameTime() * PRK_Gateway_FlashSpeed, LocalPlayer().PRK_Gateway_Flash, 0 )
+	if ( LocalPlayer().PRK_Gateway_FlashTime and LocalPlayer().PRK_Gateway_FlashTime <= CurTime() ) then
+		LocalPlayer().PRK_Gateway_Flash = Lerp( FrameTime() * PRK_Gateway_FlashSpeed, LocalPlayer().PRK_Gateway_Flash, 0 )
+	end
 
+	-- FOV
+	if ( LocalPlayer().PRK_Gateway_FOV ) then
+		LocalPlayer().PRK_Gateway_FOV = Lerp( FrameTime() * LocalPlayer().PRK_Gateway_FOVSpeed, LocalPlayer().PRK_Gateway_FOV, LocalPlayer().PRK_Gateway_FOVTarget )
+	end
+
+	-- Inside Particles
 	if ( LocalPlayer().PRK_Gateway ) then
 		-- Show tunnel particles at player's new position
 		local self = LocalPlayer().PRK_Gateway
@@ -102,16 +159,50 @@ hook.Add( "Think", "PRK_Think_Gateway", function()
 end )
 
 function PRK_CalcView_Gateway( ply, origin, angles, fov )
-	if ( LocalPlayer().PRK_Gateway ) then
+	if (
+		LocalPlayer().PRK_Gateway or
+		( LocalPlayer().PRK_Gateway_FOV and ( math.abs( LocalPlayer().PRK_Gateway_FOV - LocalPlayer().PRK_Gateway_FOVTarget ) > 10 ) )
+	) then
 		local view = {}
+			-- view.angles = ( -LocalPlayer().PRK_GatewayDir ):Angle()
 			view.angles = Vector( 1, 0, 0 ):Angle()
 			view.origin = LocalPlayer():EyePos()
+			view.fov = LocalPlayer().PRK_Gateway_FOV
 		return view
 	end
 	return false
 end
 
 hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Gateway", function()
+	if ( LocalPlayer().PRK_Gateway ) then
+		local self = LocalPlayer().PRK_Gateway
+		cam.Start3D()
+			-- Draw texture
+			local pos = LocalPlayer():EyePos() + Vector( 1, 0, 0 ) * ( 1000 - ( CurTime() - self.Travellers[LocalPlayer()] ) * 200 )
+			-- PRK_BasicDebugSphere( pos )
+			local angle = Vector( 1, 0, 0 ):Angle()
+				angle:RotateAroundAxis( Vector( 0, 1, 0 ), -90 )
+				angle:RotateAroundAxis( Vector( 1, 0, 0 ), 90 )
+			cam.Start3D2D( pos, angle, 0.2 )
+				surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+				surface.SetMaterial( material )
+					-- surface.DrawTexturedRect( -ScrW() / 2, -ScrH() / 2, ScrW(), ScrH() )
+				draw.NoTexture()
+			cam.End3D2D()
+
+			-- Draw particles
+			for k, v in pairs( PRK_Gateway_Emitters ) do
+				if ( v:IsValid() ) then
+					v:Draw()
+				end
+			end
+		cam.End3D()
+
+		-- Draw overlay effect
+		DrawMaterialOverlay( "effects/tp_eyefx/tpeye3", -0.06 )
+	end
+
+	-- Draw flash
 	if ( LocalPlayer().PRK_Gateway_Flash ) then
 		surface.SetDrawColor( Color( 255, 255, 255, 255 * LocalPlayer().PRK_Gateway_Flash ) )
 		surface.DrawRect(
@@ -120,18 +211,6 @@ hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Gateway", function()
 			ScrW(),
 			ScrH()
 		)
-	end
-
-	if ( LocalPlayer().PRK_Gateway ) then
-		cam.Start3D()
-			for k, v in pairs( PRK_Gateway_Emitters ) do
-				if ( v:IsValid() ) then
-					v:Draw()
-				end
-			end
-		cam.End3D()
-
-		DrawMaterialOverlay( "effects/tp_eyefx/tpeye3", -0.06 )
 	end
 end )
 
@@ -258,6 +337,27 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 				for k, v in pairs( PRK_Gateway_Emitters ) do
 					if ( v:IsValid() ) then
 						v:Draw()
+					end
+				end
+
+				for ply, time in pairs( self.Travellers ) do
+					if ply and ply:IsValid() and ( time + PRK_Gateway_TravelTime >= CurTime() ) then
+						local oldpos = ply:GetPos()
+						local oldang = ply:GetAngles()
+						local move = ( CurTime() - time ) / PRK_Gateway_TravelTime
+						local maxdist = 10000
+						local dist = maxdist * move
+						local scale = 1 - move
+
+						ply:SetPos( pos + forward * dist + Vector( 0, 0, 1 ) * -50 * scale )
+						ply:SetModelScale( scale )
+						ply:SetAngles( AngleRand() )
+						ply:SetupBones()
+							ply:DrawModel()
+						ply:SetModelScale( 1 )
+						ply:SetPos( oldpos )
+						ply:SetAngles( oldang )
+						ply:SetupBones()
 					end
 				end
 			end

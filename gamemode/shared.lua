@@ -66,12 +66,15 @@ PRK_Gateway_StartOpenRange				= 500
 PRK_Gateway_MaxScale							= 5
 PRK_Gateway_PullRange						= 300
 PRK_Gateway_PullForce							= 100
-PRK_Gateway_EnterRange						= 50
+PRK_Gateway_EnterRange						= 75
 PRK_Gateway_OpenSpeed						= 5
 PRK_Gateway_TravelTime						= 5
-PRK_Gateway_FlashSpeed						= 5
-PRK_Gateway_ParticleDelay					= 0.1
-PRK_Gateway_ParticleDelayTravel			= 0.05
+PRK_Gateway_FlashHoldTime					= 0.2
+PRK_Gateway_FlashSpeed						= 10
+PRK_Gateway_FOVSpeedEnter				= 0.5
+PRK_Gateway_FOVSpeedExit					= 5
+PRK_Gateway_ParticleDelay					= 0.05
+PRK_Gateway_ParticleDelayTravel			= 0.1 --0.05
 PRK_Gateway_Segments						= 48
 
 -- Editor
@@ -105,7 +108,7 @@ PRK_Enemy_Types									= {
 PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
 
 -- Player
-PRK_BaseClip										= 1
+PRK_BaseClip										= 6
 PRK_Health											= 6
 PRK_Speed											= 600
 PRK_Jump												= 0

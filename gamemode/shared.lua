@@ -44,6 +44,7 @@ PRK_Colour_Enemy_Mouth						= Color( 100, 100, 100, 255 )
 PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass
+PRK_Grass_Colour									= Color( 40, 40, 40, 255 )
 PRK_Grass_Mesh_CountRange				= { 1, 6 } -- { 0, 2 }
 PRK_Grass_Billboard_Count					= 100
 PRK_Grass_Billboard_DrawRange			= 5000
@@ -127,6 +128,13 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 		volume
 	)
 
+	-- Grass effect
+	local effectdata = EffectData()
+		local pos = pos
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal( Vector( 0, 0, 1 ) )
+	util.Effect( "prk_grass", effectdata )
+
 	-- Dust effect
 	local effectdata = EffectData()
 		local pos = pos
@@ -142,7 +150,7 @@ end
 
 local meta_ply = FindMetaTable( "Player" )
 function meta_ply:JustSpawned()
-	return ( !self.SpawnTime or ( CurTime() - self.SpawnTime ) < 0.4 )
+	return ( self.SpawnTime and ( CurTime() - self.SpawnTime ) < 0.4 )
 end
 
 -- Average the frametime over a few frames to stop viewmodel jittering when lerping

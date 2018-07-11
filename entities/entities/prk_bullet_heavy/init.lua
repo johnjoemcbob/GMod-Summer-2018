@@ -66,7 +66,15 @@ State = {
 			
 		end,
 		Collide = function( self, ent, colent )
-		
+			-- Delay grass effect until ent is at correct position after firing
+			timer.Simple( 0.02, function()
+				if ( colent and colent:IsValid() and colent:GetClass() == "prk_floor" ) then
+					local effectdata = EffectData()
+						effectdata:SetOrigin( ent:GetPos() )
+						effectdata:SetNormal( Vector( 0, 0, 1 ) )
+					util.Effect( "prk_grass", effectdata )
+				end
+			end )
 		end,
 		End = function( self, ent )
 			

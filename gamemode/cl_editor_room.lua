@@ -195,8 +195,26 @@ hook.Add( "OnContextMenuClose", "PRK_OnContextMenuClose_Editor", function()
 	end
 end )
 
+local lastdown = {}
 hook.Add( "Think", "PRK_Think_Editor_Room", function()
 	if ( !LocalPlayer().PRK_Editor_Room )  then return end
+
+	-- Mouse input
+	local codes = {
+		MOUSE_LEFT,
+		MOUSE_RIGHT,
+	}
+	for k, code in pairs( codes ) do
+		if ( input.IsMouseDown( code ) ) then
+			if ( !lastdown[code] ) then
+				PRK_GUIMousePressed( code, gui.ScreenToVector( gui.MousePos() ) )
+				lastdown[code] = true
+			end
+		elseif ( lastdown[code] ) then
+			PRK_GUIMouseReleased( code, gui.ScreenToVector( gui.MousePos() ) )
+			lastdown[code] = nil
+		end
+	end
 
 	-- Lerp camera zoom
 	LocalPlayer().PRK_Editor_RoomData.Zoom = Lerp( FrameTime() * PRK_Editor_Zoom_Speed, LocalPlayer().PRK_Editor_RoomData.Zoom, LocalPlayer().PRK_Editor_RoomData.TargetZoom )
@@ -395,7 +413,7 @@ hook.Add( "StartChat", "PRK_StartChat_Editor_Room", function( isTeamChat )
 	end
 end )
 
-hook.Add( "GUIMousePressed", "PRK_GUIMousePressed_Editor_Room", function( code, aim )
+function PRK_GUIMousePressed( code, aim )
 	if ( !LocalPlayer().PRK_Editor_Room )  then return end
 
 	-- Mouse clicks
@@ -420,7 +438,6 @@ hook.Add( "GUIMousePressed", "PRK_GUIMousePressed_Editor_Room", function( code, 
 			local clickedobjects = {}
 				-- Check if any models are highlighted
 				for k, model in pairs( LocalPlayer().PRK_Editor_RoomData.Models ) do
-					-- PrintTable( model )
 					if ( model.Highlighted ) then
 						table.insert( clickedobjects, k )
 					end
@@ -484,9 +501,9 @@ hook.Add( "GUIMousePressed", "PRK_GUIMousePressed_Editor_Room", function( code, 
 	-- Refocus to UI
 	LocalPlayer().PRK_Editor_GUI_Frame:MakePopup()
 	LocalPlayer().PRK_Editor_GUI_Frame:SetKeyboardInputEnabled( false )
-end )
+end
 
-hook.Add( "GUIMouseReleased", "PRK_GUIMouseReleased_Editor_Room", function( code, aim )
+function PRK_GUIMouseReleased( code, aim )
 	if ( !LocalPlayer().PRK_Editor_Room )  then return end
 
 	LocalPlayer().PRK_Editor_RoomData.Dragging = nil
@@ -588,7 +605,7 @@ hook.Add( "GUIMouseReleased", "PRK_GUIMouseReleased_Editor_Room", function( code
 		LocalPlayer().PRK_Editor_RoomData.RectangleSelector = nil
 		-- LocalPlayer().PRK_Editor_RoomData.RectangleSelector.Menu = menu
 	end
-end )
+end
 
 hook.Add( "WhileMouseWheeling", "PRK_WhileMouseWheeling_Editor_Room_Zoom", function( wheel )
 	if ( !LocalPlayer().PRK_Editor_Room )  then return end
@@ -663,7 +680,7 @@ function PRK_Editor_Room_Import()
 	end
 
 	-- Import new
-	local dir = "prickly/"
+	local dir = PRK_Path_Rooms
 	local filename = LocalPlayer():SteamID64()
 	if ( file.Exists( dir .. filename .. ".txt", "DATA" ) ) then
 		local json = file.Read( dir .. filename .. ".txt" )
@@ -672,6 +689,7 @@ function PRK_Editor_Room_Import()
 
 	-- Create any imported stuff with extra steps
 	-- Add models
+	LocalPlayer().PRK_Editor_RoomData.Models = {}
 	for k, model in pairs( LocalPlayer().PRK_Editor_RoomData.ModelExportInstructions ) do
 		local ent = PRK_Editor_Room_AddEnt( model.Pos, model.Editor_Ent )
 		if ( ent ) then
@@ -688,6 +706,10 @@ function PRK_Editor_Room_Import()
 			table.insert( LocalPlayer().PRK_Editor_RoomData.Models, ent )
 		end
 	end
+
+	-- Add missing empty tables
+	LocalPlayer().PRK_Editor_RoomData.Highlighted = {}
+	LocalPlayer().PRK_Editor_RoomData.HighlightedModel = {}
 end
 
 function PRK_Editor_Room_Export()
@@ -696,6 +718,7 @@ function PRK_Editor_Room_Export()
 	local content = ""
 		-- Convert tables to json
 		local tab = table.shallowcopy( LocalPlayer().PRK_Editor_RoomData )
+			-- Store new instruction data
 			tab.ModelExportInstructions = {}
 			for k, model in pairs( tab.Models ) do
 				local instructions = {
@@ -707,7 +730,19 @@ function PRK_Editor_Room_Export()
 				}
 				table.insert( tab.ModelExportInstructions, instructions )
 			end
-		content = util.TableToJSON( tab )
+			-- Nullify anything not needed to generate this room again
+			tab.Highlighted = nil
+			tab.HighlightedModel = nil
+			tab.Models = nil
+			-- Remove extra data from parts
+			for k, part in pairs( tab.Parts ) do
+				part.Highlighted = nil
+				part.prebreadth = nil
+				part.prewidth = nil
+				part.preposx = nil
+				part.preposy = nil
+			end
+		content = util.TableToJSON( tab, true )
 	file.CreateDir( dir )
 	file.Write( dir .. filename .. ".txt", content )
 end
@@ -943,7 +978,7 @@ hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Editor", function()
 							LocalPlayer().PRK_Editor_RoomData.Highlighted[k][_] = intersect_point_square( pos, square )
 						end
 						-- if ( LocalPlayer().PRK_Editor_RoomData.Highlighted[k][_] or _ ==5 ) then
-						if ( LocalPlayer().PRK_Editor_RoomData.Highlighted[k][_] or ( LocalPlayer().PRK_Editor_RoomData.Dragging and LocalPlayer().PRK_Editor_RoomData.Dragging[k][_] ) ) then
+						if ( LocalPlayer().PRK_Editor_RoomData.Highlighted[k][_] or ( LocalPlayer().PRK_Editor_RoomData.Dragging and LocalPlayer().PRK_Editor_RoomData.Dragging[k] and LocalPlayer().PRK_Editor_RoomData.Dragging[k][_] ) ) then
 							surface.DrawRect(
 								x,
 								y,

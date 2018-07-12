@@ -35,49 +35,6 @@ local models = {
 		Angle( 0, 0, 0 ),
 		Vector( 0.2, 0.2, 1 ),
 	},
-	-- HL2
-	-- {
-		-- "models/Gibs/wood_gib01c.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 90, 0, 0 ),
-		-- Vector( 2, 1, 1 ),
-	-- },
-	-- {
-		-- "models/Gibs/wood_gib01c.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 90, 0, 0 ),
-		-- Vector( 3, 1, 1 ),
-	-- },
-	-- {
-		-- "models/Gibs/wood_gib01c.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 90, 0, 0 ),
-		-- Vector( 4, 1, 1 ),
-	-- },
-	-- {
-		-- "models/props_c17/oildrumchunk01b.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 0, 0, 0 ),
-		-- Vector( 0.5, 0.1, 2 ),
-	-- },
-	-- {
-		-- "models/props_foliage/bramble001a.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 0, 0, 0 ),
-		-- Vector( 0.5, 0.5, 0.5 ),
-	-- },
-	-- {
-		-- "models/gibs/scanner_gib02.mdl",
-		-- Vector( 0, 0, 5 ),
-		-- Angle( 90, 90, 0 ),
-		-- Vector( 2, 2, 2 ),
-	-- },
-	-- {
-		-- "models/props_junk/garbage128_composite001b.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 0, 0, 0 ),
-		-- Vector( 1, 1, 1 ),
-	-- },
 }
 
 PRK_Material_Grass = Material( "prk_grass.png", "noclamp smooth" )
@@ -138,40 +95,69 @@ function ENT:Think()
 	-- Disrupt plants if close
 	local disruptors = {}
 		table.Add( disruptors, player.GetAll() )
-		table.Add( disruptors, ents.FindByClass( "prk_*_heavy" ) )
-		table.Add( disruptors, ents.FindByClass( "prk_npc_*" ) )
+		table.Add( disruptors, ents.FindByClass( "prk_*" ) )
+		table.Add( disruptors, ents.FindByClass( "npc_*" ) ) -- testing/fun
+		-- table.Add( disruptors, ents.FindByClass( "prk_*_heavy" ) )
+		-- table.Add( disruptors, ents.FindByClass( "prk_npc_*" ) )
+		-- table.Add( disruptors, ents.FindByClass( "prk_gateway" ) )
+		-- table.Add( disruptors, ents.FindByClass( "prk_debris" ) )
+	local specialcases = {}
+		specialcases["prk_gateway"] = function( ent, moving )
+			return true, 300, ent.Scale / 2, -1, false
+		end
+		specialcases["prk_debris"] = function( ent, moving )
+			if ( ent:GetNWBool( "Explosion" ) ) then
+				return true, 400, -1, 0, false
+			end
+			return moving, nil, 1, 0, true
+		end
 	for _, ent in pairs( disruptors ) do
+		local effects = true
+		local overridedist = nil
 		local speed = ent:GetVelocity():Length()
-		-- print( speed )
 		local moving = speed > 100
+		local scaleoff = 0
+		local magnitude = 1
+			-- Special case for gateways
+			local spc = specialcases[ent:GetClass()]
+			if ( spc ) then
+				moving, overridedist, magnitude, scaleoff, effects = spc( ent, moving )
+			end
+		-- print( speed )
 		if ( moving ) then
 			for k, v in pairs( self.Models ) do
 				if ( !v.NextTouch or v.NextTouch <= CurTime() ) then
 					local dist = ent:GetPos():Distance( v:GetPos() )
 					local maxdist = 50
+						if ( overridedist ) then
+							maxdist = overridedist
+						end
 					local close = dist < maxdist
 					if ( close ) then
-						-- Sound effect
-						ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
+						local forward = ( ent:GetPos() + ent:GetVelocity() - v:GetPos() ):GetNormal()
+
+						if ( effects ) then
+							-- Sound effect
+							ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
+
+							-- Particle burst
+							local effectdata = EffectData()
+								local pos = ent:GetPos() - forward
+								effectdata:SetOrigin( pos )
+								effectdata:SetNormal( -forward )
+								-- effectdata:SetColor( ent:GetColor() )
+							util.Effect( "prk_hit", effectdata )
+						end
 
 						-- Lean away from entity
-						local forward = ( ent:GetPos() + ent:GetVelocity() - v:GetPos() ):GetNormal()
 						local up = Vector( 0, 0, 1 )
 						local right = up:Cross( forward )
 						local ang = Angle( v.Ang.p, v.Ang.y, v.Ang.r )
-							ang:RotateAroundAxis( right, dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
+							ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
 						v.TargetAngles = ang
 
 						-- Bounce up/down scale
-						v.TargetScaleOffset = 3
-
-						-- Particle burst
-						local effectdata = EffectData()
-							local pos = ent:GetPos() - forward
-							effectdata:SetOrigin( pos )
-							effectdata:SetNormal( -forward )
-							-- effectdata:SetColor( ent:GetColor() )
-						util.Effect( "prk_hit", effectdata )
+						v.TargetScaleOffset = 3 * magnitude + scaleoff
 
 						-- Delay next
 						-- v.NextTouch = CurTime() + 1
@@ -218,14 +204,16 @@ end
 
 function ENT:OnRemove()
 	-- Remove grass
-	local toremove = {}
-	for k, grass in pairs( LocalPlayer().Grasses ) do
-		if ( grass.Entity == self.Entity ) then
-			table.insert( toremove, grass )
+	if ( LocalPlayer().Grasses ) then
+		local toremove = {}
+		for k, grass in pairs( LocalPlayer().Grasses ) do
+			if ( grass.Entity == self.Entity ) then
+				table.insert( toremove, grass )
+			end
 		end
-	end
-	for k, remove in pairs( toremove ) do
-		table.RemoveByValue( LocalPlayer().Grasses, grass )
+		for k, remove in pairs( toremove ) do
+			table.RemoveByValue( LocalPlayer().Grasses, grass )
+		end
 	end
 
 	-- Remove visuals
@@ -238,9 +226,11 @@ local nextthink = 0
 hook.Add( "Think", "PRK_Think_Grass", function()
 	if ( CurTime() < nextthink ) then return end
 
-	for k, grasses in pairs( LocalPlayer().Grasses ) do
-		local dist = k:Distance( LocalPlayer():GetPos() )
-		grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
+	if ( LocalPlayer().Grasses ) then
+		for k, grasses in pairs( LocalPlayer().Grasses ) do
+			local dist = k:Distance( LocalPlayer():GetPos() )
+			grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
+		end
 	end
 
 	nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime

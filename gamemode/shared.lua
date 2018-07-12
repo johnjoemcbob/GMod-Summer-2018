@@ -10,7 +10,7 @@ GM.Author = "johnjoemcbob & DrMelon"
 GM.Email = ""
 GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 
-PRK_SANDBOX = true
+-- PRK_SANDBOX = true
 if PRK_SANDBOX then
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 else
@@ -45,7 +45,9 @@ PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass
 PRK_Grass_Colour									= Color( 40, 40, 40, 255 )
-PRK_Grass_Mesh_CountRange				= { 1, 6 } -- { 0, 2 }
+-- PRK_Grass_Mesh_CountRange				= { 0, 2 }
+PRK_Grass_Mesh_CountRange				= { 1, 6 }
+-- PRK_Grass_Billboard_Count					= 10
 PRK_Grass_Billboard_Count					= 100
 PRK_Grass_Billboard_DrawRange			= 5000
 PRK_Grass_Billboard_SortRange				= 10
@@ -109,13 +111,14 @@ PRK_Enemy_Types									= {
 PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
 
 -- Player
-PRK_BaseClip										= 6
+PRK_BaseClip										= 2 --6
 PRK_Health											= 6
 PRK_Speed											= 600
 PRK_Jump												= 0
 
 -- Misc
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
+PRK_Path_Rooms									= "prickly/"
 
 ------------------------
   -- Gamemode Hooks --
@@ -168,10 +171,13 @@ hook.Add( "Think", "PRK_Think_FrameTime", function()
 end )
 
 function PRK_GetFrameTime()
+	-- if ( CLIENT ) then
+		-- return RealFrameTime()
+	-- end
+	-- return FrameTime()
 	if ( !PRK_AverageFrameTime or PRK_AverageFrameTime == 0 ) then
 		return 0.016
 	end
-	-- print( PRK_AverageFrameTime )
 	return PRK_AverageFrameTime -- FrameTime() -- 0.016
 end
 

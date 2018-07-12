@@ -159,6 +159,7 @@ end
 
 function ENT:CollideWithEnt( ent )
 	if ( self.NextCollide and self.NextCollide > CurTime() ) then return end
+	if ( !ent or !ent:IsValid() ) then return end
 
 	-- Don't collide a bunch with one bounce
 	self.NextCollide = CurTime() + 0.2

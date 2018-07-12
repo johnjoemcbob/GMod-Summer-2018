@@ -50,6 +50,9 @@ end )
 function ENT:Initialize()
 	self.Scale = 0
 	self.Travellers = {}
+
+	self.SoundHum = CreateSound( self, "ambient/levels/citadel/portal_beam_loop1.wav" )
+	self.SoundHum:Play()
 end
 
 function ENT:Think()
@@ -73,7 +76,7 @@ function ENT:Draw()
 end
 
 function ENT:OnRemove()
-	
+	self.SoundHum:Stop()
 end
 
 local function createparticle_inside( off )
@@ -84,11 +87,13 @@ local function createparticle_inside( off )
 	local scale = PRK_Gateway_MaxScale
 	local bend = Vector()
 		if ( off == 0 ) then
-			local r = ( math.cos( CurTime() ) + math.sin( CurTime() / 10 ) ) / 2
-			local u = math.cos( CurTime() )
+			local speed = 3
+			local r = ( math.cos( CurTime() * speed ) + math.sin( CurTime() / 10 * speed ) ) / 2
+			local u = math.cos( CurTime() * speed )
 			bend = right * r * 10 + up * u * 30
 		end
-	LocalPlayer().PRK_GatewayDir = ( -forward - bend / 120 ):GetNormal()
+	local div = 120
+	LocalPlayer().PRK_GatewayDir = ( -forward - bend / div ):GetNormal()
 	local effectdata = EffectData()
 		effectdata:SetOrigin( pos + forward * scale * 50 + forward * scale * -15 * off + bend )
 		effectdata:SetNormal( LocalPlayer().PRK_GatewayDir )
@@ -210,6 +215,7 @@ function PRK_CalcView_Gateway( ply, origin, angles, fov )
 	return false
 end
 
+-- Draw inside
 hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Gateway", function()
 	if ( LocalPlayer().PRK_Gateway ) then
 		local self = LocalPlayer().PRK_Gateway
@@ -332,6 +338,8 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 
 		local targetscale = math.Clamp( 1 - ( self.ClosestPlayerDistance / PRK_Gateway_StartOpenRange ), 0, 1 ) * PRK_Gateway_MaxScale
 		self.Scale = Lerp( FrameTime() * PRK_Gateway_OpenSpeed, self.Scale, targetscale )
+		self.SoundHum:ChangeVolume( 0.5 + self.Scale / PRK_Gateway_MaxScale )
+		self.SoundHum:ChangePitch( 100 + 50 * self.Scale / PRK_Gateway_MaxScale )
 		local length = self.Scale * 100
 		local segs = PRK_Gateway_Segments --24
 

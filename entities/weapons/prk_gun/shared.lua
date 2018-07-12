@@ -122,6 +122,7 @@ if ( CLIENT ) then
 		local chambers = net.ReadFloat()
 
 		self.TargetMaxClip = chambers
+		PRK_RevolverChambers.TargetAng = 360 / self.TargetMaxClip * self.Owner:GetNWInt( "PRK_Clip" )
 	end )
 end
 
@@ -152,7 +153,9 @@ function SWEP:Think()
 	end
 
 	if ( CLIENT ) then
-		self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
+		if ( self.GunModel and self.GunModel:IsValid() ) then
+			self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
+		end
 	end
 
 	self:NextThink( CurTime() + 1 )
@@ -378,6 +381,10 @@ end
 
 if ( CLIENT ) then
 	function SWEP:Initialize()
+		if ( !system.HasFocus() ) then
+			return
+		end
+
 		-- Create if non-existant
 		local pos = LocalPlayer():GetViewModel():GetPos()
 		local ang = LocalPlayer():GetViewModel():GetAngles()
@@ -397,6 +404,13 @@ if ( CLIENT ) then
 	function SWEP:GetViewModelPosition( pos, ang )
 		if ( PRK_InEditor( self.Owner ) ) then return end
 
+		if ( !system.HasFocus() ) then
+			if ( self.GunModel and self.GunModel:IsValid() ) then
+				self.GunModel:Remove()
+				self.GunModel = nil
+			end
+			return
+		end
 		if ( !self.GunModel or !self.GunModel:IsValid() ) then
 			self:Initialize()
 		end

@@ -414,7 +414,7 @@ end
 function GM:OnContextMenuOpen()
 	if ( !hook.Call( "ContextMenuOpen", GAMEMODE ) ) then return end
 
-	CreateContextMenu()
+	-- CreateContextMenu()
 end
 
 function GM:OnContextMenuClose()
@@ -457,7 +457,7 @@ end )
 hook.Add( "StartCommand", "PRK_StartCommand", function( ply, cmd )
 	local wheel = cmd:GetMouseWheel()
 	if ( wheel != 0 ) then
-		hook.Call( "WhileMouseWheeling", nil, wheel )
+		hook.Call( "WhileMouseWheeling", GAMEMODE, wheel )
 	end
 end )
 
@@ -744,7 +744,9 @@ function PRK_HUDPaint_RevolverChambers()
 	local ang = PRK_RevolverChambers.Ang
 	-- print( ang )
 	-- print( chambers )
-		local off = 180 -- ( ( 1 / chambers ) * -360 ) + 180
+		-- local off = 180 -- ( ( 1 / chambers ) * -360 ) + 180
+		local off = ( ( 1 / chambers ) * 360 ) + 180
+		off = off - ( 360 / chambers )
 		ang = ang - off
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
@@ -803,15 +805,6 @@ function PRK_HUDPaint_RevolverChambers()
 		end
 		-- draw.Circle( point.x, point.y, cham_rad, 32, 0 )
 		draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 ) -- TODO; fix this for all resolutions (only current problem is large size on 3 chambers?)
-		PRK_DrawText(
-			id,
-			point.x,
-			point.y,
-			Color( 255, 255, 255, 255 ),
-			TEXT_ALIGN_CENTER,
-			TEXT_ALIGN_CENTER,
-			16
-		)
 	end
 
 	-- Draw 'No Ammo' warning
@@ -943,6 +936,14 @@ function GM:PreDrawTranslucentRenderables()
 	return !PRK_ShouldDraw()
 end
 
+function GM:PreDrawHalos()
+
+end
+
+function GM:PostDrawEffects()
+	
+end
+
 function PRK_ShouldDraw()
 	return !( LocalPlayer().PRK_Editor_Room or LocalPlayer().PRK_Gateway )
 end
@@ -978,12 +979,6 @@ local function PRK_CalcView( ply, pos, angles, fov )
 	end
 end
 hook.Add( "CalcView", "PRK_CalcView", PRK_CalcView )
-
-concommand.Add( "prk_effect", function( ply, cmd, args )
-	local effectdata = EffectData()
-		effectdata:SetOrigin( LocalPlayer():GetPos() )
-	util.Effect( "prk_grass", effectdata )
-end )
 
 -- Resolution changing
 local LastScrW = ScrW()

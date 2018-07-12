@@ -348,32 +348,20 @@ function PRK_Explosion( attacker, pos, radius )
 	local rad = 0.9
 	for i = 1, 2 do
 		local radius_visual = radius * rad
-		local top = PRK_CreateEnt(
+		local sphere = PRK_CreateEnt(
 			"prk_debris",
-			"models/props_phx/construct/metal_dome360.mdl",
+			"models/hunter/misc/shell2x2.mdl",
 			pos,
 			Angle( 0, 0, 0 )
 		)
-			top:SetMaterial( "models/debug/debugwhite", true )
-			top:SetColor( col )
-			top:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
-			top:SetModelScale( 0, time )
-		local bot = PRK_CreateEnt(
-			"prk_debris",
-			"models/props_phx/construct/metal_dome360.mdl",
-			pos,
-			Angle( 180, 0, 0 )
-		)
-			bot:SetMaterial( "models/debug/debugwhite", true )
-			bot:SetColor( col )
-			bot:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
-			bot:SetModelScale( 0, time )
+			sphere:SetMaterial( "models/debug/debugwhite", true )
+			sphere:SetColor( col )
+			sphere:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
+			sphere:SetModelScale( 0, time )
+			sphere:SetNWBool( "Explosion", true )
 		timer.Simple( time, function()
-			if ( top and top:IsValid() ) then
-				top:Remove()
-			end
-			if ( bot and bot:IsValid() ) then
-				bot:Remove()
+			if ( sphere and sphere:IsValid() ) then
+				sphere:Remove()
 			end
 		end )
 		col = Color( 0, 0, 0, 255 )

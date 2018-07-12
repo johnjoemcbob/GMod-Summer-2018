@@ -3,17 +3,6 @@ AddCSLuaFile( "cl_init.lua" )
 
 include( "shared.lua" )
 
-sound.Add(
-	{ 
-		name = "prk_gateway_hum",
-		channel = CHAN_ITEM,
-		level = 65,
-		volume = 1.0,
-		pitch = { 140, 180 },
-		sound = "ambient/atmosphere/captain_room.wav"
-	}
-)
-
 util.AddNetworkString( "PRK_Gateway_EnterExit" )
 
 -- Send to all clients for showing player body in the stream
@@ -29,7 +18,6 @@ end
 function ENT:Initialize()
 	self:SetModel( "models/props_c17/fence01a.mdl" )
 	self:SetNoDraw( true )
-	self:EmitSound( "prk_gateway_hum" )
 
 	self:SetSolid( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
@@ -42,7 +30,7 @@ function ENT:Initialize()
 		endpos = pos - self:GetForward() * 10000,
 		filter = self,
 	} )
-	self:SetPos( tr.HitPos + tr.HitNormal * 0.01 )
+	self:SetPos( tr.HitPos + tr.HitNormal * 0.04 )
 	self:SetAngles( tr.HitNormal:Angle() )
 
 	-- Freeze initial body
@@ -61,7 +49,7 @@ function ENT:Think()
 			if ( ply.PRK_GatewayTime + PRK_Gateway_TravelTime <= CurTime() ) then
 				self:Exit( ply )
 			end
-		else
+		elseif ( ply:Alive() ) then
 			local dist = self:GetPos():Distance( ply:GetPos() )
 			if ( dist <= PRK_Gateway_EnterRange ) then
 				self:Enter( ply )
@@ -78,7 +66,7 @@ function ENT:Think()
 end
 
 function ENT:OnRemove()
-	self:StopSound( "prk_gateway_hum" )
+	
 end
 
 function ENT:Enter( ply )

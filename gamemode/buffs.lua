@@ -40,8 +40,7 @@ function BuffCallback( ply, buff, stack )
         local chambers_amt = PRK_BaseClip + (stack * PRK_BUFF_PLAYER_CHAMBERS_ADD)
         
         local gun = ply:GetActiveWeapon()
-		gun.MaxClip = chambers_amt
-        gun:SendNumChambers(chambers_amt)
+		gun:SetChambers( chambers_amt )
     end
 end
 

@@ -40,9 +40,18 @@ local models = {
 PRK_Material_Grass = Material( "prk_grass.png", "noclamp smooth" )
 
 local colours = {
+	-- Color( 92, 4, 40, 255 ),
+	-- Blue/purple
+	Color( 80, 4, 90, 255 ),
 	Color( 65, 4, 90, 255 ),
 	Color( 47, 4, 90, 255 ),
 	Color( 12, 4, 90, 255 ),
+	Color( 4, 12, 90, 255 ),
+	Color( 4, 47, 90, 255 ),
+	-- Green
+	-- Color( 12, 90, 4, 255 ),
+	-- Color( 47, 90, 4, 255 ),
+	-- Color( 65, 90, 4, 255 ),
 }
 
 function ENT:Initialize()

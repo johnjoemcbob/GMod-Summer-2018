@@ -725,7 +725,8 @@ function PRK_Think_RevolverChambers()
 end
 
 function PRK_HUDPaint_RevolverChambers()
-	if ( !LocalPlayer():GetActiveWeapon() or !LocalPlayer():GetActiveWeapon():IsValid() or LocalPlayer():GetActiveWeapon():GetClass() != "prk_gun" ) then return end
+	local wep = LocalPlayer():GetActiveWeapon()
+	if ( !wep or !wep:IsValid() or wep:GetClass() != "prk_gun" or !wep.ChamberBullets ) then return end
 
 	draw.NoTexture()
 
@@ -746,7 +747,7 @@ function PRK_HUDPaint_RevolverChambers()
 	-- print( chambers )
 		-- local off = 180 -- ( ( 1 / chambers ) * -360 ) + 180
 		local off = ( ( 1 / chambers ) * 360 ) + 180
-		off = off - ( 360 / chambers )
+		off = off + ( 360 / chambers )
 		ang = ang - off
 	-- Move slightly with player
 	x, y = PRK_GetUIPosVelocity( x, y, LagX, LagY )
@@ -792,19 +793,18 @@ function PRK_HUDPaint_RevolverChambers()
 	end
 
 	-- Draw individual chambers
-	local ammo = LocalPlayer():GetNWInt( "PRK_Clip" )
-	for k, point in pairs( points ) do
-		local id = k -- #points - k + 1
-		if ( id <= ammo ) then
-			surface.SetDrawColor( 100, 190, 190, 255 )
-		else
+	for chamber, point in pairs( points ) do
+		local function inner()
+			local info = PRK_BulletTypeInfo[wep.ChamberBullets[chamber]]
+			if ( info ) then
+				info:Paint( wep, point.x, point.y, math.min( 18, cham_rad ) )
+			end
+		end
+		local function mask()
 			surface.SetDrawColor( 0, 20, 20, 255 )
+			draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 )
 		end
-		if ( id == 1 ) then
-			-- surface.SetDrawColor( 255, 20, 20, 255 )
-		end
-		-- draw.Circle( point.x, point.y, cham_rad, 32, 0 )
-		draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 ) -- TODO; fix this for all resolutions (only current problem is large size on 3 chambers?)
+		draw.StencilBasic( mask, inner )
 	end
 
 	-- Draw 'No Ammo' warning
@@ -908,10 +908,10 @@ function PRK_Gun_UseAmmo()
 	end
 end
 
-function PRK_Gun_AddAmmo()
+function PRK_Gun_AddAmmo( dir )
 	if ( LocalPlayer():GetActiveWeapon() and LocalPlayer():GetActiveWeapon():IsValid() ) then
 		local chambers = LocalPlayer():GetActiveWeapon().MaxClip or 6
-		PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + ( 360 / chambers )
+		PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + ( 360 / chambers ) * dir
 		PRK_RevolverChambers.NoAmmoWarning = false
 		PRK_RevolverChambers.ExtraChange = 1
 	end
@@ -1127,6 +1127,9 @@ function surface.DrawRectBorder( x, y, w, h, border )
 	)
 end
 
+function draw.Rect( x, y, w, h, color )
+	draw.Box( x, y, w, h, color )
+end
 function draw.Box( x, y, w, h, color )
 	if ( color ) then
 		draw.SetDrawColor( color )

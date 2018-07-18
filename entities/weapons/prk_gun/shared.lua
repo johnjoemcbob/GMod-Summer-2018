@@ -1,30 +1,29 @@
-AddCSLuaFile( "shared.lua" )
 
-SWEP.PrintName	= "Prickly Gun"
+SWEP.PrintName						= "Prickly Gun"
 
-SWEP.Author		= ""
-SWEP.Purpose	= ""
+SWEP.Author								= ""
+SWEP.Purpose							= ""
 
-SWEP.Spawnable	= true
-SWEP.UseHands	= true
-SWEP.DrawAmmo	= false
+SWEP.Spawnable						= true
+SWEP.UseHands							= true
+SWEP.DrawAmmo						= false
 
-SWEP.ViewModel	= "models/weapons/w_357.mdl"
-SWEP.WorldModel	= "models/weapons/w_357.mdl"
+SWEP.ViewModel						= "models/weapons/w_357.mdl"
+SWEP.WorldMode						= "models/weapons/w_357.mdl"
 
-SWEP.ViewModelFOV	= 32
-SWEP.Slot			= 0
-SWEP.SlotPos		= 5
+SWEP.ViewModelFOV					= 32
+SWEP.Slot									= 0
+SWEP.SlotPos							= 5
 
-SWEP.Primary.ClipSize		= -1
-SWEP.Primary.DefaultClip	= -1
-SWEP.Primary.Automatic		= true
-SWEP.Primary.Ammo			= "none"
+SWEP.Primary.ClipSize				= -1
+SWEP.Primary.DefaultClip			= -1
+SWEP.Primary.Automatic			= true
+SWEP.Primary.Ammo					= "none"
 
-SWEP.Secondary.ClipSize		= -1
-SWEP.Secondary.DefaultClip	= -1
-SWEP.Secondary.Automatic	= true
-SWEP.Secondary.Ammo			= "none"
+SWEP.Secondary.ClipSize			= -1
+SWEP.Secondary.DefaultClip		= -1
+SWEP.Secondary.Automatic		= true
+SWEP.Secondary.Ammo				= "none"
 
 SWEP.RequireAmmo					= true
 SWEP.MaxClip							= PRK_BaseClip
@@ -47,6 +46,253 @@ SWEP.SoundPitchReloadBase		= 80
 SWEP.SoundPitchReloadIncrease	= 10
 SWEP.SoundPitchReloadSpeed	= 0.4
 
+PRK_BulletTypeInfo = {
+	-- Empty
+	[0] = {
+		Paint = function( info, self, x, y, r )
+			
+		end,
+		CanFire = function( info )
+			return false
+		end,
+	},
+	-- Default
+	[1] = {
+		Paint = function( info, self, x, y, r )
+			local r = r * 3
+			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 100, 190, 190, 255 ) )
+		end,
+		CanFire = function( info )
+			return true
+		end,
+		Fire = function( info, self )
+			-- Play shoot sound
+			self:EmitSound(
+				"weapons/grenade_launcher1.wav",
+				75,
+				self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self:GetFilledChamberCount() / self.MaxClip ) ) )
+			)
+
+			-- Play first impact effect at spawn point
+			local tr = self.Owner:GetEyeTrace()
+			local effectdata = EffectData()
+				local pos = tr.HitPos
+				effectdata:SetOrigin( pos )
+				effectdata:SetNormal( tr.HitNormal )
+			util.Effect( "prk_hit", effectdata )
+
+			-- Spawn bullet
+			if ( SERVER ) then
+				local bullet = ents.Create( "prk_bullet_heavy" )
+				bullet:Spawn()
+				bullet.Owner = self.Owner
+				-- Appear at hit point and bounce back towards player
+				local pos = tr.HitPos + tr.HitNormal * 10
+					-- Clamp pos to max distance
+					local dir = pos - self.Owner:EyePos()
+					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+					end
+				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
+				bullet:Launch( pos, dir )
+				local phys = bullet:GetPhysicsObject()
+				if ( phys and phys:IsValid() ) then
+					phys:AddAngleVelocity( VectorRand() * 1000 )
+				end
+				bullet:CollideWithEnt( tr.Entity )
+			end
+
+			-- return takeammo, spin, shootparticles, punch
+			return true, true, true, true
+		end,
+	},
+	-- Default
+	[1] = {
+		Paint = function( info, self, x, y, r )
+			local r = r * 3
+			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 100, 190, 190, 255 ) )
+		end,
+		CanFire = function( info )
+			return true
+		end,
+		Fire = function( info, self )
+			-- Play shoot sound
+			self:EmitSound(
+				"weapons/grenade_launcher1.wav",
+				75,
+				self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self:GetFilledChamberCount() / self.MaxClip ) ) )
+			)
+
+			-- Play first impact effect at spawn point
+			local tr = self.Owner:GetEyeTrace()
+			local effectdata = EffectData()
+				local pos = tr.HitPos
+				effectdata:SetOrigin( pos )
+				effectdata:SetNormal( tr.HitNormal )
+			util.Effect( "prk_hit", effectdata )
+
+			-- Spawn bullet
+			if ( SERVER ) then
+				local bullet = ents.Create( "prk_bullet_heavy" )
+				bullet:Spawn()
+				bullet.Owner = self.Owner
+				-- Appear at hit point and bounce back towards player
+				local pos = tr.HitPos + tr.HitNormal * 10
+					-- Clamp pos to max distance
+					local dir = pos - self.Owner:EyePos()
+					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+					end
+				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
+				bullet:Launch( pos, dir )
+				local phys = bullet:GetPhysicsObject()
+				if ( phys and phys:IsValid() ) then
+					phys:AddAngleVelocity( VectorRand() * 1000 )
+				end
+				bullet:CollideWithEnt( tr.Entity )
+			end
+
+			-- return takeammo, spin, shootparticles, punch
+			return true, true, true, true
+		end,
+	},
+	-- Test
+	[2] = {
+		Paint = function( info, self, x, y, r )
+			-- Initialise
+			if ( !self.Fires ) then
+				self.Fires = 6
+			end
+
+			local r = r * 3
+			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 210, 210, 220, 255 ) )
+
+			local ang = 0
+			local chambers = 6
+			local cham_rad = r / 16
+			local points = PRK_GetCirclePoints( x, y, r - cham_rad * 13, chambers, ang )
+				-- Remove middle point
+				table.remove( points, 1 )
+			for chamber, point in pairs( points ) do
+				if ( chamber <= self.Fires ) then
+					surface.SetDrawColor( 100, 190, 190, 255 )
+				else
+					surface.SetDrawColor( 10, 10, 20, 255 )
+				end
+				draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 )
+			end
+		end,
+		CanFire = function( info )
+			return true
+		end,
+		Fire = function( info, self )
+			-- Initialise
+			if ( !self.Fires ) then
+				self.Fires = 6
+			end
+
+			-- Play shoot sound
+			self:EmitSound(
+				"weapons/grenade_launcher1.wav",
+				75,
+				50 + self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self.Fires / 6 ) ) )
+			)
+
+			-- Play first impact effect at spawn point
+			local tr = self.Owner:GetEyeTrace()
+			local effectdata = EffectData()
+				local pos = tr.HitPos
+				effectdata:SetOrigin( pos )
+				effectdata:SetNormal( tr.HitNormal )
+			util.Effect( "prk_hit", effectdata )
+
+			-- Spawn bullet
+			if ( SERVER ) then
+				local bullet = ents.Create( "prk_bullet_heavy" )
+				bullet:Spawn()
+				bullet.Owner = self.Owner
+				-- Appear at hit point and bounce back towards player
+				local pos = tr.HitPos + tr.HitNormal * 10
+					-- Clamp pos to max distance
+					local dir = pos - self.Owner:EyePos()
+					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+					end
+				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
+				bullet:Launch( pos, dir )
+				local phys = bullet:GetPhysicsObject()
+				if ( phys and phys:IsValid() ) then
+					phys:AddAngleVelocity( VectorRand() * 1000 )
+				end
+				bullet:CollideWithEnt( tr.Entity )
+			end
+
+			self.Fires = self.Fires - 1
+			if ( self.Fires <= 0 ) then
+				return true, true, true, true
+			end
+			-- return takeammo, spin, shootparticles, punch
+			return false, false, true, true
+		end,
+	},
+	-- Test
+	[3] = {
+		Paint = function( info, self, x, y, r )
+			local r = r * 3
+			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 210, 100, 220, 255 ) )
+		end,
+		CanFire = function( info )
+			return true
+		end,
+		Fire = function( info, self )
+			-- Play shoot sound
+			self:EmitSound(
+				"weapons/grenade_launcher1.wav",
+				75,
+				self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self:GetFilledChamberCount() / self.MaxClip ) ) )
+			)
+
+			-- Play first impact effect at spawn point
+			local tr = self.Owner:GetEyeTrace()
+			local effectdata = EffectData()
+				local pos = tr.HitPos
+				effectdata:SetOrigin( pos )
+				effectdata:SetNormal( tr.HitNormal )
+			util.Effect( "prk_hit", effectdata )
+
+			-- Spawn spider
+			if ( SERVER ) then
+				local spider = ents.Create( "prk_npc_sploder" )
+				spider:SetNWFloat( "Scale", 0.5 )
+				spider:Spawn()
+				spider:SetNoDraw( true )
+				timer.Simple( 0.04, function()
+					spider:SetNoDraw( false )
+					spider:BroadcastScale( 0.5 )
+				end )
+				spider.Owner = self.Owner
+				-- Appear at hit point and bounce back towards player
+				local pos = tr.HitPos + tr.HitNormal * 10
+					-- Clamp pos to max distance
+					local dir = pos - self.Owner:EyePos()
+					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+					end
+				spider:SetPos( pos )
+			end
+
+			-- return takeammo, spin, shootparticles, punch
+			return true, true, true, true
+		end,
+	},
+}
+PRK_BulletType = {
+	["Empty"] = 0,
+	["Default"] = 1,
+	["Test1"] = 2,
+	["Test2"] = 3,
+}
+
 sound.Add(
 	{ 
 		name = "prk_gun_spin",
@@ -64,15 +310,19 @@ if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_NoAmmo" )
     util.AddNetworkString( "PRK_Gun_SetNumChambers" )
 
-	function SWEP:SendFire()
+	function SWEP:SendFire( spin )
 		net.Start( "PRK_Gun_Fire" )
 			net.WriteEntity( self )
+			net.WriteTable( self.ChamberBullets )
+			net.WriteBool( spin )
 		net.Send( self.Owner )
 	end
 
-	function SWEP:SendReload()
+	function SWEP:SendReload( dir )
 		net.Start( "PRK_Gun_Reload" )
 			net.WriteEntity( self )
+			net.WriteTable( self.ChamberBullets )
+			net.WriteFloat( dir )
 		net.Send( self.Owner )
 	end
 
@@ -85,58 +335,26 @@ if ( SERVER ) then
     function SWEP:SendNumChambers( chambers )
         net.Start( "PRK_Gun_SetNumChambers" )
             net.WriteEntity( self )
+			net.WriteTable( self.ChamberBullets )
             net.WriteFloat( chambers )
         net.Send( self.Owner )
     end
 end
 
-if ( CLIENT ) then
-	PRK_Initialise_RevolverChambers()
-
-	net.Receive( "PRK_Gun_Fire", function( len, ply )
-		local self = net.ReadEntity()
-
-		self.GunPunch = 1
-		self.GunPunchRnd = math.random( -10, 10 )
-		PRK_Gun_UseAmmo() -- In main cl_init.lua
-	end )
-
-	net.Receive( "PRK_Gun_Reload", function( len, ply )
-		local self = net.ReadEntity()
-
-		-- self:EmitSound( "buttons/lever7.wav" )
-
-		self.GunPunch = -0.4
-		self.GunPunchRnd = math.random( -10, 10 )
-		PRK_Gun_AddAmmo() -- In main cl_init.lua
-	end )
-
-	net.Receive( "PRK_Gun_NoAmmo", function( len, ply )
-		local self = net.ReadEntity()
-
-		PRK_Gun_NoAmmoWarning()
-	end )
-    
-	net.Receive( "PRK_Gun_SetNumChambers", function( len, ply )
-		local self = net.ReadEntity()
-		local chambers = net.ReadFloat()
-
-		self.TargetMaxClip = chambers
-		PRK_RevolverChambers.TargetAng = 360 / self.TargetMaxClip * self.Owner:GetNWInt( "PRK_Clip" )
-	end )
-end
-
 function SWEP:Initialize()
 	self:SetHoldType( "fist" )
 
-	if ( SERVER ) then
-		self.Owner:SetNWInt( "PRK_Clip", self.MaxClip )
-		self.Owner:SetNWInt( "PRK_ExtraAmmo", 0 )
-	end
+	-- Initialise networked variables
+	self.Owner:SetNWInt( "PRK_CurrentChamber", 1 )
+	self.Owner:SetNWInt( "PRK_ExtraAmmo", 0 )
 
-	if ( CLIENT ) then
-		PRK_Initialise_RevolverChambers()
+	-- Initialise chambers to filled with normal bullets on client and server
+	self.ChamberBullets = {}
+	for i = 1, self.MaxClip do
+		self.ChamberBullets[i] = PRK_BulletType.Default
 	end
+	self.ChamberBullets[1] = PRK_BulletType.Test1
+	self.ChamberBullets[2] = PRK_BulletType.Test2
 end
 
 function SWEP:Think()
@@ -170,119 +388,74 @@ function SWEP:PrimaryAttack( right )
 	if ( PRK_InEditor( self.Owner ) ) then return end
 	if ( self.Owner:JustSpawned() ) then return end
 
-	-- Make sure we can shoot first
-	local ammo = self.Owner:GetNWInt( "PRK_Clip" )
-	if ( self.RequireAmmo and ammo <= 0 ) then
-		-- Play sound
-		self.Weapon:EmitSound( "buttons/lightswitch2.wav" )
-
-		-- Show warning
-		if ( SERVER ) then
+	-- Communicate warning
+	if ( SERVER ) then
+		local ammo = self:GetFilledChamberCount()
+		if ( ammo == 0 ) then
 			self:SendNoAmmo()
 		end
-
-		self:SetNextPrimaryFire( CurTime() + self.TimeFire )
-		return
 	end
 
-	-- Play shoot sound
-	-- PRK_EmitChainPitchedSound(
-		-- self.Owner:Nick() .. "_PRK_Gun_Fire",
-		-- self.Weapon,
-		-- "weapons/grenade_launcher1.wav",
-		-- 75,
-		-- 1,
-		-- self.SoundPitchFireBase,
-		-- self.SoundPitchFireIncrease,
-		-- self.SoundPitchFireSpeed
-	-- )
-	self.Weapon:EmitSound(
-		"weapons/grenade_launcher1.wav",
-		75,
-		self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( ammo / self.MaxClip ) ) )
-	)
-	self:SpinSound()
-	-- print( self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ammo / self.MaxClip ) )
+	-- Make sure we can shoot first
+	local cham = self.Owner:GetNWInt( "PRK_CurrentChamber" )
+	if ( !PRK_BulletTypeInfo[self.ChamberBullets[cham]]:CanFire() ) then return end
+
+	-- Shoot logic + take ammo
+	local takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[self.ChamberBullets[cham]]:Fire( self )
+	if ( SERVER ) then
+		if ( spin ) then
+			self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) - 1, 1, self.MaxClip ) )
+			self:SpinSound()
+		end
+
+		-- Communicate with client
+		self:SendFire( spin )
+	end
+
+	-- Don't update until client gets here
+	if ( takeammo ) then
+		self.ChamberBullets[cham] = PRK_BulletType.Empty
+	end
 
 	-- Play animation
 	self.Owner:SetAnimation( PLAYER_ATTACK1 )
 
 	-- Play shoot effect
-	local vm = self.Owner:GetViewModel()
-	local effectdata = EffectData()
-		local pos = vm:GetPos() +
-			self.Owner:GetForward() * 60 +
-			self.Owner:GetRight() * 20 * self.RightHanded +
-			self.Owner:GetVelocity() * 0.1
-		effectdata:SetOrigin( pos )
-		effectdata:SetNormal(
-			self.Owner:GetForward() +
-			self.Owner:GetUp()
-		)
-	util.Effect( "prk_hit", effectdata )
-
-	-- Play first impact effect at spawn point
-	local tr = self.Owner:GetEyeTrace()
-	local effectdata = EffectData()
-		local pos = tr.HitPos
-		effectdata:SetOrigin( pos )
-		effectdata:SetNormal( tr.HitNormal )
-	util.Effect( "prk_hit", effectdata )
-
-	-- Shoot 1 bullet, 150 damage, 0.01 aimcone
-	if ( SERVER ) then
-		local bullet = ents.Create( "prk_bullet_heavy" )
-		bullet:Spawn()
-        bullet.Owner = self.Owner
-			-- Appear at hit point and bounce back towards player
-			local pos = tr.HitPos + tr.HitNormal * 10
-				-- Clamp pos to max distance
-				local dir = pos - self.Owner:EyePos()
-				if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
-					pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
-				end
-			local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
-			bullet:Launch( pos, dir )
-			local phys = bullet:GetPhysicsObject()
-			if ( phys and phys:IsValid() ) then
-				phys:AddAngleVelocity( VectorRand() * 1000 )
-			end
-			bullet:CollideWithEnt( tr.Entity )
-		
-		-- Remove 1 bullet from our clip
-		if ( self.RequireAmmo ) then
-			self.Owner:SetNWInt( "PRK_Clip", ammo - 1 )
-		end
-
-		-- Communicate with client
-		self:SendFire()
+	if ( shootparticles ) then
+		local vm = self.Owner:GetViewModel()
+		local effectdata = EffectData()
+			local pos = vm:GetPos() +
+				self.Owner:GetForward() * 60 +
+				self.Owner:GetRight() * 20 * self.RightHanded +
+				self.Owner:GetVelocity() * 0.1
+			effectdata:SetOrigin( pos )
+			effectdata:SetNormal(
+				self.Owner:GetForward() +
+				self.Owner:GetUp()
+			)
+		util.Effect( "prk_hit", effectdata )
 	end
 
-	-- Punch FOV (if not running backwards - this felt bad, like the player had stopped moving)
-	local vel = self.Owner:GetVelocity()
-	local bac = -self.Owner:GetForward()
-	local movingback = vel:Dot( bac ) > 0
-	-- if ( !movingback ) then
+	if ( punch ) then
+		-- Punch FOV
+		local vel = self.Owner:GetVelocity()
+		local bac = -self.Owner:GetForward()
+		local movingback = vel:Dot( bac ) > 0
 		if ( !self.FOVBase ) then
 			self.FOVBase = self.Owner:GetFOV()
 		end
 		local base = self.FOVBase
 		local fov = base + self.DistFOVPunch
+			-- Punch in reverse if running backwards (otherwise feels like the player is not moving)
 			if ( movingback ) then
 				fov = base - self.DistFOVPunch
 			end
 		self.Owner:SetFOV( fov, self.TimeFOVPunch )
 		self.FOVPunch = CurTime() + self.TimeFOVPunch + self.TimeHoldFOVPunch
-	-- end
 
-	-- Punch the player's view
-	self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
-	local pushback = self.Owner:GetForward() * -20
-		if ( self.Owner:IsOnGround() ) then
-			pushback = pushback * 2
-		end
-		pushback.z = 0
-	-- self.Owner:SetVelocity( pushback )
+		-- Punch the player's view
+		self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
+	end
 
 	self:SetNextPrimaryFire( CurTime() + self.TimeFire )
 	self.NextReload = CurTime() + self.TimeReload
@@ -292,28 +465,31 @@ function SWEP:SecondaryAttack()
 	
 end
 
-function SWEP:Reload()
+function SWEP:Reload( dir )
+	if ( dir == nil ) then dir = 1 end
 	if ( PRK_InEditor( self.Owner ) ) then return end
 
 	if ( !self.NextReload or self.NextReload <= CurTime() ) then
-		local ammo = self.Owner:GetNWInt( "PRK_Clip" )
+		-- Always spin chambers, and do it before any loading
+		self:SpinSound()
+		if ( SERVER ) then
+			self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) + dir, 1, self.MaxClip ) )
+		end
+
+		local ammo = self:GetFilledChamberCount()
 		local extraammo = self.Owner:GetNWInt( "PRK_ExtraAmmo" )
-		if ( extraammo > 0 and ammo < self.MaxClip ) then
+		if ( ammo < self.MaxClip and extraammo > 0 and self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] == PRK_BulletType.Empty ) then
 			-- Reload and communicate
 			if ( SERVER ) then
-				-- local extraammo_add = self.Owner:GetNWInt( "PRK_ExtraAmmo_Add" )
-				-- if ( extraammo_add > 0 ) then
-					-- self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", extraammo_add - 1 )
-				-- end
 				self.Owner:SetNWInt( "PRK_ExtraAmmo", extraammo - 1 )
 				local extraammo_add = self.Owner:GetNWInt( "PRK_ExtraAmmo_Add" )
 				self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", extraammo_add - 1 )
-				self.Owner:SetNWInt( "PRK_Clip", ammo + 1 )
-				self:SendReload()
+
+				-- self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Default
+				self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Test2
 			end
 
 			-- Play sound
-			-- self.Weapon:EmitSound( "buttons/lever7.wav" )
 			PRK_EmitChainPitchedSound(
 				self.Owner:Nick() .. "_PRK_Gun_Reload",
 				self.Weapon,
@@ -326,12 +502,12 @@ function SWEP:Reload()
 				0.5,
 				function()
 					if ( self and self:IsValid() ) then
+						-- End chain effect
 						self.Owner:EmitSound( "buttons/blip1.wav", 75, 50, 0.15 )
 						self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", 0 )
 					end
 				end
 			)
-			self:SpinSound()
 
 			-- Delay next shoot until reload finished
 			self:SetNextPrimaryFire( CurTime() + 0.5 )
@@ -343,6 +519,11 @@ function SWEP:Reload()
 			if ( SERVER ) then
 				self:SendNoAmmo()
 			end
+		end
+
+		-- Send the reload message to client last
+		if ( SERVER ) then
+			self:SendReload( dir )
 		end
 
 		self.NextReload = CurTime() + self.TimeReload
@@ -366,6 +547,38 @@ function SWEP:OnRemove()
 	end
 end
 
+function SWEP:SetChambers( chambers )
+	-- Change size and add any new empty chambers
+	self.MaxClip = chambers
+	for i = 1, self.MaxClip do
+		if ( !self.ChamberBullets[i] ) then
+			self.ChamberBullets[i] = PRK_BulletType.Empty
+		end
+	end
+	self:SetNWInt( "PRK_CurrentChamber", 1 )
+
+	-- Send to client
+	self:SendNumChambers( chambers )
+end
+
+function SWEP:GetFilledChamberCount()
+	local count = 0
+		for k, cham in pairs( self.ChamberBullets ) do
+			if ( cham != PRK_BulletType.Empty ) then
+				count = count + 1
+			end
+		end
+	return count
+end
+
+function SWEP:PlaySound( sound, soundlevel, pitch, volume )
+	timer.Simple( 0.001, function()
+		if ( self and self:IsValid() ) then
+			self:EmitSound( sound, soundlevel, pitch, volume )
+		end
+	end )
+end
+
 function SWEP:SpinSound()
 	timer.Simple( 0.01, function()
 		if ( self and self:IsValid() ) then
@@ -377,88 +590,4 @@ function SWEP:SpinSound()
 			end )
 		end
 	end )
-end
-
-if ( CLIENT ) then
-	function SWEP:Initialize()
-		if ( !system.HasFocus() ) then
-			return
-		end
-
-		-- Create if non-existant
-		local pos = LocalPlayer():GetViewModel():GetPos()
-		local ang = LocalPlayer():GetViewModel():GetAngles()
-		self.GunModel = PRK_AddModel( self.WorldModel, pos, ang, 1, "models/shiny", Color( 100, 100, 100, 255 ) )
-
-		-- Scale
-		local scale = Vector( 1, 3, 3 )
-
-		local mat = Matrix()
-			mat:Scale( scale )
-		self.GunModel:EnableMatrix( "RenderMultiply", mat )
-
-		self.GunModel:SetParent( LocalPlayer():GetViewModel() )
-	end
-
-	local curpos = Vector()
-	function SWEP:GetViewModelPosition( pos, ang )
-		if ( PRK_InEditor( self.Owner ) ) then return end
-
-		if ( !system.HasFocus() ) then
-			if ( self.GunModel and self.GunModel:IsValid() ) then
-				self.GunModel:Remove()
-				self.GunModel = nil
-			end
-			return
-		end
-		if ( !self.GunModel or !self.GunModel:IsValid() ) then
-			self:Initialize()
-		end
-
-		local frametime = PRK_GetFrameTime()
-			-- Default pos/ang
-			local target = 
-				pos +
-				ang:Forward() * 20 +
-				ang:Right() * 10 * self.RightHanded +
-				ang:Up() * -15
-			local speedpunch = self.LerpSpeedPunch
-			local speed = self.LerpSpeed * PRK_Speed / 400
-			if ( !game.SinglePlayer() ) then
-				curpos = LocalPlayer():GetViewModel():GetPos()
-			end
-			local dist = 1
-			local targetang =
-				ang +
-				Angle( 0, 1, 0 ) * 10 * self.RightHanded
-
-			-- Gun punch
-			if ( !self.GunPunch ) then
-				self.GunPunch = 0
-				self.GunPunchRnd = 0
-			end
-			target =
-				target +
-				ang:Up() * 10 * self.GunPunch +
-				ang:Forward() * -20 * self.GunPunch +
-				ang:Right() * self.GunPunchRnd / 10
-			targetang =
-				targetang +
-				Angle( -1, 0, 0 ) * 150 * self.GunPunch
-			self.GunPunch = math.Approach( self.GunPunch, 0, frametime * speedpunch )
-			self.GunPunchRnd = math.Approach( self.GunPunchRnd, 0, frametime * speedpunch )
-
-			-- Lerp
-			pos = LerpVector( frametime * speed * dist, curpos, target )
-			ang = targetang
-			curpos = pos
-		return pos, ang
-	end
-
-	function SWEP:OnRemove()
-		if ( self.GunModel and self.GunModel:IsValid() ) then
-			self.GunModel:Remove()
-			self.GunModel = nil
-		end
-	end
 end

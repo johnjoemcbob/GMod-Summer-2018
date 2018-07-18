@@ -21,9 +21,33 @@ sound.Add(
 	}
 )
 
+-- Net
+if ( SERVER ) then
+	util.AddNetworkString( "PRK_NPC_Sploder_Scale" )
+
+	function ENT:BroadcastScale( scale )
+		net.Start( "PRK_NPC_Sploder_Scale" )
+			net.WriteEntity( self )
+			net.WriteFloat( scale )
+		net.Broadcast()
+	end
+end
+if ( CLIENT ) then
+	net.Receive( "PRK_NPC_Sploder_Scale", function( len, ply )
+		local self = net.ReadEntity()
+		local scale = net.ReadFloat()
+
+		if ( self and self:IsValid() ) then
+			self:SetNWFloat( "Scale", scale )
+			self:OnRemove()
+			self:Initialize()
+		end
+	end )
+end
+
 function ENT:Initialize()
 	self:SetModel( "models/headcrab.mdl" )
-	self:SetModelScale( 3, 0 )
+	self:SetModelScale( self:GetNWFloat( "Scale", 3 ), 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 
@@ -31,7 +55,6 @@ function ENT:Initialize()
 	if ( CLIENT ) then
 		self.Visuals = {}
 
-		local forw_off = 12
 		self:SetAngles( Angle() )
 		local baseheight = 40
 		local pos = {
@@ -42,19 +65,19 @@ function ENT:Initialize()
 			Vector( 0, 0, baseheight + 20 ),
 		}
 		for k, v in pairs( pos ) do
-			local eye_mod = "models/XQM/Rails/gumball_1.mdl"
-			local eye_pos = v
-			local eye_ang = Angle()
-			local eye_sca = 0.8 + math.random( 10, 50 ) / 100
-			local eye_mat = "models/debug/debugwhite"
-			local eye_col = Color(
+			local berry_mod = "models/XQM/Rails/gumball_1.mdl"
+			local berry_pos = v / 3 * self:GetModelScale()
+			local berry_ang = Angle()
+			local berry_sca = ( 0.8 + math.random( 10, 50 ) / 100 ) / 3 * self:GetModelScale()
+			local berry_mat = "models/debug/debugwhite"
+			local berry_col = Color(
 				PRK_Colour_Enemy_Eye.r * ( 0.7 + math.random( 10, 100 ) / 100 ),
 				PRK_Colour_Enemy_Eye.g,
 				PRK_Colour_Enemy_Eye.b,
 				PRK_Colour_Enemy_Eye.a
 			)
 
-			local vis = PRK_AddModel( eye_mod, eye_pos, eye_ang, eye_sca, eye_mat, eye_col )
+			local vis = PRK_AddModel( berry_mod, berry_pos, berry_ang, berry_sca, berry_mat, berry_col )
 				vis:SetParent( self, 2 )
 			table.insert( self.Visuals, vis )
 		end
@@ -73,9 +96,9 @@ function ENT:Initialize()
 	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
 	self.SearchRadius 	= 1000	-- How far to search for enemies
 
-	self.Speed = 500
+	self.Speed = 500 * self:GetNWFloat( "Scale", 3 )
 	self.Coins = 3
-	self.SplodeRange = 200
+	self.SplodeRange = 200 / 3 * self:GetNWFloat( "Scale", 3 )
 
 	local length = 1.5
 	local function play()
@@ -113,6 +136,8 @@ function ENT:OnRemove()
 			)
 				prop:SetMaterial( "models/debug/debugwhite", true )
 				prop:SetColor( PRK_Colour_Enemy_Eye )
+				prop:SetModelScale( 1 / 3 * self:GetNWFloat( "Scale", 3 ), 0 )
+				prop:PhysicsInitSphere( 5 * self:GetNWFloat( "Scale", 3 ) )
 				local phys = prop:GetPhysicsObject()
 				if ( phys and phys:IsValid() ) then
 					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )

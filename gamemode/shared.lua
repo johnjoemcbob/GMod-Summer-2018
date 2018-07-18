@@ -10,7 +10,7 @@ GM.Author = "johnjoemcbob & DrMelon"
 GM.Email = ""
 GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 
--- PRK_SANDBOX = true
+PRK_SANDBOX = true
 if PRK_SANDBOX then
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 else
@@ -111,7 +111,7 @@ PRK_Enemy_Types									= {
 PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
 
 -- Player
-PRK_BaseClip										= 2 --6
+PRK_BaseClip										= 3 --6
 PRK_Health											= 6
 PRK_Speed											= 600
 PRK_Jump												= 0
@@ -257,6 +257,17 @@ function PRK_GetCirclePoints( x, y, radius, seg, rotate )
 		-- local a = math.rad( 0 ) -- This is need for non absolute segment counts
 		-- table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
 	return cir
+end
+
+function math.Wrap( cur, min, max )
+	local ret = tonumber( cur )
+		if ( ret < min ) then
+			ret = max
+		end
+		if ( ret > max ) then
+			ret = min
+		end
+	return ret
 end
 
 -- Make a shallow copy of a table (from http://lua-users.org/wiki/CopyTable)

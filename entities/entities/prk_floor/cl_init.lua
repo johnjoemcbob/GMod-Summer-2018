@@ -55,45 +55,75 @@ local colours = {
 }
 
 function ENT:Initialize()
-	-- Plant models
-	local min = self:OBBMins()
-	local max = self:OBBMaxs()
+	-- Floor scale
+	local min, max = self:GetCollisionBounds()
+	local sca = Vector( max.x / PRK_Plate_Size * 2, max.y / PRK_Plate_Size * 2, 1 )
+	local mat = Matrix()
+		mat:Scale( sca )
+	self:EnableMatrix( "RenderMultiply", mat )
+	self:SetRenderBounds( min * 2, max * 2 )
+
+	self:PhysicsInitConvex( {
+		Vector( min.x, min.y, min.z ),
+		Vector( min.x, min.y, max.z ),
+		Vector( min.x, max.y, min.z ),
+		Vector( min.x, max.y, max.z ),
+		Vector( max.x, min.y, min.z ),
+		Vector( max.x, min.y, max.z ),
+		Vector( max.x, max.y, min.z ),
+		Vector( max.x, max.y, max.z )
+	} )
+
+	-- Set up solidity and movetype
+	self:SetMoveType( MOVETYPE_VPHYSICS )
+	self:SetSolid( SOLID_VPHYSICS )
+
+	-- Enable custom collisions on the entity
+	self:EnableCustomCollisions( true )
+
+	-- Delay grass/plant creation until floor is positioned
 	self.Models = {}
-	local mult = 10
-	local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * mult, PRK_Grass_Mesh_CountRange[2] * mult ) / mult )
-	for i = 1, amount do
-		local rnd = models[math.random( 1, #models )]
-		local mdl = rnd[1]
-		local pos = Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) + rnd[2]
-		local ang = rnd[3] + Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
-		local mat = "models/debug/debugwhite"
-		local col = colours[math.random( 1, #colours )]
+	timer.Simple( 0.1, function()
+		-- Plant models
+		local min = self:OBBMins()
+		local max = self:OBBMaxs()
+		local mult = 10
+		local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * mult, PRK_Grass_Mesh_CountRange[2] * mult ) / mult )
+		for i = 1, amount do
+			local rnd = models[math.random( 1, #models )]
+			local mdl = rnd[1]
+			local pos = Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) + rnd[2]
+			local ang = rnd[3] + Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
+			local mat = "models/debug/debugwhite"
+			local col = colours[math.random( 1, #colours )]
 
-		local ent = self:AddModel( mdl, pos, ang, 1, mat, col )
-		-- Scale
-		local sca = rnd[4]
-		local mat = Matrix()
-			mat:Scale( sca )
-		ent.Scale = sca
-		ent:EnableMatrix( "RenderMultiply", mat )
-	end
+			local ent = self:AddModel( mdl, pos, ang, 1, mat, col )
+			-- Scale
+			local sca = rnd[4]
+			local mat = Matrix()
+				mat:Scale( sca )
+			ent.Scale = sca
+			ent:EnableMatrix( "RenderMultiply", mat )
+		end
 
-	-- Grass billboards
-	if ( !LocalPlayer().Grasses ) then
-		LocalPlayer().Grasses = {}
-	end
+		-- Grass billboards
+		if ( !LocalPlayer().Grasses ) then
+			LocalPlayer().Grasses = {}
+		end
 
-	local grasscount = PRK_Grass_Billboard_Count
-	local grasses = {}
-	for i = 1, grasscount do
-		table.insert( grasses,	{
-			self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
-			Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
-			math.random( 10, 50 ) / 10,
-			Entity = self.Entity
-		} )
-	end
-	LocalPlayer().Grasses[self:GetPos()] = grasses
+		local grasscount = PRK_Grass_Billboard_Count
+		local grasses = {}
+		for i = 1, grasscount do
+			table.insert( grasses,	{
+				self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
+				Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
+				math.random( 10, 50 ) / 10,
+				Entity = self.Entity
+			} )
+		end
+		self.GrassPos = self:GetPos()
+		LocalPlayer().Grasses[self.GrassPos] = grasses
+	end )
 end
 
 function ENT:Draw()
@@ -215,13 +245,16 @@ function ENT:OnRemove()
 	-- Remove grass
 	if ( LocalPlayer().Grasses ) then
 		local toremove = {}
-		for k, grass in pairs( LocalPlayer().Grasses ) do
-			if ( grass.Entity == self.Entity ) then
-				table.insert( toremove, grass )
+		local pos = self.GrassPos
+		if ( LocalPlayer().Grasses[pos] ) then
+			for k, grass in pairs( LocalPlayer().Grasses[pos] ) do
+				if ( k == tonumber( k ) and grass.Entity == self.Entity ) then
+					table.insert( toremove, grass )
+				end
 			end
-		end
-		for k, remove in pairs( toremove ) do
-			table.RemoveByValue( LocalPlayer().Grasses, grass )
+			for k, remove in pairs( toremove ) do
+				table.RemoveByValue( LocalPlayer().Grasses[pos], remove )
+			end
 		end
 	end
 
@@ -231,15 +264,27 @@ function ENT:OnRemove()
 	end
 end
 
+-- Hooked to main GAMEMODE:Think to avoid calling whole thing for each entity each frame
 local nextthink = 0
 hook.Add( "Think", "PRK_Think_Grass", function()
 	if ( CurTime() < nextthink ) then return end
 
 	if ( LocalPlayer().Grasses ) then
+		-- Decide if whole floor clumps of grass should be drawn
+		LocalPlayer().GrassesRenderOrder = {}
 		for k, grasses in pairs( LocalPlayer().Grasses ) do
 			local dist = k:Distance( LocalPlayer():GetPos() )
 			grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
+			if ( grasses.ShouldDraw ) then
+				table.insert( LocalPlayer().GrassesRenderOrder, {
+					Key = k,
+					Dist = dist,
+				} )
+			end
 		end
+		-- Sort these entries so the closest will be drawn first
+		table.sort( LocalPlayer().GrassesRenderOrder, function( a, b ) return a.Dist < b.Dist end )
+		-- PrintTable( LocalPlayer().GrassesRenderOrder )
 	end
 
 	nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime
@@ -250,41 +295,47 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Gr
 	if ( !PRK_ShouldDraw() ) then return end
 
 	-- Sort grass by furthest from player first, to avoid depth issues (better way to do this?)
-	if ( PRK_Grass_Billboard_MaxSortCount != 0 ) then
-		local distply = LocalPlayer():GetPos():Distance( LastSortPos )
-		if ( distply >= PRK_Grass_Billboard_SortRange ) then
-			table.bubbleSort(
-				LocalPlayer().Grasses,
-				function( a, b )
-					local dista = math.Round( LocalPlayer():GetPos():Distance( a[1] ), 1 )
-					local distb = math.Round( LocalPlayer():GetPos():Distance( b[1] ), 1 )
-					return dista < distb
-				end,
-				PRK_Grass_Billboard_MaxSortCount
-			)
-			LastSortPos = LocalPlayer():GetPos()
-		end
-	end
+	-- if ( PRK_Grass_Billboard_MaxSortCount != 0 ) then
+		-- local distply = LocalPlayer():GetPos():Distance( LastSortPos )
+		-- if ( distply >= PRK_Grass_Billboard_SortRange ) then
+			-- table.bubbleSort(
+				-- LocalPlayer().Grasses,
+				-- function( a, b )
+					-- local dista = math.Round( LocalPlayer():GetPos():Distance( a[1] ), 1 )
+					-- local distb = math.Round( LocalPlayer():GetPos():Distance( b[1] ), 1 )
+					-- return dista < distb
+				-- end,
+				-- PRK_Grass_Billboard_MaxSortCount
+			-- )
+			-- LastSortPos = LocalPlayer():GetPos()
+		-- end
+	-- end
 
 	-- Render grass
 	render.SetMaterial( PRK_Material_Grass )
 	local size = 16
 	local rendercount = 0
-	for k, grasses in pairs( LocalPlayer().Grasses ) do
-		if ( grasses.ShouldDraw ) then
-			for _, grass in pairs( grasses ) do
-				if ( _ == tonumber( _ ) ) then
-					render.DrawQuadEasy(
-						grass[1] + Vector( 0, 0, size / 2 ),
-						grass[2],
-						size, size + grass[3],
-						PRK_Grass_Colour,
-						180
-					)
-					rendercount = rendercount + 1
-					if ( rendercount >= PRK_Grass_Billboard_MaxRenderCount ) then
-						break
+	if ( LocalPlayer().GrassesRenderOrder ) then
+		for q, key in pairs( LocalPlayer().GrassesRenderOrder ) do
+			local grasses = LocalPlayer().Grasses[key.Key]
+			if ( grasses.ShouldDraw ) then
+				for _, grass in pairs( grasses ) do
+					if ( _ == tonumber( _ ) ) then
+						render.DrawQuadEasy(
+							grass[1] + Vector( 0, 0, size / 2 ),
+							grass[2],
+							size, size + grass[3],
+							PRK_Grass_Colour,
+							180
+						)
+						rendercount = rendercount + 1
+						if ( rendercount >= PRK_Grass_Billboard_MaxRenderCount ) then
+							break
+						end
 					end
+				end
+				if ( rendercount >= PRK_Grass_Billboard_MaxRenderCount ) then
+					break
 				end
 			end
 		end

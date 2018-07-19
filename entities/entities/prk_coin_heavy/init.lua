@@ -135,6 +135,8 @@ function ENT:Initialize()
 	-- Variables
 	self.JumpDelay = { 2, 4 }
 	self.StartPos = self:GetPos()
+	self.CurrentOutOfWorld = 0
+	self.MaxOutOfWorld = 5
 
 	-- Initialise
 	self:StartState( State.Pickup )
@@ -145,8 +147,23 @@ function ENT:Think()
 
 	-- Check for fallen out of world
 	if ( self:GetPos().z < -12300 ) then
-		print( "Prickly: Coin fell out of world, resetting to first position" )
-		self:SetPos( self.StartPos )
+		if ( self.CurrentOutOfWorld >= self.MaxOutOfWorld ) then
+			if ( self.Owner and self.Owner:IsValid() ) then
+				-- If this has an owner, give to them
+				print( "Prickly: Coin cannot be stablised in world, giving to owner")
+				trypickup( self, self.Owner )
+			else
+				-- Otherwise just find a random player and give it
+				print( "Prickly: Coin cannot be stablised in world, giving to random player (no owner set)")
+				local players = player.GetAll()
+				local rndply = players[math.random( 1, #players )]
+				trypickup( self, rndply )
+			end
+		else
+			print( "Prickly: Coin fell out of world, resetting to first position (" .. self.CurrentOutOfWorld .. "/" .. self.MaxOutOfWorld .. ")" )
+			self:SetPos( self.StartPos )
+		end
+		self.CurrentOutOfWorld = self.CurrentOutOfWorld + 1
 		self:SetVelocity( Vector() )
 	end
 

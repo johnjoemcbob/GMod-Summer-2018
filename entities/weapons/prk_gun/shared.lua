@@ -485,8 +485,8 @@ function SWEP:Reload( dir )
 				local extraammo_add = self.Owner:GetNWInt( "PRK_ExtraAmmo_Add" )
 				self.Owner:SetNWInt( "PRK_ExtraAmmo_Add", extraammo_add - 1 )
 
-				-- self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Default
-				self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Test2
+				self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Default
+				-- self.ChamberBullets[self.Owner:GetNWInt( "PRK_CurrentChamber" )] = PRK_BulletType.Test2
 			end
 
 			-- Play sound

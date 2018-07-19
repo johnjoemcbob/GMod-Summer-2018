@@ -124,21 +124,30 @@ function PRK_Gen_Step()
 					class = "prk_floor"
 				elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
 					class = "prk_wall"
+				elseif ( mod.Type == PRK_GEN_TYPE_CEILING ) then
+					class = "prk_ceiling"
 				end
 			local ent = PRK_CreateEnt(
 				class,
 				mod.Mod,
 				room.Origin + mod.Pos,
-				mod.Ang
+				mod.Ang,
+				true,
+				true
 			)
-			if ( mod.Type != nil ) then
-				ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
-			end
-			if ( #room.Ents != 0 ) then
-				ent:SetParent( room.Ents[1] )
-			end
-			ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
-			ent.PRK_Room = CurrentRoomID
+				ent.Size = mod.Size
+				if ( ent.Size and type(ent.Size) == "table" ) then
+					ent:SetPos( ent:GetPos() + Vector( ent.Size[1] / 2, -ent.Size[2] / 2, 0 ) )
+				end
+				if ( mod.Type != nil ) then
+					ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
+				end
+				if ( #room.Ents != 0 ) then
+					ent:SetParent( room.Ents[1] )
+				end
+				ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
+				ent.PRK_Room = CurrentRoomID
+			ent:Spawn()
 			table.insert( room.Ents, ent )
 		end
 		room.AttachPoints = table.shallowcopy( plan.AttachPoints )
@@ -147,9 +156,9 @@ function PRK_Gen_Step()
 		orient_try = 1
 	else
 		local att = room.AttachPoints[index_try]
-		print( "-0" )
-		print( index_try )
-		PrintTable( room.AttachPoints )
+		-- print( "-0" )
+		-- print( index_try )
+		-- PrintTable( room.AttachPoints )
 
 		-- Move anchor to correct position
 		local anchor = HelperModels["Anchor"].Ent
@@ -255,7 +264,7 @@ function PRK_Gen_Step()
 			v:SetParent( nil )
 		end
 
-		-- setup next
+		-- Setup next
 		orient_try = orient_try + 1
 		if ( orient_try > 4 ) then
 			orient_try = 1
@@ -339,20 +348,171 @@ function PRK_Gen_LoadRooms()
 					end
 				end
 				room.Models = {}
+				-- Floors
 				for _, part in pairs( room.Parts ) do
 					table.insert( room.Models, {
 						Pos = part.position,
 						Ang = Angle( 0, 0, 0 ),
+						Size = { part.width, part.breadth },
 						Mod = "models/hunter/plates/plate1x1.mdl",
 						Type = PRK_GEN_TYPE_FLOOR,
 						Collide = true,
 					} )
 				end
+				-- Walls
+				PRK_Gen_LoadRooms_Walls( room )
+				-- Ceilings
+				for _, part in pairs( room.Parts ) do
+					table.insert( room.Models, {
+						Pos = part.position + Vector( 0, 0, 8 * PRK_Editor_Square_Size ),
+						Ang = Angle( 0, 0, 0 ),
+						Size = { part.width, part.breadth },
+						Mod = "models/hunter/plates/plate1x1.mdl",
+						Type = PRK_GEN_TYPE_CEILING,
+						Collide = true,
+					} )
+				end
 				-- Debug output
-				PrintTable( room )
+				-- PrintTable( room )
 			table.insert( rooms, room )
 		end
 	return rooms
+end
+
+function PRK_Gen_LoadRooms_Walls( room )
+	-- For each floor part
+	for _, part in pairs( room.Parts ) do
+		-- For each edge
+		local scale = PRK_Editor_Square_Size * PRK_Editor_Grid_Scale
+		local sides = {
+			-- Left
+			{
+				x = 0,
+				y = 0,
+				w = 0,
+				b = 1,
+			},
+			-- Right
+			{
+				x = 1,
+				y = 0,
+				w = 0,
+				b = 1,
+			},
+			-- Top
+			{
+				x = 0,
+				y = 0,
+				w = 1,
+				b = 0,
+			},
+			-- Right
+			{
+				x = 0,
+				y = 1,
+				w = 1,
+				b = 0,
+			},
+		}
+		local function getbounds( part, side )
+			local x = math.Round( ( part.position.x + part.width * side.x ) / scale )
+			local y = math.Round( ( -part.position.y + part.breadth * side.y ) / scale )
+			local w = math.Round( part.width * side.w / scale )
+			local b = math.Round( part.breadth * side.b / scale )
+			return x, y, w, b
+		end
+		for k, side in pairs( sides ) do
+			local x, y, w, b = getbounds( part, side )
+			local base = Entity(1):GetPos() + Entity(1):GetEyeTrace().Normal * 20
+			local pos1 = base + Vector( x, -y, 0 )
+			local pos2 = base + Vector( x + w, -y - b, 0 )
+			-- debugoverlay.Line( pos1, pos2, 110, Color( 255, 255, 255, 255 ), true )
+			local wallsegs = {}
+			-- Subdivide into grid segments
+			local length = math.max( w, b )
+			for i = 0, length - 1 do
+				-- Check each segment for if it needs a wall
+				local x = side.w == 1 and x + i or x
+				local y = side.b == 1 and y + i or y
+				local w = side.w == 1 and 1 or w
+				local b = side.b == 1 and 1 or b
+				-- Against every edge of every other part
+				local hitfloor = false
+					local mid = Vector( x + w / 2, y + b / 2, 0 )
+					for _, otherpart in pairs( room.Parts ) do
+						if ( otherpart != part ) then
+							for _, otherside in pairs( sides ) do
+								local x, y, w, b = getbounds( otherpart, otherside )
+								local start = Vector( x, y, 0 )
+								local finish = Vector( x + w, y + b, 0 )
+								if ( intersect_point_line( mid, start, finish ) ) then
+									hitfloor = true
+									break
+								end
+							end
+							if ( hitfloor ) then
+								break
+							end
+						end
+					end
+				if ( !hitfloor ) then
+					table.insert( wallsegs, i )
+				end
+
+				-- local pos1 = base + Vector( x, -y, -0.1 )
+				-- local pos2 = base + Vector( x + w, -y - b, -0.1 )
+				-- local col = Color( 255, 255, 255, 255 )
+					-- if ( !hitfloor ) then col = Color( 255, 0, 255, 255 ) end
+				-- debugoverlay.Line( pos1, pos2, 110, col, true )
+			end
+			-- Combine any continuous segements into one wall entity
+			local combinedwallsegs = {}
+				local chain = -1
+				local lastval = -1
+				for q, seg in pairs( wallsegs ) do
+					-- Last value ends chain automatically
+					if ( q == #wallsegs ) then
+						lastval = seg
+					end
+					-- Begin chain if none currently
+					if ( chain == -1 ) then
+						chain = seg
+					end
+					-- End chain if there is a gap between some values
+					if ( lastval != -1 and lastval != seg - 1 ) then
+						table.insert( combinedwallsegs, { chain, lastval - chain + 1 } )
+						chain = seg
+					end
+					lastval = seg
+				end
+			-- Add walls
+			for q, seg in pairs( combinedwallsegs ) do
+				local x = side.w == 1 and x + seg[1] or x
+				local y = side.b == 1 and y + seg[1] or y
+				local pos = Vector( x, -y, 8 ) * scale
+				local ang = Angle( -90, 0, 0 )
+					if ( side.w == 1 ) then ang = Angle( -90, 90, 0 ) end
+				table.insert( room.Models, {
+					Pos = pos,
+					Ang = ang,
+					Size = { seg[2] * scale * side.w, seg[2] * scale * side.b },
+					Mod = "models/hunter/plates/plate1x1.mdl",
+					Type = PRK_GEN_TYPE_WALL,
+				} )
+			end
+			-- Debug output
+			for q, seg in pairs( combinedwallsegs ) do
+				local x = side.w == 1 and x + seg[1] or x
+				local y = side.b == 1 and y + seg[1] or y
+				local w = side.w == 1 and seg[2] or w
+				local b = side.b == 1 and seg[2] or b
+				local pos1 = base + Vector( x, -y, 0 )
+				local pos2 = base + Vector( x + w, -y - b, 0 )
+				local col = Color( 255, 0, 255, 255 )
+				debugoverlay.Line( pos1, pos2, 110, col, true )
+			end
+		end
+	end
 end
 
 function PRK_Gen_Remove()

@@ -10,6 +10,25 @@ function ENT:Think()
 end
 
 function ENT:Initialize()
+	local min, max = self:GetCollisionBounds()
+	self:PhysicsInitConvex( {
+		Vector( min.x, min.y, min.z ),
+		Vector( min.x, min.y, max.z ),
+		Vector( min.x, max.y, min.z ),
+		Vector( min.x, max.y, max.z ),
+		Vector( max.x, min.y, min.z ),
+		Vector( max.x, min.y, max.z ),
+		Vector( max.x, max.y, min.z ),
+		Vector( max.x, max.y, max.z )
+	} )
+
+	-- Set up solidity and movetype
+	self:SetMoveType( MOVETYPE_VPHYSICS )
+	self:SetSolid( SOLID_VPHYSICS )
+
+	-- Enable custom collisions on the entity
+	self:EnableCustomCollisions( true )
+
 	self.Models = {}
 	local ent = self:AddModel(
 		"models/hunter/plates/plate1x1.mdl",
@@ -19,14 +38,16 @@ function ENT:Initialize()
 		"prk_gradient",
 		Color( 255, 255, 255, 255 )
 	)
-		local size = 47.45
+		local size = PRK_Editor_Square_Size
 		local collision = self:OBBMaxs() - self:OBBMins()
-		local scale = Vector( collision.x / size, collision.y / size, 1 )
-
+		local border = 0.004
+		local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
 		local mat = Matrix()
 			mat:Scale( scale )
 	ent:EnableMatrix( "RenderMultiply", mat )
-	ent:SetRenderBounds( self:OBBMins(), self:OBBMaxs() )
+	local add = Vector( 1, 1, 1 ) * 1500
+	ent:SetRenderBounds( self:OBBMins(), self:OBBMaxs(), add )
+	self:SetRenderBounds( self:OBBMins(), self:OBBMaxs(), add )
 end
 
 function ENT:Think()
@@ -41,6 +62,7 @@ end
 
 function ENT:Draw()
 	-- self:DrawModel()
+	-- debugoverlay.Box( self:GetPos(), self:OBBMins(), self:OBBMaxs(), FrameTime() / 2, Color( 255, 255, 0, 100 ) )
 end
 
 function ENT:OnRemove()

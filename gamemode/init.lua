@@ -139,6 +139,7 @@ function GM:PlayerSpawn( ply )
 	wep:Initialize()
 
 	-- Init speed
+	ply:SetCanWalk( false )
 	ply:SetWalkSpeed( PRK_Speed )
 	ply:SetRunSpeed( PRK_Speed )
 	ply:SetMaxSpeed( PRK_Speed )
@@ -266,12 +267,16 @@ function GM:GenerateLobby()
 	local origin = Vector( 0, 0, -12289 )
 	local amount = 2
 	local function createwall( x, y, yaw )
-		PRK_CreateEnt(
+		local wall = PRK_CreateEnt(
 			"prk_wall",
 			"models/hunter/plates/plate8x8.mdl",
 			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 90, yaw, 0 )
+			Angle( 90, yaw, 0 ),
+			true,
+			true
 		)
+			wall.Size = { 8 * size, 8 * size }
+		wall:Spawn()
 	end
 	for x = -amount, amount do
 		for y = -amount, amount, amount * 2 do
@@ -291,11 +296,15 @@ function GM:GenerateLobby()
 			"prk_floor",
 			"models/hunter/plates/plate8x8.mdl",
 			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 0, 0, 0 )
+			Angle( 0, 0, 0 ),
+			true,
+			true
 		)
-		floor:DrawShadow( false )
-		floor:SetMaterial( "models/rendertarget" )
-		floor:SetColor( 0, 0, 0, 255 )
+			floor.Size = { 8 * size, 8 * size }
+			floor:DrawShadow( false )
+			floor:SetMaterial( "models/rendertarget" )
+			floor:SetColor( 0, 0, 0, 255 )
+		floor:Spawn()
 	end
 	for x = -amount, amount do
 		for y = -amount, amount do
@@ -394,15 +403,17 @@ function PRK_CreateProp( mod, pos, ang, mov )
 end
 
 -- Create an ent which is frozen by default
--- Class (String), Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
-function PRK_CreateEnt( class, mod, pos, ang, mov )
+-- Class (String), Model (String), Position (Vector), Angle (Angle), Should Move? (bool), Should auto spawn? (bool)
+function PRK_CreateEnt( class, mod, pos, ang, mov, nospawn )
 	local ent = ents.Create( class )
 		if ( mod ) then
 			ent:SetModel( mod )
 		end
 		ent:SetPos( pos )
 		ent:SetAngles( ang )
-		ent:Spawn()
+		if ( !nospawn ) then
+			ent:Spawn()
+		end
 		if ( !mov ) then
 			local phys = ent:GetPhysicsObject()
 			if ( phys and phys:IsValid() ) then

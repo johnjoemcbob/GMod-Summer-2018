@@ -29,14 +29,11 @@ function ENT:Initialize()
 	-- Freeze initial body
 	local phys = self:GetPhysicsObject()
 	if ( phys and phys:IsValid() ) then
-		phys:Wake()
 		phys:EnableMotion( false )
 	end
 end
 
-function ENT:Touch( ent )
-	-- print( ent:GetVelocity() )
-	
+function ENT:Think()
 	-- self:NextThink( CurTime() )
 	-- return true
 end

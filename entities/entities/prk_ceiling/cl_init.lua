@@ -1,12 +1,13 @@
-AddCSLuaFile( "shared.lua" )
-AddCSLuaFile( "cl_init.lua" )
-
 include( "shared.lua" )
 
 function ENT:Initialize()
-	self:SetModel( "models/hunter/plates/plate1x1.mdl" )
-	local min = Vector( -self.Size[1] / 2, -self.Size[2] / 2, -2 )
-	local max = -min
+	-- Ceiling scale
+	local min, max = self:GetCollisionBounds()
+	local sca = Vector( max.x / PRK_Plate_Size * 2, max.y / PRK_Plate_Size * 2, 1 )
+	local mat = Matrix()
+		mat:Scale( sca )
+	self:EnableMatrix( "RenderMultiply", mat )
+	self:SetRenderBounds( min * 2, max * 2 )
 
 	self:PhysicsInitConvex( {
 		Vector( min.x, min.y, min.z ),
@@ -26,17 +27,8 @@ function ENT:Initialize()
 	-- Enable custom collisions on the entity
 	self:EnableCustomCollisions( true )
 
-	-- Freeze initial body
-	local phys = self:GetPhysicsObject()
-	if ( phys and phys:IsValid() ) then
-		phys:Wake()
-		phys:EnableMotion( false )
-	end
 end
 
-function ENT:Touch( ent )
-	-- print( ent:GetVelocity() )
-	
-	-- self:NextThink( CurTime() )
-	-- return true
+function ENT:Draw()
+	self:DrawModel()
 end

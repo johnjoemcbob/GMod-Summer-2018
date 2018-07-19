@@ -45,13 +45,13 @@ PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass
 PRK_Grass_Colour									= Color( 40, 40, 40, 255 )
--- PRK_Grass_Mesh_CountRange				= { 0, 2 }
 PRK_Grass_Mesh_CountRange				= { 1, 6 }
--- PRK_Grass_Billboard_Count					= 10
+-- PRK_Grass_Mesh_CountRange				= { 0, 0 }
 PRK_Grass_Billboard_Count					= 100
+-- PRK_Grass_Billboard_Count					= 0
 PRK_Grass_Billboard_DrawRange			= 5000
 PRK_Grass_Billboard_SortRange				= 10
-PRK_Grass_Billboard_ShouldDrawTime	= 1
+PRK_Grass_Billboard_ShouldDrawTime	= 0.1
 PRK_Grass_Billboard_MaxSortCount		= 0
 PRK_Grass_Billboard_MaxRenderCount	= 4000
 
@@ -94,7 +94,7 @@ PRK_Editor_Square_Border_Min				= 8
 PRK_Editor_Square_Border_Add				= 4
 
 -- Level Generation
-PRK_Gen_SizeModifier							= 10
+PRK_Gen_SizeModifier							= 0.01 -- 10
 
 -- Damage/Death
 PRK_Hurt_Material									= "pp/texturize/pattern1.png"
@@ -375,6 +375,28 @@ function VectorIsApproximatelyZero( V )
 	V.y = math.Round( V.y, dec )
 	V.z = math.Round( V.z, dec )
 	return VectorIsZero( V )
+end
+
+-- https://codereview.stackexchange.com/questions/98787/checking-if-the-point-is-on-the-line-segment
+function intersect_point_line( c, a, b )
+	local crossproduct = (c.y - a.y) * (b.x - a.x) - (c.x - a.x) * (b.y - a.y)
+
+	-- compare versus epsilon for floating point values, or != 0 if using integers
+	if math.abs(crossproduct) > PRK_Epsilon then
+		return false
+	end
+
+	local dotproduct = (c.x - a.x) * (b.x - a.x) + (c.y - a.y) * (b.y - a.y)
+	if dotproduct < 0 then
+		return false
+	end
+
+	local squaredlengthba = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y)
+	if dotproduct > squaredlengthba then
+		return false
+	end
+
+	return true
 end
 
 -- http://stackoverflow.com/a/23976134/1190664

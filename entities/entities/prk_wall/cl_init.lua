@@ -45,9 +45,11 @@ function ENT:Initialize()
 		local mat = Matrix()
 			mat:Scale( scale )
 	ent:EnableMatrix( "RenderMultiply", mat )
-	local add = Vector( 1, 1, 1 ) * 1500
-	ent:SetRenderBounds( self:OBBMins(), self:OBBMaxs(), add )
-	self:SetRenderBounds( self:OBBMins(), self:OBBMaxs(), add )
+
+	local min = -scale * size
+	local max = scale * size
+	ent:SetRenderBounds( min, max )
+	self:SetRenderBounds( min, max )
 end
 
 function ENT:Think()

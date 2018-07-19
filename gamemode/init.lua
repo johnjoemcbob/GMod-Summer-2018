@@ -263,31 +263,8 @@ function GM:GenerateLobby()
 	local size = PRK_Plate_Size
 	local hsize = size / 2
 
-	-- Add walls
 	local origin = Vector( 0, 0, -12289 )
 	local amount = 2
-	local function createwall( x, y, yaw )
-		local wall = PRK_CreateEnt(
-			"prk_wall",
-			"models/hunter/plates/plate8x8.mdl",
-			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 90, yaw, 0 ),
-			true,
-			true
-		)
-			wall.Size = { 8 * size, 8 * size }
-		wall:Spawn()
-	end
-	for x = -amount, amount do
-		for y = -amount, amount, amount * 2 do
-			createwall( x, y, 0 )
-		end
-	end
-	for y = -amount, amount do
-		for x = -amount, amount, amount * 2 do
-			createwall( x, y, 90 )
-		end
-	end
 
 	-- Add floor
 	local origin = origin + Vector( 0, 0, -hsize * 8 )
@@ -312,18 +289,47 @@ function GM:GenerateLobby()
 		end
 	end
 
-	-- Add ceiling
-	local origin = origin + Vector( 0, 0, size * 8 )
-	local function createceil( x, y )
-		local ceil = PRK_CreateProp(
-			-- "prk_ceiling",
+	-- Add walls
+	local origin = origin - Vector( 0, 0, -hsize * 8 )
+	local function createwall( x, y, yaw )
+		local wall = PRK_CreateEnt(
+			"prk_wall",
 			"models/hunter/plates/plate8x8.mdl",
 			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 0, 0, 0 )
+			Angle( 90, yaw, 0 ),
+			true,
+			true
 		)
-		ceil:DrawShadow( false )
-		ceil:SetMaterial( "models/rendertarget" )
-		ceil:SetColor( 0, 0, 0, 255 )
+			wall.Size = { 8 * size, 8 * size }
+		wall:Spawn()
+	end
+	for x = -amount, amount do
+		for y = -amount, amount, amount * 2 do
+			createwall( x, y, 0 )
+		end
+	end
+	for y = -amount, amount do
+		for x = -amount, amount, amount * 2 do
+			createwall( x, y, 90 )
+		end
+	end
+
+	-- Add ceiling
+	local origin = origin + Vector( 0, 0, -hsize * 8 + size * 8 )
+	local function createceil( x, y )
+		local ceil = PRK_CreateEnt(
+			"prk_ceiling",
+			"models/hunter/plates/plate8x8.mdl",
+			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
+			Angle( 0, 0, 0 ),
+			true,
+			true
+		)
+			ceil:DrawShadow( false )
+			ceil:SetMaterial( "models/rendertarget" )
+			ceil:SetColor( 0, 0, 0, 255 )
+			ceil.Size = { 8 * size, 8 * size }
+		ceil:Spawn()
 	end
 	for x = -amount, amount do
 		for y = -amount, amount do

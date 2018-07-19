@@ -32,8 +32,3 @@ function ENT:Initialize()
 		phys:EnableMotion( false )
 	end
 end
-
-function ENT:Think()
-	-- self:NextThink( CurTime() )
-	-- return true
-end

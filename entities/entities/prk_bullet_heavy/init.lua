@@ -157,6 +157,7 @@ function ENT:Think()
 		else
 			print( "Prickly: Bullet fell out of world, resetting to first position (" .. self.CurrentOutOfWorld .. "/" .. self.MaxOutOfWorld .. ")" )
 			self:SetPos( self.StartPos )
+			self:CollideWithEnt( self )
 		end
 		self.CurrentOutOfWorld = self.CurrentOutOfWorld + 1
 		self:SetVelocity( Vector() )

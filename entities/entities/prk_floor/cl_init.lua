@@ -38,6 +38,7 @@ local models = {
 }
 
 PRK_Material_Grass = Material( "prk_grass.png", "noclamp smooth" )
+PRK_Material_Grass_Multiple = Material( "prk_grass_multiple.png", "noclamp smooth" )
 
 local colours = {
 	-- Color( 92, 4, 40, 255 ),
@@ -87,8 +88,8 @@ function ENT:Initialize()
 		-- Plant models
 		local min = self:OBBMins()
 		local max = self:OBBMaxs()
-		local mult = 10
-		local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * mult, PRK_Grass_Mesh_CountRange[2] * mult ) / mult )
+		local precision = 10
+		local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * precision, PRK_Grass_Mesh_CountRange[2] * precision ) / precision * ( sca.x + sca.y ) )
 		for i = 1, amount do
 			local rnd = models[math.random( 1, #models )]
 			local mdl = rnd[1]
@@ -111,7 +112,7 @@ function ENT:Initialize()
 			LocalPlayer().Grasses = {}
 		end
 
-		local grasscount = PRK_Grass_Billboard_Count
+		local grasscount = PRK_Grass_Billboard_Count * ( sca.x + sca.y )
 		local grasses = {}
 		for i = 1, grasscount do
 			table.insert( grasses,	{
@@ -130,110 +131,123 @@ function ENT:Draw()
 	self:DrawModel()
 end
 
+local disruptors = {}
 function ENT:Think()
-	-- Disrupt plants if close
-	local disruptors = {}
-		table.Add( disruptors, player.GetAll() )
-		table.Add( disruptors, ents.FindByClass( "prk_*" ) )
-		table.Add( disruptors, ents.FindByClass( "npc_*" ) ) -- testing/fun
-		-- table.Add( disruptors, ents.FindByClass( "prk_*_heavy" ) )
-		-- table.Add( disruptors, ents.FindByClass( "prk_npc_*" ) )
-		-- table.Add( disruptors, ents.FindByClass( "prk_gateway" ) )
-		-- table.Add( disruptors, ents.FindByClass( "prk_debris" ) )
-	local specialcases = {}
-		specialcases["prk_gateway"] = function( ent, moving )
-			return true, 300, ent.Scale / 2, -1, false
-		end
-		specialcases["prk_debris"] = function( ent, moving )
-			if ( ent:GetNWBool( "Explosion" ) ) then
-				return true, 400, -1, 0, false
+	if ( PRK_Grass_Mesh_Disruption ) then
+		-- Disrupt plants if close
+		if ( !self.NextRefreshDisruptors or self.NextRefreshDisruptors <= CurTime() ) then
+			disruptors = {}
+			for k, v in pairs( ents.FindInSphere( self:GetPos(), PRK_Grass_Mesh_DisruptorOuterRange ) ) do
+				if ( table.HasValue( PRK_Grass_Mesh_Disruptors, v:GetClass() ) ) then
+					table.insert( disruptors, v )
+				end
 			end
-			return moving, nil, 1, 0, true
+			-- for k, disrupt in pairs( PRK_Grass_Mesh_Disruptors ) do
+				-- table.Add( disruptors, ents.FindByClass( disrupt ) )
+			-- end
+			-- table.Add( disruptors, player.GetAll() )
+			-- table.Add( disruptors, ents.FindByClass( "prk_*" ) )
+			-- table.Add( disruptors, ents.FindByClass( "prk_*" ) )
+			-- table.Add( disruptors, ents.FindByClass( "npc_*" ) ) -- testing/fun
+			self.NextRefreshDisruptors = CurTime() + PRK_Grass_Mesh_DisruptTime
 		end
-	for _, ent in pairs( disruptors ) do
-		local effects = true
-		local overridedist = nil
-		local speed = ent:GetVelocity():Length()
-		local moving = speed > 100
-		local scaleoff = 0
-		local magnitude = 1
-			-- Special case for gateways
-			local spc = specialcases[ent:GetClass()]
-			if ( spc ) then
-				moving, overridedist, magnitude, scaleoff, effects = spc( ent, moving )
+		local specialcases = {}
+			specialcases["prk_gateway"] = function( ent, moving )
+				return true, 300, ent.Scale / 2, -1, false
 			end
-		-- print( speed )
-		if ( moving ) then
-			for k, v in pairs( self.Models ) do
-				if ( !v.NextTouch or v.NextTouch <= CurTime() ) then
-					local dist = ent:GetPos():Distance( v:GetPos() )
-					local maxdist = 50
-						if ( overridedist ) then
-							maxdist = overridedist
+			specialcases["prk_debris"] = function( ent, moving )
+				if ( ent:GetNWBool( "Explosion" ) ) then
+					return true, 400, -1, 0, false
+				end
+				return moving, nil, 1, 0, true
+			end
+		for _, ent in pairs( disruptors ) do
+			if ( ent and ent:IsValid() ) then
+				local effects = true
+				local overridedist = nil
+				local speed = ent:GetVelocity():Length()
+				local moving = speed > 100
+				local scaleoff = 0
+				local magnitude = 1
+					-- Special case for gateways
+					local spc = specialcases[ent:GetClass()]
+					if ( spc ) then
+						moving, overridedist, magnitude, scaleoff, effects = spc( ent, moving )
+					end
+				-- print( speed )
+				if ( moving ) then
+					for k, v in pairs( self.Models ) do
+						if ( !v.NextTouch or v.NextTouch <= CurTime() ) then
+							local dist = ent:GetPos():Distance( v:GetPos() )
+							local maxdist = PRK_Grass_Mesh_DisruptorInnerRange
+								if ( overridedist ) then
+									maxdist = overridedist
+								end
+							local close = dist < maxdist
+							if ( close ) then
+								local forward = ( ent:GetPos() + ent:GetVelocity() - v:GetPos() ):GetNormal()
+
+								if ( effects ) then
+									-- Sound effect
+									ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
+
+									-- Particle burst
+									local effectdata = EffectData()
+										local pos = ent:GetPos() - forward
+										effectdata:SetOrigin( pos )
+										effectdata:SetNormal( -forward )
+										-- effectdata:SetColor( ent:GetColor() )
+									util.Effect( "prk_hit", effectdata )
+								end
+
+								-- Lean away from entity
+								local up = Vector( 0, 0, 1 )
+								local right = up:Cross( forward )
+								local ang = Angle( v.Ang.p, v.Ang.y, v.Ang.r )
+									ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
+								v.TargetAngles = ang
+
+								-- Bounce up/down scale
+								v.TargetScaleOffset = 3 * magnitude + scaleoff
+
+								-- Delay next
+								-- v.NextTouch = CurTime() + 1
+							end
 						end
-					local close = dist < maxdist
-					if ( close ) then
-						local forward = ( ent:GetPos() + ent:GetVelocity() - v:GetPos() ):GetNormal()
-
-						if ( effects ) then
-							-- Sound effect
-							ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
-
-							-- Particle burst
-							local effectdata = EffectData()
-								local pos = ent:GetPos() - forward
-								effectdata:SetOrigin( pos )
-								effectdata:SetNormal( -forward )
-								-- effectdata:SetColor( ent:GetColor() )
-							util.Effect( "prk_hit", effectdata )
-						end
-
-						-- Lean away from entity
-						local up = Vector( 0, 0, 1 )
-						local right = up:Cross( forward )
-						local ang = Angle( v.Ang.p, v.Ang.y, v.Ang.r )
-							ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
-						v.TargetAngles = ang
-
-						-- Bounce up/down scale
-						v.TargetScaleOffset = 3 * magnitude + scaleoff
-
-						-- Delay next
-						-- v.NextTouch = CurTime() + 1
 					end
 				end
 			end
 		end
-	end
 
-	-- Lerp plants
-	for k, v in pairs( self.Models ) do
-		-- Lerp angles
-		if ( v.TargetAngles ) then
-			local speed = 5
-			local ang = LerpAngle( FrameTime() * speed, v:GetAngles(), v.TargetAngles )
-			v:SetAngles( ang )
-			v.TargetAngles = v.Ang
-		end
+		-- Lerp plants
+		for k, v in pairs( self.Models ) do
+			-- Lerp angles
+			if ( v.TargetAngles ) then
+				local speed = 5
+				local ang = LerpAngle( FrameTime() * speed, v:GetAngles(), v.TargetAngles )
+				v:SetAngles( ang )
+				v.TargetAngles = v.Ang
+			end
 
-		-- Lerp scale
-		if ( v.TargetScaleOffset ) then
-			local speed = 10
-			local scalemulthori = 0.1
-			local scalemultvert = -0.2
-			v.TargetScaleOffset = math.Approach( v.TargetScaleOffset, 0, FrameTime() * speed )
-			local scaleoffset = v.TargetScaleOffset - 2
-				if ( scaleoffset < -1 ) then
-					scaleoffset = ( 1 - scaleoffset ) - 3
+			-- Lerp scale
+			if ( v.TargetScaleOffset ) then
+				local speed = 10
+				local scalemulthori = 0.1
+				local scalemultvert = -0.2
+				v.TargetScaleOffset = math.Approach( v.TargetScaleOffset, 0, FrameTime() * speed )
+				local scaleoffset = v.TargetScaleOffset - 2
+					if ( scaleoffset < -1 ) then
+						scaleoffset = ( 1 - scaleoffset ) - 3
+					end
+				local sca = v.Scale + Vector( scaleoffset * scalemulthori, scaleoffset * scalemulthori, scaleoffset * scalemultvert )
+				local mat = Matrix()
+					mat:Scale( sca )
+				v:EnableMatrix( "RenderMultiply", mat )
+
+				-- End scale
+				if ( v.TargetScaleOffset == 0 ) then
+					v.TargetScaleOffset = nil
 				end
-			local sca = v.Scale + Vector( scaleoffset * scalemulthori, scaleoffset * scalemulthori, scaleoffset * scalemultvert )
-			local mat = Matrix()
-				mat:Scale( sca )
-			v:EnableMatrix( "RenderMultiply", mat )
-
-			-- End scale
-			if ( v.TargetScaleOffset == 0 ) then
-				v.TargetScaleOffset = nil
 			end
 		end
 	end
@@ -269,62 +283,55 @@ local nextthink = 0
 hook.Add( "Think", "PRK_Think_Grass", function()
 	if ( CurTime() < nextthink ) then return end
 
-	if ( LocalPlayer().Grasses ) then
-		-- Decide if whole floor clumps of grass should be drawn
-		LocalPlayer().GrassesRenderOrder = {}
-		for k, grasses in pairs( LocalPlayer().Grasses ) do
-			local dist = k:Distance( LocalPlayer():GetPos() )
-			grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
-			if ( grasses.ShouldDraw ) then
-				table.insert( LocalPlayer().GrassesRenderOrder, {
-					Key = k,
-					Dist = dist,
-				} )
+	if ( PRK_Grass_Billboard ) then
+		if ( LocalPlayer().Grasses ) then
+			-- Decide if whole floor clumps of grass should be drawn
+			LocalPlayer().GrassesRenderOrder = {}
+			-- local testpos = LocalPlayer():GetPos()
+			local testpos = LocalPlayer():EyePos() + LocalPlayer():EyeAngles():Forward() * PRK_Grass_Billboard_SortRange
+			for k, grasses in pairs( LocalPlayer().Grasses ) do
+				local dist = k:Distance( testpos )
+				grasses.ShouldDraw = ( dist < PRK_Grass_Billboard_DrawRange )
+				if ( grasses.ShouldDraw ) then
+					table.insert( LocalPlayer().GrassesRenderOrder, {
+						Key = k,
+						Dist = dist,
+					} )
+				end
 			end
+			-- Sort these entries so the closest will be drawn first
+			table.sort( LocalPlayer().GrassesRenderOrder, function( a, b ) return a.Dist < b.Dist end )
+			-- PrintTable( LocalPlayer().GrassesRenderOrder )
 		end
-		-- Sort these entries so the closest will be drawn first
-		table.sort( LocalPlayer().GrassesRenderOrder, function( a, b ) return a.Dist < b.Dist end )
-		-- PrintTable( LocalPlayer().GrassesRenderOrder )
 	end
 
 	nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime
 end )
 
 local LastSortPos = Vector()
-hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Grass", function()
+hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Grass", function( depth, skybox )
 	if ( !PRK_ShouldDraw() ) then return end
-
-	-- Sort grass by furthest from player first, to avoid depth issues (better way to do this?)
-	-- if ( PRK_Grass_Billboard_MaxSortCount != 0 ) then
-		-- local distply = LocalPlayer():GetPos():Distance( LastSortPos )
-		-- if ( distply >= PRK_Grass_Billboard_SortRange ) then
-			-- table.bubbleSort(
-				-- LocalPlayer().Grasses,
-				-- function( a, b )
-					-- local dista = math.Round( LocalPlayer():GetPos():Distance( a[1] ), 1 )
-					-- local distb = math.Round( LocalPlayer():GetPos():Distance( b[1] ), 1 )
-					-- return dista < distb
-				-- end,
-				-- PRK_Grass_Billboard_MaxSortCount
-			-- )
-			-- LastSortPos = LocalPlayer():GetPos()
-		-- end
-	-- end
+	if ( depth or skybox ) then return end
 
 	-- Render grass
-	render.SetMaterial( PRK_Material_Grass )
-	local size = 16
-	local rendercount = 0
-	if ( LocalPlayer().GrassesRenderOrder ) then
-		for q, key in pairs( LocalPlayer().GrassesRenderOrder ) do
-			local grasses = LocalPlayer().Grasses[key.Key]
-			if ( grasses.ShouldDraw ) then
+	if ( PRK_Grass_Billboard ) then
+		local width = 1
+		render.SetMaterial( PRK_Material_Grass )
+			if ( PRK_Grass_Billboard_MultipleSprite ) then
+				width = 8
+				render.SetMaterial( PRK_Material_Grass_Multiple )
+			end
+		local size = 16
+		local rendercount = 0
+		if ( LocalPlayer().GrassesRenderOrder ) then
+			for q, key in pairs( LocalPlayer().GrassesRenderOrder ) do
+				local grasses = LocalPlayer().Grasses[key.Key]
 				for _, grass in pairs( grasses ) do
 					if ( _ == tonumber( _ ) ) then
 						render.DrawQuadEasy(
 							grass[1] + Vector( 0, 0, size / 2 ),
 							grass[2],
-							size, size + grass[3],
+							size * width, size + grass[3],
 							PRK_Grass_Colour,
 							180
 						)

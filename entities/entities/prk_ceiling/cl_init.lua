@@ -26,7 +26,6 @@ function ENT:Initialize()
 
 	-- Enable custom collisions on the entity
 	self:EnableCustomCollisions( true )
-
 end
 
 function ENT:Draw()

@@ -45,15 +45,32 @@ PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass
 PRK_Grass_Colour									= Color( 40, 40, 40, 255 )
-PRK_Grass_Mesh_CountRange				= { 1, 6 }
+PRK_Grass_Mesh_CountRange				= { 0.1, 0.6 }
 -- PRK_Grass_Mesh_CountRange				= { 0, 0 }
-PRK_Grass_Billboard_Count					= 100
+PRK_Grass_Mesh_Disruption					= true
+PRK_Grass_Mesh_DisruptTime				= 0.2
+PRK_Grass_Mesh_DisruptorInnerRange	= 50
+PRK_Grass_Mesh_DisruptorOuterRange	= 4000
+PRK_Grass_Mesh_Disruptors					= {
+																	"player",
+																	"prk_bullet_heavy",
+																	"prk_laser_heavy",
+																	"prk_coin_heavy",
+																	"prk_npc_biter",
+																	"prk_npc_sploder",
+																	"prk_debris",
+																	"prk_gateway",
+																	"prk_potion",
+}
+PRK_Grass_Billboard								= true
+PRK_Grass_Billboard_Count					= 5
 -- PRK_Grass_Billboard_Count					= 0
 PRK_Grass_Billboard_DrawRange			= 5000
-PRK_Grass_Billboard_SortRange				= 10
+PRK_Grass_Billboard_SortRange				= 200 --400
 PRK_Grass_Billboard_ShouldDrawTime	= 0.1
 PRK_Grass_Billboard_MaxSortCount		= 0
-PRK_Grass_Billboard_MaxRenderCount	= 4000
+PRK_Grass_Billboard_MaxRenderCount	= 200--4000
+PRK_Grass_Billboard_MultipleSprite		= false
 
 -- Visuals
 PRK_Epsilon											= 0.001
@@ -94,7 +111,7 @@ PRK_Editor_Square_Border_Min				= 8
 PRK_Editor_Square_Border_Add				= 4
 
 -- Level Generation
-PRK_Gen_SizeModifier							= 0.01 -- 10
+PRK_Gen_SizeModifier							= 10 --0.01 -- 10
 
 -- Damage/Death
 PRK_Hurt_Material									= "pp/texturize/pattern1.png"

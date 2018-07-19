@@ -33,10 +33,3 @@ function ENT:Initialize()
 		phys:EnableMotion( false )
 	end
 end
-
-function ENT:Touch( ent )
-	-- print( ent:GetVelocity() )
-	
-	-- self:NextThink( CurTime() )
-	-- return true
-end

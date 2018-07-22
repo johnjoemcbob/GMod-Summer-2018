@@ -335,9 +335,9 @@ end
 function PRK_Gen_LoadRooms()
 	local rooms = {}
 		-- Find all room data files
-		local files, directories = file.Find( PRK_Path_Rooms .. "*", "DATA" )
+		local files, directories = file.Find( PRK_DataPath .. "*", "DATA" )
 		for k, filename in pairs( files ) do
-			local room = file.Read( PRK_Path_Rooms .. filename )
+			local room = file.Read( PRK_DataPath .. filename )
 				-- Convert from json back to table format
 				room = util.JSONToTable( room )
 				-- Parse the room creation instructions into the correct level gen instructions

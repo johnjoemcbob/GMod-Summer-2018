@@ -83,6 +83,12 @@ function SendInEditor( toggle )
 	net.SendToServer()
 end
 
+function SendEditorExport( content )
+	net.Start( "PRK_EditorExport" )
+		net.WriteString( content )
+	net.SendToServer()
+end
+
 local function PRK_Editor_GUI()
 	-- UI
 	local w = 128 -- ScrW() / 6
@@ -139,6 +145,22 @@ local function PRK_Editor_GUI()
 		end
 		function b:DoClick()
 			PRK_Editor_Room_Export()
+			local menu = vgui.Create( "DMenu", LocalPlayer().ContextMenu )
+				menu:SetPos( gui.MouseX(), gui.MouseY() )
+				-- Options
+				menu:AddOption(
+					"Export locally",
+					function()
+						PRK_Editor_Room_Export()
+					end
+				)
+				menu:AddOption(
+					"Export and save to server",
+					function()
+						PRK_Editor_Room_Export( true )
+					end
+				)
+			menu:Open()
 		end
 
 	-- Initialize values
@@ -680,7 +702,7 @@ function PRK_Editor_Room_Import()
 	end
 
 	-- Import new
-	local dir = PRK_Path_Rooms
+	local dir = PRK_DataPath
 	local filename = LocalPlayer():SteamID64()
 	if ( file.Exists( dir .. filename .. ".txt", "DATA" ) ) then
 		local json = file.Read( dir .. filename .. ".txt" )
@@ -712,8 +734,8 @@ function PRK_Editor_Room_Import()
 	LocalPlayer().PRK_Editor_RoomData.HighlightedModel = {}
 end
 
-function PRK_Editor_Room_Export()
-	local dir = "prickly/"
+function PRK_Editor_Room_Export( server )
+	local dir = PRK_DataPath
 	local filename = LocalPlayer():SteamID64()
 	local content = ""
 		-- Convert tables to json
@@ -742,9 +764,13 @@ function PRK_Editor_Room_Export()
 				part.preposx = nil
 				part.preposy = nil
 			end
-		content = util.TableToJSON( tab, true )
-	file.CreateDir( dir )
-	file.Write( dir .. filename .. ".txt", content )
+		content = util.TableToJSON( tab )
+	if ( server ) then
+		SendEditorExport( content )
+	else
+		file.CreateDir( dir )
+		file.Write( dir .. filename .. ".txt", content )
+	end
 end
 
 function PRK_CalcView_Editor_Room( ply, origin, angles, fov )

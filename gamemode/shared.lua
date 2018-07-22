@@ -69,7 +69,7 @@ PRK_Grass_Billboard_DrawRange			= 5000
 PRK_Grass_Billboard_SortRange				= 200 --400
 PRK_Grass_Billboard_ShouldDrawTime	= 0.1
 PRK_Grass_Billboard_MaxSortCount		= 0
-PRK_Grass_Billboard_MaxRenderCount	= 200--4000
+PRK_Grass_Billboard_MaxRenderCount	= 200 --4000 --200
 PRK_Grass_Billboard_MultipleSprite		= false
 
 -- Visuals
@@ -135,7 +135,7 @@ PRK_Jump												= 0
 
 -- Misc
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
-PRK_Path_Rooms									= "prickly/"
+PRK_DataPath									= "prickly/"
 
 ------------------------
   -- Gamemode Hooks --

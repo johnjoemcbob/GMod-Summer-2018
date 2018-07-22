@@ -63,11 +63,10 @@ function ENT:OnTakeDamage( dmg )
 	local debris = math.random( 3, 5 )
 	for i = 1, debris do
 		local prop = PRK_CreateEnt( "prk_debris", DebrisModels[math.random( 1, #DebrisModels )], self:GetPos() + Vector( 0, 0, 10 ), AngleRand(), true )
-			local phys = prop:GetPhysicsObject()
-			if ( phys and phys:IsValid() ) then
-				phys:SetVelocity( VectorRand() * 200 )
-			end
-		timer.Simple( 5, function() prop:Remove() end )
+		local phys = prop:GetPhysicsObject()
+		if ( phys and phys:IsValid() ) then
+			phys:SetVelocity( VectorRand() * 200 )
+		end
 	end
 
 	-- Destroy this

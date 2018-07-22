@@ -43,6 +43,7 @@ util.AddNetworkString( "PRK_TakeDamage" )
 util.AddNetworkString( "PRK_Die" )
 util.AddNetworkString( "PRK_Spawn" )
 util.AddNetworkString( "PRK_Editor" )
+util.AddNetworkString( "PRK_EditorExport" )
 
 function SendKeyValue( ply, key, val )
 	net.Start( "PRK_KeyValue" )
@@ -88,6 +89,18 @@ net.Receive( "PRK_Editor", function( len, ply )
 	-- else
 		-- ply:UnLock()
 	-- end
+end )
+
+net.Receive( "PRK_EditorExport", function( len, ply )
+	local content = net.ReadString()
+
+	print( "receive content to save:" .. content )
+	local dir = PRK_Path_Rooms
+	local filename = ply:SteamID64() -- todo: client define file name, append to their steamID (so each player can store more than one room)
+	print( dir )
+	print( filename )
+	file.CreateDir( dir )
+	file.Write( dir .. filename .. ".txt", content )
 end )
 
 ------------------------

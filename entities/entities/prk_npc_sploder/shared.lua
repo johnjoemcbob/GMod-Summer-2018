@@ -134,15 +134,14 @@ function ENT:OnRemove()
 				AngleRand(),
 				true
 			)
-				prop:SetMaterial( "models/debug/debugwhite", true )
-				prop:SetColor( PRK_Colour_Enemy_Eye )
-				prop:SetModelScale( 1 / 3 * self:GetNWFloat( "Scale", 3 ), 0 )
-				prop:PhysicsInitSphere( 5 * self:GetNWFloat( "Scale", 3 ) )
-				local phys = prop:GetPhysicsObject()
-				if ( phys and phys:IsValid() ) then
-					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
-				end
-			timer.Simple( 5, function() prop:Remove() end )
+			prop:SetMaterial( "models/debug/debugwhite", true )
+			prop:SetColor( PRK_Colour_Enemy_Eye )
+			prop:SetModelScale( 1 / 3 * self:GetNWFloat( "Scale", 3 ), 0 )
+			prop:PhysicsInitSphere( 5 * self:GetNWFloat( "Scale", 3 ) )
+			local phys = prop:GetPhysicsObject()
+			if ( phys and phys:IsValid() ) then
+				phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+			end
 		end
 
 		-- Only give coins if the player killed it before it exploded

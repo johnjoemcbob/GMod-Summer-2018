@@ -7,21 +7,24 @@ local models = {
 		Vector( 0, 0, 0 ),
 		Angle( 0, 0, 0 ),
 		Vector( 1, 1, 1 ),
-		-- Vector( 0.5, 0.5, 0.5 ),
+	},
+	{
+		"models/props/de_inferno/succulant.mdl",
+		Vector( 0, 0, 0 ),
+		Angle( 0, 0, 0 ),
+		Vector( 1, 1, 0.5 ),
 	},
 	{
 		"models/props/cs_militia/fern01.mdl",
 		Vector( 0, 0, 15 ),
 		Angle( 0, 0, 0 ),
 		Vector( 1.7, 1.7, 1.7 ),
-		-- Vector( 0.5, 0.5, 0.5 ),
 	},
 	{
 		"models/props/pi_fern.mdl",
 		Vector( 0, 0, 0 ),
 		Angle( 0, 0, 0 ),
 		Vector( 1.7, 1.7, 1.7 ),
-		-- Vector( 0.5, 0.5, 0.5 ),
 	},
 	{
 		"models/props/de_inferno/cactus.mdl",

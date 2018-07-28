@@ -128,6 +128,7 @@ function ENT:Think()
 
 	-- Fire if facing
 	local dif = self.Rotator:GetAngles():Forward():Distance( targetang:Forward() )
+	-- local dif = 100000
 	-- print( dif )
 	if ( dif < self.LookAtApprox ) then
 		if ( !self.NextFire or self.NextFire <= CurTime() ) then
@@ -171,8 +172,8 @@ function ENT:Think()
 		self.Sound_Rotate:ChangePitch( 100 + 20 * dif, 0 )
 	end
 
-	-- self:NextThink( CurTime() )
-	-- return true
+	self:NextThink( CurTime() )
+	return true
 end
 
 function ENT:OnRemove()

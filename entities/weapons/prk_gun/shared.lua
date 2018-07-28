@@ -187,56 +187,6 @@ PRK_BulletTypeInfo = {
 			return false, false, true, true
 		end,
 	},
-	-- Test
-	[3] = {
-		Paint = function( info, self, x, y, r )
-			local r = r * 3
-			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 210, 100, 220, 255 ) )
-		end,
-		CanFire = function( info )
-			return true
-		end,
-		Fire = function( info, self )
-			-- Play shoot sound
-			self:EmitSound(
-				"weapons/grenade_launcher1.wav",
-				75,
-				self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self:GetFilledChamberCount() / self.MaxClip ) ) )
-			)
-
-			-- Play first impact effect at spawn point
-			local tr = self.Owner:GetEyeTrace()
-			local effectdata = EffectData()
-				local pos = tr.HitPos
-				effectdata:SetOrigin( pos )
-				effectdata:SetNormal( tr.HitNormal )
-			util.Effect( "prk_hit", effectdata )
-
-			-- Spawn spider
-			if ( SERVER ) then
-				local spider = ents.Create( "prk_npc_sploder" )
-				spider:SetNWFloat( "Scale", 0.5 )
-				spider:Spawn()
-				spider:SetNoDraw( true )
-				timer.Simple( 0.04, function()
-					spider:SetNoDraw( false )
-					spider:BroadcastScale( 0.5 )
-				end )
-				spider.Owner = self.Owner
-				-- Appear at hit point and bounce back towards player
-				local pos = tr.HitPos + tr.HitNormal * 10
-					-- Clamp pos to max distance
-					local dir = pos - self.Owner:EyePos()
-					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
-						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
-					end
-				spider:SetPos( pos )
-			end
-
-			-- return takeammo, spin, shootparticles, punch
-			return true, true, true, true
-		end,
-	},
 }
 PRK_BulletType = {
 	["Empty"] = 0,
@@ -261,11 +211,13 @@ if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_Reload" )
 	util.AddNetworkString( "PRK_Gun_NoAmmo" )
     util.AddNetworkString( "PRK_Gun_SetNumChambers" )
+    util.AddNetworkString( "PRK_Gun_BulletUpdate" )
 
-	function SWEP:SendFire( spin )
+	function SWEP:SendFire( bullettype, spin )
 		net.Start( "PRK_Gun_Fire" )
 			net.WriteEntity( self )
 			net.WriteTable( self.ChamberBullets )
+			net.WriteFloat( bullettype )
 			net.WriteBool( spin )
 		net.Send( self.Owner )
 	end
@@ -291,6 +243,13 @@ if ( SERVER ) then
             net.WriteFloat( chambers )
         net.Send( self.Owner )
     end
+
+	function SWEP:SendBulletUpdate()
+        net.Start( "PRK_Gun_BulletUpdate" )
+            net.WriteEntity( self )
+			net.WriteTable( self.ChamberBullets )
+        net.Send( self.Owner )
+	end
 end
 
 function SWEP:Initialize()
@@ -305,8 +264,7 @@ function SWEP:Initialize()
 	for i = 1, self.MaxClip do
 		self.ChamberBullets[i] = PRK_BulletType.Default
 	end
-	-- self.ChamberBullets[1] = PRK_BulletType.Test1
-	-- self.ChamberBullets[2] = PRK_BulletType.Test2
+	self.ChamberBullets[1] = PRK_BulletType.Test1
 end
 
 function SWEP:Think()
@@ -353,39 +311,22 @@ function SWEP:PrimaryAttack( right )
 	if ( !PRK_BulletTypeInfo[self.ChamberBullets[cham]]:CanFire() ) then return end
 
 	-- Shoot logic + take ammo
-	local takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[self.ChamberBullets[cham]]:Fire( self )
+	local takeammo, spin, shootparticles, punch
 	if ( SERVER ) then
+		takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[self.ChamberBullets[cham]]:Fire( self )
 		if ( spin ) then
 			self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) - 1, 1, self.MaxClip ) )
 			self:SpinSound()
 		end
 
 		-- Communicate with client
-		self:SendFire( spin )
-	end
+		self:SendFire( self.ChamberBullets[cham], spin )
 
-	-- Don't update until client gets here
-	if ( takeammo ) then
-		self.ChamberBullets[cham] = PRK_BulletType.Empty
-	end
-
-	-- Play animation
-	self.Owner:SetAnimation( PLAYER_ATTACK1 )
-
-	-- Play shoot effect
-	if ( shootparticles ) then
-		local vm = self.Owner:GetViewModel()
-		local effectdata = EffectData()
-			local pos = vm:GetPos() +
-				self.Owner:GetForward() * 60 +
-				self.Owner:GetRight() * 20 * self.RightHanded +
-				self.Owner:GetVelocity() * 0.1
-			effectdata:SetOrigin( pos )
-			effectdata:SetNormal(
-				self.Owner:GetForward() +
-				self.Owner:GetUp()
-			)
-		util.Effect( "prk_hit", effectdata )
+		-- Don't take ammo until client gets here, so that client can have sound/particle effects play
+		if ( takeammo ) then
+			self.ChamberBullets[cham] = PRK_BulletType.Empty
+		end
+		self:SendBulletUpdate()
 	end
 
 	if ( punch ) then

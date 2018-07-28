@@ -6,7 +6,30 @@ PRK_Initialise_RevolverChambers()
 net.Receive( "PRK_Gun_Fire", function( len, ply )
 	local self = net.ReadEntity()
 	local tab = net.ReadTable()
+	local bul = net.ReadFloat()
 	local spn = net.ReadBool()
+
+	-- print( "fireing.. " .. CurTime() )
+	local takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[bul]:Fire( self )
+
+	-- Play animation
+	self.Owner:SetAnimation( PLAYER_ATTACK1 )
+
+	-- Play shoot effect
+	if ( shootparticles ) then
+		local vm = self.Owner:GetViewModel()
+		local effectdata = EffectData()
+			local pos = vm:GetPos() +
+				self.Owner:GetForward() * 60 +
+				self.Owner:GetRight() * 20 * self.RightHanded +
+				self.Owner:GetVelocity() * 0.1
+			effectdata:SetOrigin( pos )
+			effectdata:SetNormal(
+				self.Owner:GetForward() +
+				self.Owner:GetUp()
+			)
+		util.Effect( "prk_hit", effectdata )
+	end
 
 	self.ChamberBullets = tab
 
@@ -47,6 +70,13 @@ net.Receive( "PRK_Gun_SetNumChambers", function( len, ply )
 	local oldoff = PRK_RevolverChambers.TargetAng / 360 * targ - 1
 	self.TargetMaxClip = chambers
 	PRK_RevolverChambers.TargetAng = 360 / self.TargetMaxClip * oldoff
+end )
+
+net.Receive( "PRK_Gun_BulletUpdate", function( len, ply )
+	local self = net.ReadEntity()
+	local tab = net.ReadTable()
+
+	self.ChamberBullets = tab
 end )
 
 function SWEP:OnEntityCreated()

@@ -111,10 +111,63 @@ function GM:Initialize()
 end
 
 function GM:InitPostEntity()
+	-- Hide sun
+	local suns = ents.FindByClass( "env_sun" )
+	for k, sun in pairs( suns ) do
+		sun:SetKeyValue( "size", 0 )
+		sun:SetKeyValue( "overlaysize", 0 )
+	end
+
+	-- Generate and connect world
 	self:GenerateLobby()
+
+	local gates = {
+		{
+			Vector( 0, 740, -12200 ),
+			Angle( 0, 90, 0 ),
+		},
+		{
+			Vector( 740, 0, -12200 ),
+			Angle( 0, 0, 0 ),
+		},
+		{
+			Vector( 0, -740, -12200 ),
+			Angle( 0, -90, 0 ),
+		},
+		{
+			Vector( -740, 0, -12200 ),
+			Angle( 0, 180, 0 ),
+		},
+	}
+	local function gen( num )
+		math.randomseed( 0 )
+		PRK_Gen( PRK_Zones[num].pos, num )
+		math.randomseed( os.time() )
+
+		-- Create gateway to link to this
+		local ent = PRK_CreateEnt( "prk_gateway", nil, gates[num][1], gates[num][2] )
+		ent:SetDestination( PRK_Zones[num].pos, num )
+	end
+
+	PRK_Zones = self:FlatgrassZones()
+	timer.Simple( 10, function()
+		gen( 1 )
+		-- timer.Simple( 20, function()
+			-- gen( 2 )
+			-- timer.Simple( 20, function()
+				-- gen( 3 )
+				-- timer.Simple( 20, function()
+					-- gen( 4 )
+				-- end )
+			-- end )
+		-- end )
+	end )
 end
 
 function GM:PlayerInitialSpawn( ply )
+	-- Initialise in the lobby
+	ply:SetNWInt( "PRK_Zone", 0 )
+
 	-- Send any required client data to the new client
 	timer.Simple( 2, function()
 		for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
@@ -126,6 +179,9 @@ function GM:PlayerInitialSpawn( ply )
 end
 
 function GM:PlayerSpawn( ply )
+	-- Reset to the lobby
+	ply:SetNWInt( "PRK_Zone", 0 )
+
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
 	local mats = {
 		"phoenix_storms/wire/pcb_green",
@@ -295,6 +351,7 @@ function GM:GenerateLobby()
 			floor:SetMaterial( "models/rendertarget" )
 			floor:SetColor( 0, 0, 0, 255 )
 		floor:Spawn()
+		floor:SetZone( 0 )
 	end
 	for x = -amount, amount do
 		for y = -amount, amount do
@@ -313,42 +370,41 @@ function GM:GenerateLobby()
 			true,
 			true
 		)
-			wall.Size = { 8 * size, 8 * size }
+			wall.Size = { 8 * size * ( amount * 2 + 1 ), 0 }
 		wall:Spawn()
+		wall:SetZone( 0 )
 	end
-	for x = -amount, amount do
-		for y = -amount, amount, amount * 2 do
-			createwall( x, y, 0 )
-		end
+	for x = -1, 1, 2 do
+		local y = x * amount * 1
+		createwall( 0, y, 0 )
 	end
-	for y = -amount, amount do
-		for x = -amount, amount, amount * 2 do
-			createwall( x, y, 90 )
-		end
+	for y = -1, 1, 2 do
+		local x = y * amount * 1
+		createwall( x, 0, 90 )
 	end
 
-	-- Add ceiling
+	-- Add ceilings
 	local origin = origin + Vector( 0, 0, -hsize * 8 + size * 8 )
-	local function createceil( x, y )
+	local function createceil( pos, w, h )
 		local ceil = PRK_CreateEnt(
 			"prk_ceiling",
 			"models/hunter/plates/plate8x8.mdl",
-			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
+			pos,
 			Angle( 0, 0, 0 ),
 			true,
 			true
 		)
 			ceil:DrawShadow( false )
-			ceil:SetMaterial( "models/rendertarget" )
-			ceil:SetColor( 0, 0, 0, 255 )
-			ceil.Size = { 8 * size, 8 * size }
+			ceil:SetNoDraw( true )
+			ceil.Size = { w, h }
 		ceil:Spawn()
+		ceil:SetZone( 0 )
 	end
-	for x = -amount, amount do
-		for y = -amount, amount do
-			createceil( x, y, 0 )
-		end
-	end
+	-- Lobby
+	createceil( origin + Vector( 0, 0, hsize * 8 ), 8 * size * amount * 2, 8 * size * amount * 2 )
+	-- Play zones
+	local flatsize = 15345 * 2
+	createceil( Vector( 0, 0, -12800 ) + Vector( 0, 0, size * 8 ), flatsize, flatsize )
 end
 
 function PRK_Explosion( attacker, pos, radius )

@@ -76,9 +76,9 @@ function ENT:Initialize()
 
 	-- Variables
 	self.TimeAutoRemoveLaser	= 2
-	self.TimeFire					= 1.5
-	self.SpeedRotate			= 15 --10
-	self.SpeedFire				= 300--000
+	self.TimeFire				= 3 --1.5
+	self.SpeedRotate			= 13--15 --10
+	self.SpeedFire				= 250 --300--000
 	self.LookAtApprox			= 0.1 --0.05
 end
 
@@ -171,8 +171,8 @@ function ENT:Think()
 		self.Sound_Rotate:ChangePitch( 100 + 20 * dif, 0 )
 	end
 
-	self:NextThink( CurTime() )
-	return true
+	-- self:NextThink( CurTime() )
+	-- return true
 end
 
 function ENT:OnRemove()

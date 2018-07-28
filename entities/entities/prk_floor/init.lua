@@ -32,4 +32,10 @@ function ENT:Initialize()
 		phys:Wake()
 		phys:EnableMotion( false )
 	end
+
+	timer.Simple( 10, function()
+		if ( self and self:IsValid() ) then
+			self:Remove()
+		end
+	end )
 end

@@ -713,7 +713,7 @@ function PRK_Initialise_RevolverChambers()
 end
 
 function PRK_Think_RevolverChambers()
-	local speed = FrameTime() * 5
+	local speed = FrameTime() * PRK_Gun_HUDLerpSpeed
 	local old = PRK_RevolverChambers.Ang
 	PRK_RevolverChambers.Ang = Lerp( speed, PRK_RevolverChambers.Ang, PRK_RevolverChambers.TargetAng )
 	PRK_RevolverChambers.LastChange = math.abs( old - PRK_RevolverChambers.Ang )
@@ -737,7 +737,7 @@ function PRK_HUDPaint_RevolverChambers()
 	local r_def = r
 	local r_add = 0
 		if ( PRK_RevolverChambers.LastChange ) then
-			r_add = math.min( PRK_RevolverChambers.LastChange, 10 ) * 4
+			r_add = math.min( PRK_RevolverChambers.LastChange, 10 ) * PRK_Gun_HUDScaleMultiplier
 			r = r + r_add
 		end
 	local x = ScrW() - r * 4.5
@@ -927,7 +927,9 @@ end
 
 -- Don't draw map outside of generated PRK stuff
 function GM:PreDrawOpaqueRenderables()
-	render.Clear( 0, 0, 0, 255, true, true )
+	if ( !PRK_DrawMap ) then
+		render.Clear( 0, 0, 0, 255 )--, true, true )
+	end
 
 	return !PRK_ShouldDraw()
 end
@@ -994,6 +996,28 @@ end )
 --------------
   -- Util --
 --------------
+function PlayerInZone( ent, zone )
+	if ( zone == nil ) then
+		if ( !PRK_Zones ) then
+			PRK_Zones = GAMEMODE:FlatgrassZones()
+		end
+
+		for k, zone in pairs( PRK_Zones ) do
+			local square = {
+				x = { zone.pos.x - zone.width / 2, zone.pos.x + zone.width / 2 },
+				y = { zone.pos.y - zone.breadth / 2, zone.pos.y + zone.breadth / 2 },
+			}
+			if ( intersect_point_square( ent:GetPos(), square ) ) then
+				ent.Zone = k
+				zone = k
+				break
+			end
+		end
+	end
+
+	return ( LocalPlayer():GetNWInt( "PRK_Zone" ) == zone )
+end
+
 function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 	-- Default args
 	if ( fontsize == nil ) then

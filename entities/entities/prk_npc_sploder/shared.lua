@@ -96,9 +96,9 @@ function ENT:Initialize()
 	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
 	self.SearchRadius 	= 1000	-- How far to search for enemies
 
-	self.Speed = 500 * self:GetNWFloat( "Scale", 3 )
+	self.Speed = 500 --* self:GetNWFloat( "Scale", 3 )
 	self.Coins = 3
-	self.SplodeRange = 200 / 3 * self:GetNWFloat( "Scale", 3 )
+	self.SplodeRange = 200 --/ 3 * self:GetNWFloat( "Scale", 3 )
 
 	local length = 1.5
 	local function play()

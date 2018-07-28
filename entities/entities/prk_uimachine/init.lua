@@ -210,8 +210,8 @@ end
 function ENT:Think()
 	
 
-	self:NextThink( CurTime() )
-	return true
+	-- self:NextThink( CurTime() )
+	-- return true
 end
 
 function ENT:OnRemove()

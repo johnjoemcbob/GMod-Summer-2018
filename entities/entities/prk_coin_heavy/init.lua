@@ -146,7 +146,7 @@ function ENT:Think()
 	self:ThinkState()
 
 	-- Check for fallen out of world
-	if ( self:GetPos().z < -12300 ) then
+	if ( self:GetPos().z < PRK_Height_OutOfWorld ) then
 		if ( self.CurrentOutOfWorld >= self.MaxOutOfWorld ) then
 			if ( self.Owner and self.Owner:IsValid() ) then
 				-- If this has an owner, give to them

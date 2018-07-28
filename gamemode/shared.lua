@@ -21,121 +21,235 @@ end
   -- Globals --
 -----------------
 -- HUD
-PRK_HUD_Shadow_DistX						= -2
-PRK_HUD_Shadow_DistY						= 2
-PRK_HUD_Shadow_Effect						= 4
-PRK_HUD_Punch_Amount						= 5
-PRK_HUD_Punch_Speed							= 10
-PRK_HUD_DieEffect_MaxAlpha				= 230
+PRK_HUD_Shadow_DistX							= -2
+PRK_HUD_Shadow_DistY							= 2
+PRK_HUD_Shadow_Effect							= 4
+PRK_HUD_Punch_Amount							= 5
+PRK_HUD_Punch_Speed								= 10
+PRK_HUD_DieEffect_MaxAlpha						= 230
 
 -- Colours
-PRK_HUD_Colour_Main							= Color( 255, 255, 255, 255 )
-PRK_HUD_Colour_Dark							= Color( 0, 0, 0, 255 )
-PRK_HUD_Colour_Money						= Color( 255, 255, 50, 255 )
-PRK_HUD_Colour_Shadow						= Color( 255, 100, 150, 255 )
-PRK_HUD_Colour_Highlight					= Color( 100, 190, 190, 255 )
-PRK_HUD_Colour_Heart_Dark					= Color( 70, 20, 30, 255 )
-PRK_HUD_Colour_Heart_Light					= Color( 150, 20, 70, 255 )
+PRK_HUD_Colour_Main								= Color( 255, 255, 255, 255 )
+PRK_HUD_Colour_Dark								= Color( 0, 0, 0, 255 )
+PRK_HUD_Colour_Money							= Color( 255, 255, 50, 255 )
+PRK_HUD_Colour_Shadow							= Color( 255, 100, 150, 255 )
+PRK_HUD_Colour_Highlight						= Color( 100, 190, 190, 255 )
+PRK_HUD_Colour_Heart_Dark						= Color( 70, 20, 30, 255 )
+PRK_HUD_Colour_Heart_Light						= Color( 150, 20, 70, 255 )
 
-PRK_Colour_Enemy_Skin						= Color( 0, 0, 5, 255 )
+PRK_Colour_Enemy_Skin							= Color( 0, 0, 5, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
-PRK_Colour_Enemy_Tooth						= PRK_HUD_Colour_Main
-PRK_Colour_Enemy_Mouth						= Color( 100, 100, 100, 255 )
+PRK_Colour_Enemy_Tooth							= PRK_HUD_Colour_Main
+PRK_Colour_Enemy_Mouth							= Color( 100, 100, 100, 255 )
 PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass
-PRK_Grass_Colour									= Color( 40, 40, 40, 255 )
-PRK_Grass_Mesh_CountRange				= { 0.1, 0.6 }
--- PRK_Grass_Mesh_CountRange				= { 0, 0 }
-PRK_Grass_Mesh_Disruption					= true
-PRK_Grass_Mesh_DisruptTime				= 0.2
-PRK_Grass_Mesh_DisruptorInnerRange	= 50
-PRK_Grass_Mesh_DisruptorOuterRange	= 4000
-PRK_Grass_Mesh_Disruptors					= {
-																	"player",
-																	"prk_bullet_heavy",
-																	"prk_laser_heavy",
-																	"prk_coin_heavy",
-																	"prk_npc_biter",
-																	"prk_npc_sploder",
-																	"prk_debris",
-																	"prk_gateway",
-																	"prk_potion",
+PRK_Grass_Colour								= Color( 40, 40, 40, 255 )
+PRK_Grass_Mesh									= true
+-- PRK_Grass_Mesh									= false -- FPS test
+PRK_Grass_Mesh_CountRange						= { 0.1, 0.2 }
+-- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
+PRK_Grass_Mesh_Disruption						= true
+-- PRK_Grass_Mesh_Disruption						= false -- FPS test
+PRK_Grass_Mesh_DisruptTime						= 0.2
+PRK_Grass_Mesh_DisruptorInnerRange				= 50
+PRK_Grass_Mesh_DisruptorOuterRange				= 4000
+PRK_Grass_Mesh_Disruptors						= {
+													"player",
+													"prk_bullet_heavy",
+													"prk_laser_heavy",
+													"prk_coin_heavy",
+													"prk_npc_biter",
+													"prk_npc_sploder",
+													"prk_debris",
+													"prk_gateway",
+													"prk_potion",
 }
 PRK_Grass_Billboard								= true
-PRK_Grass_Billboard_Count					= 5
--- PRK_Grass_Billboard_Count					= 0
-PRK_Grass_Billboard_DrawRange			= 5000
-PRK_Grass_Billboard_SortRange				= 200 --400
-PRK_Grass_Billboard_ShouldDrawTime	= 0.1
-PRK_Grass_Billboard_MaxSortCount		= 0
-PRK_Grass_Billboard_MaxRenderCount	= 200 --4000 --200
-PRK_Grass_Billboard_MultipleSprite		= false
+-- PRK_Grass_Billboard								= false -- FPS test
+PRK_Grass_Billboard_Count						= 3
+PRK_Grass_Billboard_DrawRange					= 5000
+PRK_Grass_Billboard_Forward						= 200 --400
+PRK_Grass_Billboard_ShouldDrawTime				= 0.1
+PRK_Grass_Billboard_MaxRenderCount				= 4000
+PRK_Grass_Billboard_MaxRenderCount				= 1000 -- FPS test
+PRK_Grass_Billboard_MultipleSprite				= false
+
+PRK_Wall_Detail_Mesh_Count						= function()
+													return math.max( 0, math.random( -10, 1 ) )
+													-- return 0
+												end
 
 -- Visuals
-PRK_Epsilon											= 0.001
-PRK_Plate_Size										= 47.45
-PRK_DrawDistance									= 4000
-PRK_MaxAverageFrameTimes					= 10
+PRK_Epsilon										= 0.001
+PRK_Plate_Size									= 47.45
+PRK_DrawMap										= false
+PRK_DrawDistance								= 4000
+PRK_MaxAverageFrameTimes						= 10
 PRK_CurrencyBefore								= "€"
-PRK_CurrencyAfter									= ""
-PRK_CursorSize										= 8
+PRK_CurrencyAfter								= ""
+PRK_CursorSize									= 8
 
 -- Gateway
-PRK_Gateway_StartOpenRange				= 500
+PRK_Gateway_StartOpenRange						= 500
 PRK_Gateway_MaxScale							= 5
-PRK_Gateway_PullRange						= 300
+PRK_Gateway_PullRange							= 300
 PRK_Gateway_PullForce							= 100
-PRK_Gateway_EnterRange						= 100
-PRK_Gateway_OpenSpeed						= 5
-PRK_Gateway_TravelTime						= 5
-PRK_Gateway_FlashHoldTime					= 0.2
-PRK_Gateway_FlashSpeed						= 10
-PRK_Gateway_FOVSpeedEnter				= 0.5
-PRK_Gateway_FOVSpeedExit					= 5
-PRK_Gateway_ParticleDelay					= 0.05
-PRK_Gateway_ParticleDelayTravel			= 0.1 --0.05
-PRK_Gateway_Segments						= 48
+PRK_Gateway_EnterRange							= 100
+PRK_Gateway_OpenSpeed							= 5
+PRK_Gateway_TravelTime							= 5
+PRK_Gateway_FlashHoldTime						= 0.2
+PRK_Gateway_FlashSpeed							= 10
+PRK_Gateway_FOVSpeedEnter						= 0.5
+PRK_Gateway_FOVSpeedExit						= 5
+PRK_Gateway_ParticleDelay						= 0.05
+PRK_Gateway_ParticleDelayTravel					= 0.1 --0.05
+PRK_Gateway_Segments							= 48
 
 -- Editor
 PRK_Editor_MoveSpeed							= 2
 PRK_Editor_Zoom_Step							= 30
-PRK_Editor_Zoom_Speed						= 10
-PRK_Editor_Zoom_Min							= 50
-PRK_Editor_Zoom_Default						= 500
-PRK_Editor_Zoom_Max							= 2000
+PRK_Editor_Zoom_Speed							= 10
+PRK_Editor_Zoom_Min								= 50
+PRK_Editor_Zoom_Default							= 500
+PRK_Editor_Zoom_Max								= 2000
 PRK_Editor_Grid_Scale							= 0.5
 PRK_Editor_Grid_Size							= 1024
-PRK_Editor_Square_Size						= PRK_Plate_Size
-PRK_Editor_Square_Border_Min				= 8
-PRK_Editor_Square_Border_Add				= 4
+PRK_Editor_Square_Size							= PRK_Plate_Size
+PRK_Editor_Square_Border_Min					= 8
+PRK_Editor_Square_Border_Add					= 4
 
 -- Level Generation
-PRK_Gen_SizeModifier							= 10 --0.01 -- 10
+PRK_Gen_SizeModifier							= 7 -- 5 --0.01 -- 10
+PRK_Gen_DetailWaitTime							= 1
+PRK_Gen_StepBetweenTime							= 0--5
+PRK_Gen_IgnoreEnts								= { false, false, true, false }
 
 -- Damage/Death
-PRK_Hurt_Material									= "pp/texturize/pattern1.png"
+PRK_Hurt_Material								= "pp/texturize/pattern1.png"
 PRK_Hurt_ShowTime								= 0.2
 PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 
 -- Enemy
 PRK_Enemy_Types									= {
-																	["Biter"] = "prk_npc_biter",
-																	["Sploder"] = "prk_npc_sploder",
-																	["Turret"] = "prk_turret_heavy",
+													["Biter"] = "prk_npc_biter",
+													["Sploder"] = "prk_npc_sploder",
+													["Turret"] = "prk_turret_heavy",
 }
-PRK_Enemy_CoinDropMult						= 0.2 -- 0.1
+PRK_Enemy_CoinDropMult							= 0.2 -- 0.1
 
 -- Player
-PRK_BaseClip										= 3 --6
-PRK_Health											= 6
-PRK_Speed											= 600
-PRK_Jump												= 0
+PRK_BaseClip									= 3 --6
+PRK_Health										= 6
+PRK_Speed										= 600
+PRK_Jump										= 0
+
+-- Gun
+PRK_Gun_PunchLerpSpeed							= 1
+PRK_Gun_MoveLerpSpeed							= 30
+PRK_Gun_HUDLerpSpeed							= 5
+PRK_Gun_HUDScaleMultiplier						= 8
 
 -- Misc
+PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 PRK_DataPath									= "prickly/"
+
+function GM:FlatgrassZones()
+	local y = -12800
+
+	-- Ignore lobby in middle of flatgrass
+	local lobbymin = Vector( -1000, -1000, y )
+	local lobbymax = Vector( 1000, 1000, y )
+
+	-- 3 divisions of width/breadth
+	local div = 3
+
+	-- Map bounds
+	local min = Vector( -15345, -15345, y )
+	local max = Vector( 15345, 15345, y )
+
+	-- Get zone size
+	local width = ( max.x - lobbymax.x )
+	local breadth = ( max.y - lobbymax.y )
+
+	-- Generate and store zones
+	local zones = {}
+		for w = 0, 1 do
+			for b = 0, 1 do
+				local pos = Vector( min.x, min.y, min.z )
+					if ( w == 0 ) then
+						pos.x = min.x + width / 2
+					else
+						pos.x = max.x - width / 2
+					end
+					if ( b == 0 ) then
+						pos.y = min.y + width / 2
+					else
+						pos.y = max.y - width / 2
+					end
+				table.insert( zones, {
+					pos = pos,
+					width = width,
+					breadth = breadth,
+				} )
+			end
+		end
+
+		-- Debug draw
+		for k, zone in pairs( zones ) do
+			debugoverlay.Box(
+				zone.pos,
+				Vector( -width / 2, -breadth / 2, 0 ),
+				Vector( width / 2, breadth / 2, 10 ),
+				30,
+				ColorRand()
+			)
+		end
+	return zones
+end
+
+function GM:BasicGridZones()
+	-- 3 divisions of width/breadth
+	local div = 3
+
+	-- Map bounds
+	local min = Vector( -15345, -15345, -12735 )
+	local max = Vector( 15345, 15345, -12735 )
+
+	-- Get total map size
+	local width = math.abs( min.x ) + math.abs( max.x )
+	local breadth = math.abs( min.y ) + math.abs( max.y )
+
+	-- Get zone size
+	width = width / div
+	breadth = breadth / div
+
+	-- Generate and store zones
+	local zones = {}
+		for w = 1, div do
+			for b = 1, div do
+				table.insert( zones, {
+					pos = min + Vector( width * ( w - 0.5 ), breadth * ( b - 0.5 ), 0 ),
+					width = width,
+					breadth = breadth,
+				} )
+			end
+		end
+
+		-- Debug draw
+		for k, zone in pairs( zones ) do
+			debugoverlay.Box(
+				zone.pos,
+				Vector( -width / 2, -breadth / 2, 0 ),
+				Vector( width / 2, breadth / 2, 10 * ( w + b ) ),
+				30,
+				ColorRand()
+			)
+		end
+	return zones
+end
 
 ------------------------
   -- Gamemode Hooks --
@@ -315,45 +429,6 @@ function table.length(T)
 	for _ in pairs(T) do count = count + 1 end
 	return count
 end
-
-function table.bubbleSort( T, func, maxchange )
-	local count = #T
-	local changed
-	local changecount = 0
-	repeat
-		changed = false
-		count = count - 1
-		for i = 1, count do
-			if func( T[i], T[i + 1] ) then
-				T[i], T[i + 1] = T[i + 1], T[i]
-				changed = true
-				changecount = changecount + 1
-				if ( maxchange and changecount >= maxchange ) then
-					print( changecount )
-					return
-				end
-			end
-		end
-	until ( changed == false )
-	print( changecount )
-end
-
--- local T = {
-	-- 6,
-	-- 5,
-	-- 8,
-	-- 2,
-	-- 4,
-	-- 3,
-	-- 7,
-	-- 9,
-	-- 1,
--- }
--- PrintTable( T )
--- table.bubbleSort( T, function( a, b )
-	-- return a > b
--- end )
--- PrintTable( T )
 
 function LerpAngleBasic( t, from, to )
 	local ret = from

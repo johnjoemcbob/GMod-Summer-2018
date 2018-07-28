@@ -29,5 +29,7 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
+	if ( !PlayerInZone( self, self.Zone ) ) then return end
+
 	self:DrawModel()
 end

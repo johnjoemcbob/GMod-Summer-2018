@@ -40,7 +40,7 @@ function ENT:Initialize()
 	self:PhysWake()
 
 	-- Variables
-	self.Damage = 1
+	self.Damage = 0.5
 	self.Collide = 0
 	self.MaxDamageCollide = 1
 

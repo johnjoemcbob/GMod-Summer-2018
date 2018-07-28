@@ -36,22 +36,22 @@ local models = {
 		cols,
 		0.9,
 	},
-	{
-		"models/props_foliage/tree_poplar_01.mdl",
-		Vector( 0, -8, -25 ),
-		Angle( 0, 0, -90 ),
-		Vector( 1, 1.5, 2 ),
-		cols,
-		0,
-	},
-	{
-		"models/props_foliage/driftwood_03a.mdl",
-		Vector( 0, 0, 0 ),
-		Angle( 0, 0, 0 ),
-		Vector( 1, 1, 1 ),
-		cols,
-		1,
-	},
+	-- { -- Shows through ceiling (because no ceiling now)
+		-- "models/props_foliage/tree_poplar_01.mdl",
+		-- Vector( 0, -8, -25 ),
+		-- Angle( 0, 0, -90 ),
+		-- Vector( 1, 1.5, 2 ),
+		-- cols,
+		-- 0,
+	-- },
+	-- { -- Ep2
+		-- "models/props_foliage/driftwood_03a.mdl",
+		-- Vector( 0, 0, 0 ),
+		-- Angle( 0, 0, 0 ),
+		-- Vector( 1, 1, 1 ),
+		-- cols,
+		-- 1,
+	-- },
 }
 
 local reload = true
@@ -99,14 +99,17 @@ function ENT:Initialize()
 		local mat = Matrix()
 			mat:Scale( scale )
 	ent:EnableMatrix( "RenderMultiply", mat )
+	ent:SetNoDraw( true )
 
 	-- Delay detail creation until wall is positioned
-	timer.Simple( 0.1, function()
+	timer.Simple( PRK_Gen_DetailWaitTime, function()
+		if ( !self or !self:IsValid() ) then return end
+
 		-- Detail models
 		local min = self:OBBMins()
 		local max = self:OBBMaxs()
 		local precision = 10
-		local amount = math.max( 0, math.random( -5, 2 ) )
+		local amount = PRK_Wall_Detail_Mesh_Count()
 		for i = 1, amount do
 			local rnd = models[math.random( 1, #models )]
 			local mdl = rnd[1]
@@ -128,6 +131,7 @@ function ENT:Initialize()
 				mat:Scale( sca )
 			ent.Scale = sca
 			ent:EnableMatrix( "RenderMultiply", mat )
+			ent:SetNoDraw( true )
 		end
 	end )
 
@@ -148,8 +152,13 @@ function ENT:Think()
 end
 
 function ENT:Draw()
-	-- self:DrawModel()
-	-- debugoverlay.Box( self:GetPos(), self:OBBMins(), self:OBBMaxs(), FrameTime() / 2, Color( 255, 255, 0, 100 ) )
+	if ( !PlayerInZone( self, self.Zone ) ) then return end
+
+	for k, v in pairs( self.Models ) do
+		local col = v:GetColor()
+		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+		v:DrawModel()
+	end
 end
 
 function ENT:OnRemove()

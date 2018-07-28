@@ -96,8 +96,8 @@ function SWEP:GetViewModelPosition( pos, ang )
 			ang:Forward() * 20 +
 			ang:Right() * 10 * self.RightHanded +
 			ang:Up() * -15
-		local speedpunch = self.LerpSpeedPunch
-		local speed = self.LerpSpeed * PRK_Speed / 400
+		local speedpunch = PRK_Gun_PunchLerpSpeed
+		local speed = PRK_Gun_MoveLerpSpeed * PRK_Speed / 400
 		if ( !game.SinglePlayer() ) then
 			curpos = LocalPlayer():GetViewModel():GetPos()
 		end
@@ -123,6 +123,7 @@ function SWEP:GetViewModelPosition( pos, ang )
 		self.GunPunchRnd = math.Approach( self.GunPunchRnd, 0, frametime * speedpunch )
 
 		-- Lerp
+		-- print( frametime * speed * dist )
 		pos = LerpVector( frametime * speed * dist, curpos, target )
 		ang = targetang
 		curpos = pos

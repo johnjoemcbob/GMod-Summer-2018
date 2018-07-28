@@ -1,50 +1,50 @@
 
-SWEP.PrintName						= "Prickly Gun"
+SWEP.PrintName					= "Prickly Gun"
 
-SWEP.Author								= ""
-SWEP.Purpose							= ""
+SWEP.Author						= ""
+SWEP.Purpose					= ""
 
-SWEP.Spawnable						= true
-SWEP.UseHands							= true
-SWEP.DrawAmmo						= false
+SWEP.Spawnable					= true
+SWEP.UseHands					= true
+SWEP.DrawAmmo					= false
 
-SWEP.ViewModel						= "models/weapons/w_357.mdl"
-SWEP.WorldMode						= "models/weapons/w_357.mdl"
+SWEP.ViewModel					= "models/weapons/w_357.mdl"
+SWEP.WorldMode					= "models/weapons/w_357.mdl"
 
-SWEP.ViewModelFOV					= 32
-SWEP.Slot									= 0
-SWEP.SlotPos							= 5
+SWEP.ViewModelFOV				= 32
+SWEP.Slot						= 0
+SWEP.SlotPos					= 5
 
-SWEP.Primary.ClipSize				= -1
-SWEP.Primary.DefaultClip			= -1
+SWEP.Primary.ClipSize			= -1
+SWEP.Primary.DefaultClip		= -1
 SWEP.Primary.Automatic			= true
-SWEP.Primary.Ammo					= "none"
+SWEP.Primary.Ammo				= "none"
 
 SWEP.Secondary.ClipSize			= -1
 SWEP.Secondary.DefaultClip		= -1
 SWEP.Secondary.Automatic		= true
 SWEP.Secondary.Ammo				= "none"
 
-SWEP.RequireAmmo					= true
-SWEP.MaxClip							= PRK_BaseClip
+SWEP.RequireAmmo				= true
+SWEP.MaxClip					= PRK_BaseClip
 local dist = 3000
-SWEP.MaxDistance						= dist
+SWEP.MaxDistance				= dist
 SWEP.MaxDistanceSqr				= dist * dist -- Store extra as sqr
-SWEP.RightHanded					= 1
-SWEP.TimeFire							= 0.2
-SWEP.TimeReload						= 0.2
-SWEP.TimeFOVPunch					= 0.1
+SWEP.RightHanded				= 1
+SWEP.TimeFire					= 0.2
+SWEP.TimeReload					= 0.2
+SWEP.TimeFOVPunch				= 0.1
 SWEP.TimeBackFOVPunch			= 0.2
 SWEP.TimeHoldFOVPunch			= 0.1
-SWEP.DistFOVPunch					= 10
-SWEP.LerpSpeedPunch				= 1
-SWEP.LerpSpeed						= 10
+SWEP.DistFOVPunch				= 10
+-- SWEP.LerpSpeedPunch				= 1
+-- SWEP.LerpSpeed					= 40 --10
 SWEP.SoundPitchFireBase			= 100
 SWEP.SoundPitchFireIncrease		= -50 --  -3
 SWEP.SoundPitchFireSpeed		= 0.2
 SWEP.SoundPitchReloadBase		= 80
 SWEP.SoundPitchReloadIncrease	= 10
-SWEP.SoundPitchReloadSpeed	= 0.4
+SWEP.SoundPitchReloadSpeed		= 0.4
 
 PRK_BulletTypeInfo = {
 	-- Empty
@@ -87,63 +87,15 @@ PRK_BulletTypeInfo = {
 				bullet:Spawn()
 				bullet.Owner = self.Owner
 				-- Appear at hit point and bounce back towards player
-				local pos = tr.HitPos + tr.HitNormal * 10
+				local out = 10
+				local pos = tr.HitPos + tr.HitNormal * out
 					-- Clamp pos to max distance
 					local dir = pos - self.Owner:EyePos()
 					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
 						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
 					end
-				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
-				bullet:Launch( pos, dir )
-				local phys = bullet:GetPhysicsObject()
-				if ( phys and phys:IsValid() ) then
-					phys:AddAngleVelocity( VectorRand() * 1000 )
-				end
-				bullet:CollideWithEnt( tr.Entity )
-			end
-
-			-- return takeammo, spin, shootparticles, punch
-			return true, true, true, true
-		end,
-	},
-	-- Default
-	[1] = {
-		Paint = function( info, self, x, y, r )
-			local r = r * 3
-			draw.Rect( x - r / 2, y - r / 2, r, r, Color( 100, 190, 190, 255 ) )
-		end,
-		CanFire = function( info )
-			return true
-		end,
-		Fire = function( info, self )
-			-- Play shoot sound
-			self:EmitSound(
-				"weapons/grenade_launcher1.wav",
-				75,
-				self.SoundPitchFireBase + ( self.SoundPitchFireIncrease * ( 1 - ( self:GetFilledChamberCount() / self.MaxClip ) ) )
-			)
-
-			-- Play first impact effect at spawn point
-			local tr = self.Owner:GetEyeTrace()
-			local effectdata = EffectData()
-				local pos = tr.HitPos
-				effectdata:SetOrigin( pos )
-				effectdata:SetNormal( tr.HitNormal )
-			util.Effect( "prk_hit", effectdata )
-
-			-- Spawn bullet
-			if ( SERVER ) then
-				local bullet = ents.Create( "prk_bullet_heavy" )
-				bullet:Spawn()
-				bullet.Owner = self.Owner
-				-- Appear at hit point and bounce back towards player
-				local pos = tr.HitPos + tr.HitNormal * 10
-					-- Clamp pos to max distance
-					local dir = pos - self.Owner:EyePos()
-					if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
-						pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
-					end
-				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * 8000 * 3
+				local mult = 8000
+				local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * mult * 3
 				bullet:Launch( pos, dir )
 				local phys = bullet:GetPhysicsObject()
 				if ( phys and phys:IsValid() ) then
@@ -353,8 +305,8 @@ function SWEP:Initialize()
 	for i = 1, self.MaxClip do
 		self.ChamberBullets[i] = PRK_BulletType.Default
 	end
-	self.ChamberBullets[1] = PRK_BulletType.Test1
-	self.ChamberBullets[2] = PRK_BulletType.Test2
+	-- self.ChamberBullets[1] = PRK_BulletType.Test1
+	-- self.ChamberBullets[2] = PRK_BulletType.Test2
 end
 
 function SWEP:Think()

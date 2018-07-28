@@ -59,20 +59,20 @@ local PlaceableEnts = {
 			Vector( 20, 30, 0 ),
 		}
 	},
-	["Attach Point"] = {
+	["Rock"] = {
 		Spawnable = true,
-		Class = nil,
+		Class = "prk_rock",
 		Variables = {
 			
 		},
-		Model = "models/props_c17/door01_left.mdl",
-		Offset = Vector( 0, 0, 50 ),
+		Model = "models/props_wasteland/rockcliff01f.mdl",
+		Offset = Vector( 0, 0, 0 ),
 		Angle = Angle(),
 		Scale = 1,
 		Colour = Color( 255, 255, 255, 255 ),
 		ClickCollision = {
-			Vector( -10, -75, 0 ),
-			Vector( 10, 75, 0 ),
+			Vector( -30, -30, 0 ),
+			Vector( 30, 30, 0 ),
 		}
 	},
 }
@@ -310,6 +310,7 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 				for _, dragging in pairs( draggable ) do
 					if ( dragging ) then
 						local part = LocalPlayer().PRK_Editor_RoomData.Parts[k]
+						if ( part ) then
 							local edges = {
 								[1] = function()
 									local newsize = part.prewidth + change.x * PRK_Editor_Square_Size
@@ -343,6 +344,7 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 								end,
 							}
 							edges[_]()
+						end
 						LocalPlayer().PRK_Editor_RoomData.Parts[k] = part
 					end
 				end
@@ -405,10 +407,12 @@ function PRK_Editor_Room_HandleDrag()
 			for k, draggable in pairs( LocalPlayer().PRK_Editor_RoomData.Dragging ) do
 				for _, dragging in pairs( draggable ) do
 					if ( dragging ) then
-						LocalPlayer().PRK_Editor_RoomData.Parts[k].preposx = LocalPlayer().PRK_Editor_RoomData.Parts[k].position.x
-						LocalPlayer().PRK_Editor_RoomData.Parts[k].preposy = LocalPlayer().PRK_Editor_RoomData.Parts[k].position.y
-						LocalPlayer().PRK_Editor_RoomData.Parts[k].prewidth = LocalPlayer().PRK_Editor_RoomData.Parts[k].width
-						LocalPlayer().PRK_Editor_RoomData.Parts[k].prebreadth = LocalPlayer().PRK_Editor_RoomData.Parts[k].breadth
+						if ( LocalPlayer().PRK_Editor_RoomData.Parts[k] ) then
+							LocalPlayer().PRK_Editor_RoomData.Parts[k].preposx = LocalPlayer().PRK_Editor_RoomData.Parts[k].position.x
+							LocalPlayer().PRK_Editor_RoomData.Parts[k].preposy = LocalPlayer().PRK_Editor_RoomData.Parts[k].position.y
+							LocalPlayer().PRK_Editor_RoomData.Parts[k].prewidth = LocalPlayer().PRK_Editor_RoomData.Parts[k].width
+							LocalPlayer().PRK_Editor_RoomData.Parts[k].prebreadth = LocalPlayer().PRK_Editor_RoomData.Parts[k].breadth
+						end
 						draggingsomething = true
 					end
 				end
@@ -483,6 +487,13 @@ function PRK_GUIMousePressed( code, aim )
 							end
 						)
 					end
+					add_submenu_create()
+					menu_sub_create:AddOption(
+						"Attach Point",
+						function()
+							PRK_Editor_Room_AddFloor( pos, true )
+						end
+					)
 				local menu_sub_delete
 					local function add_submenu_delete()
 						if ( !menu_sub_delete ) then
@@ -649,7 +660,7 @@ function PRK_Editor_Room_GetClosestGrid( pos )
 	return ret
 end
 
-function PRK_Editor_Room_AddFloor( pos )
+function PRK_Editor_Room_AddFloor( pos, isattach )
 	local width = 1
 	local breadth = 1
 	-- Find closest grid point
@@ -663,6 +674,7 @@ function PRK_Editor_Room_AddFloor( pos )
 		position = pos,
 		width = width,
 		breadth = breadth,
+		isattach = isattach,
 	}
 	table.insert( LocalPlayer().PRK_Editor_RoomData.Parts, part )
 end
@@ -872,9 +884,13 @@ hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Editor", function()
 
 			-- Draw floors
 			local colour_floor = Color( 200, 100, 100, 100 )
-			surface.SetDrawColor( colour_floor )
+			local colour_attach = Color( 100, 200, 100, 100 )
 			if ( LocalPlayer().PRK_Editor_RoomData.Parts ) then
 				for k, v in pairs( LocalPlayer().PRK_Editor_RoomData.Parts ) do
+					surface.SetDrawColor( colour_floor )
+						if ( v.isattach ) then
+							surface.SetDrawColor( colour_attach )
+						end
 					surface.DrawRect(
 						v.position.x / scale,
 						-v.position.y / scale,

@@ -39,7 +39,8 @@ function ENT:Initialize()
 		phys:EnableMotion( false )
 	end
 
-	self.Destination = Vector( 0, 0, -12200 ) -- temp test
+	self.Destination = Vector( 0, 0, -12200 )
+	self.DestinationZone = 0
 end
 
 function ENT:Think()
@@ -69,10 +70,16 @@ function ENT:OnRemove()
 	
 end
 
+function ENT:SetDestination( pos, zone )
+	self.Destination = pos
+	self.DestinationZone = zone
+end
+
 function ENT:Enter( ply )
 	-- Move the player elsewhere
 	ply:SetMoveType( MOVETYPE_NOCLIP )
 	ply:SetPos( PRK_Position_Nowhere )
+	ply:SetNWInt( "PRK_Zone", -100 )
 	ply:Freeze( true )
 
 	-- Request client effects
@@ -85,8 +92,9 @@ end
 
 function ENT:Exit( ply )
 	-- Move the player to destination
+	ply:SetPos( self.Destination + Vector( 0, 0, 200 ) )
 	ply:SetMoveType( MOVETYPE_WALK )
-	ply:SetPos( self.Destination )
+	ply:SetNWInt( "PRK_Zone", self.DestinationZone )
 	ply:Freeze( false )
 
 	-- Request client effects

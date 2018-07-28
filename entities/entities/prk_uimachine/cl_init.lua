@@ -71,6 +71,8 @@ function ENT:Initialize()
 	self.UI:SetDraggable( false )
 	self.UI.Entity = self
 	function self.UI:Paint( w, h )
+		if ( !PlayerInZone( self.Entity, self.Entity.Zone ) ) then return end
+
 		local x, y = 0, 0
 
 		local function draw_panel_title()
@@ -214,6 +216,8 @@ function ENT:Initialize()
 				end
 			end
 			function button:Paint( w, h )
+				if ( !PlayerInZone( self.Entity, self.Entity.Zone ) ) then return end
+
 				-- Left
 				PRK_DrawText(
 					self.ButtonLeftText,
@@ -260,6 +264,8 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
+	if ( !PlayerInZone( self, self.Zone ) ) then return end
+
 	self:DrawModel()
 end
 
@@ -272,21 +278,23 @@ end
 
 hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_UIMachine", function()
 	for k, ent in pairs( ents.FindByClass( "prk_uimachine" ) ) do
-		if ( ent.UI ) then
-			local ang = ent:GetAngles()
-				ang:RotateAroundAxis( ent:GetAngles():Right(), -90 )
-				ang:RotateAroundAxis( ent:GetAngles():Forward(), 90 )
-			vgui.Start3D2D(
-				ent:GetPos() +
-				ent:GetAngles():Up() * size * ( vert + 0.2 ) +
-				ent:GetAngles():Forward() * ( hsize + 0.2 ) +
-				ent:GetAngles():Right() * hsize * hori
-				,
-				ang,
-				scale
-			)
-				ent.UI:Paint3D2D()
-			vgui.End3D2D()
+		if ( PlayerInZone( ent, ent.Zone ) ) then
+			if ( ent.UI ) then
+				local ang = ent:GetAngles()
+					ang:RotateAroundAxis( ent:GetAngles():Right(), -90 )
+					ang:RotateAroundAxis( ent:GetAngles():Forward(), 90 )
+				vgui.Start3D2D(
+					ent:GetPos() +
+					ent:GetAngles():Up() * size * ( vert + 0.2 ) +
+					ent:GetAngles():Forward() * ( hsize + 0.7 ) +
+					ent:GetAngles():Right() * hsize * hori
+					,
+					ang,
+					scale
+				)
+					ent.UI:Paint3D2D()
+				vgui.End3D2D()
+			end
 		end
 	end
 end )

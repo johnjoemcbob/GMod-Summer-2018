@@ -68,7 +68,7 @@ State = {
 		Collide = function( self, ent, colent )
 			-- Delay grass effect until ent is at correct position after firing
 			timer.Simple( 0.02, function()
-				if ( colent and colent:IsValid() and colent:GetClass() == "prk_floor" ) then
+				if ( colent and ( ( colent:IsValid() and colent:GetClass() == "prk_floor" ) or colent == game.GetWorld() ) ) then
 					local effectdata = EffectData()
 						effectdata:SetOrigin( ent:GetPos() )
 						effectdata:SetNormal( Vector( 0, 0, 1 ) )
@@ -141,7 +141,7 @@ function ENT:Think()
 	self:ThinkState()
 
 	-- Check for fallen out of world
-	if ( self:GetPos().z < -12300 ) then
+	if ( self:GetPos().z < PRK_Height_OutOfWorld ) then
 		if ( self.CurrentOutOfWorld >= self.MaxOutOfWorld ) then
 			if ( self.Owner and self.Owner:IsValid() ) then
 				-- If this has an owner, give to them
@@ -177,7 +177,7 @@ end
 
 function ENT:CollideWithEnt( ent )
 	if ( self.NextCollide and self.NextCollide > CurTime() ) then return end
-	if ( !ent or !ent:IsValid() ) then return end
+	if ( ( !ent or !ent:IsValid() ) and ent != game.GetWorld() ) then return end
 
 	-- Don't collide a bunch with one bounce
 	self.NextCollide = CurTime() + 0.2

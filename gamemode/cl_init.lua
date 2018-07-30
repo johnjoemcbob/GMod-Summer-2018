@@ -925,6 +925,204 @@ end
   -- /PRK Gun --
 ------------------
 
+local models = {}
+local height = 10
+local scale = 0.5
+
+local function think_eye( ent, ply, left )
+	local boneid = ply:LookupBone( "ValveBiped.Bip01_Head1" )
+	local matrix = ply:GetBoneMatrix( boneid )
+	local pos = matrix:GetTranslation()
+	local ang = matrix:GetAngles()
+
+	local origin = Vector( ( height + 14 ) * scale, -16 * scale, 2 * ent.Left )
+	pos = LocalToWorld( origin, Angle(), matrix:GetTranslation(), matrix:GetAngles() )
+
+	if ( ent.Pupil ) then
+		local dist = 3 * scale
+		local poi = LocalPlayer():EyePos()
+			-- Testing/fun
+			if ( LocalPlayer() == ply ) then
+				poi = ents.FindByClass( "gmod_cameraprop" )[1]:GetPos()
+			end
+		local dir = ( poi - pos ):GetNormal()
+		pos = pos + dir * dist
+	end
+
+	-- if ( models[1] and models[1].Bite ) then
+		pos = pos + ang:Forward() * models[1].Ent.Bite * 0.5
+		pos = pos + ang:Right() * math.min( 0, models[1].Ent.Bite * 0.2 )
+		-- ent:SetModelScale( scale * ent.Scale * math.max( 0, models[1].Ent.Bite * 0.2 ) )
+	-- end
+
+	ent:SetPos( pos )
+end
+
+models = {
+	{
+		"models/ichthyosaur.mdl",
+		Vector( height * scale, -13.6 * scale, 0 ),
+		Angle( 180, 90, 90 ),
+		PRK_HUD_Colour_Shadow,
+		SpawnFunc = function( ent )
+			ent.Bite = 0
+
+			ent:SetModelScale( scale )
+
+			local scale_main = Vector( 1, 1, 1 ) * 0.5
+			local scale_ignore = Vector( 1, 1, 1 ) * 0.01
+			local ignore = {
+				[9] = true,
+				[13] = true,
+			}
+			local pos = {
+				Vector( 0, 0, 0 ), -- Root
+				Vector( 0, 0, 0 ),
+				Vector( -50, 0, 0 ),
+				Vector( -20, 0, 0 ),
+				Vector( -50, 0, 0 ),
+				Vector( -20, 0, 0 ),
+				Vector( -20, 0, 0 ),
+				Vector( -20, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( 0, 0, 0 ),
+				Vector( -20, 10, 10 ),
+				Vector( -10, 0, 10 ),
+				Vector( -10, 0, 10 ),
+				Vector( -10, 10, -10 ),
+				Vector( 0, -20, 0 ),
+				Vector( -10, 0, -10 ),
+			}
+			for i = 1, ent:GetBoneCount() do
+				if ( !ignore[i] ) then
+					-- ent:ManipulateBonePosition( i, VectorRand() )
+					if ( pos[i] ) then
+						ent:ManipulateBonePosition( i, pos[i] )
+					end
+					ent:ManipulateBoneScale( i, scale_ignore )
+				else
+					ent:ManipulateBoneScale( i, scale_main )
+				end
+				-- timer.Simple( 0.1, function()
+					-- print( i .. " " .. ent:GetBoneName( i ) )
+				-- end )
+			end
+		end,
+		Think = function( ent, ply )
+			ent.Bite = 0
+			-- ent.Bite = ( math.sin( CurTime() * 10 ) - 0.7 ) * 10
+
+			local head = 9
+			local jaw = 13
+			local pos = Vector( 0, 1, 0 ) * ent.Bite
+			ent:ManipulateBonePosition( head, pos )
+			ent:ManipulateBonePosition( jaw, pos )
+		end,
+	},
+	{
+		"models/Combine_Helicopter/helicopter_bomb01.mdl",
+		Vector( height * scale, 23.6 * scale, 0 ),
+		Angle( 0, 0, 0 ),
+		PRK_HUD_Colour_Shadow,
+		SpawnFunc = function( ent )
+			ent:SetModelScale( scale * 1.75 )
+		end,
+	},
+	{
+		"models/Combine_Helicopter/helicopter_bomb01.mdl",
+		Vector( ( height + 14 ) * scale, -16 * scale, 2 ),
+		Angle( 0, 0, 0 ),
+		Color( 255, 255, 255, 255 ),
+		SpawnFunc = function( ent )
+			ent.Scale = 0.15
+			ent:SetModelScale( scale * 0.15 )
+			ent.Left = 1
+		end,
+		Think = think_eye,
+	},
+	{
+		"models/Combine_Helicopter/helicopter_bomb01.mdl",
+		Vector( ( height + 14 ) * scale, -16 * scale, -2 ),
+		Angle( 0, 0, 0 ),
+		Color( 255, 255, 255, 255 ),
+		SpawnFunc = function( ent )
+			ent.Scale = 0.15
+			ent:SetModelScale( scale * 0.15 )
+			ent.Left = -1
+		end,
+		Think = think_eye,
+	},
+	{
+		"models/Combine_Helicopter/helicopter_bomb01.mdl",
+		Vector( ( height + 14 ) * scale, -19 * scale, 2 ),
+		Angle( 0, 0, 0 ),
+		Color( 0, 0, 0, 255 ),
+		SpawnFunc = function( ent )
+			ent.Scale = 0.1
+			ent:SetModelScale( scale * ent.Scale )
+			ent.Left = 1
+			ent.Pupil = true
+		end,
+		Think = think_eye,
+	},
+	{
+		"models/Combine_Helicopter/helicopter_bomb01.mdl",
+		Vector( ( height + 14 ) * scale, -19 * scale, -2 ),
+		Angle( 0, 0, 0 ),
+		Color( 0, 0, 0, 255 ),
+		SpawnFunc = function( ent )
+			ent.Scale = 0.1
+			ent:SetModelScale( scale * ent.Scale )
+			ent.Left = -1
+			ent.Pupil = true
+		end,
+		Think = think_eye,
+	},
+}
+
+for k, mod in pairs( models ) do
+	local ent = ClientsideModel( mod[1] )
+		ent:SetNoDraw( true )
+		if ( mod.SpawnFunc ) then
+			mod.SpawnFunc( ent )
+		end
+	mod.Ent = ent
+end
+
+hook.Add( "PostPlayerDraw" , "manual_model_draw_example" , function( ply )
+	local boneid = ply:LookupBone( "ValveBiped.Bip01_Head1" )
+
+	if not boneid then
+		return
+	end
+
+	local matrix = ply:GetBoneMatrix( boneid )
+
+	if not matrix then
+		return
+	end
+
+	for k, mod in pairs( models ) do
+		local ent = mod.Ent
+		local newpos, newang = LocalToWorld( mod[2], mod[3], matrix:GetTranslation(), matrix:GetAngles() )
+
+		ent:SetPos( newpos )
+		ent:SetAngles( newang )
+		ent:SetMaterial( "models/debug/debugwhite" )
+		render.SetColorModulation( mod[4].r / 255, mod[4].g / 255, mod[4].b / 255 )
+			if ( mod.Think ) then
+				mod.Think( ent, ply )
+			end
+			ent:SetupBones()
+			ent:DrawModel()
+		render.SetColorModulation( 1, 1, 1 )
+	end
+end )
+
 -- Don't draw map outside of generated PRK stuff
 function GM:PreDrawOpaqueRenderables()
 	if ( !PRK_DrawMap ) then

@@ -104,6 +104,12 @@ function SWEP:CreateGunModel()
 	end
 end
 
+function SWEP:DrawWorldModel()
+	render.SetColorModulation( 1, 1, 1 )
+	self:SetMaterial( "models/debug/debugwhite" )
+	self:DrawModel()
+end
+
 local curpos = Vector()
 function SWEP:GetViewModelPosition( pos, ang )
 	if ( PRK_InEditor( self.Owner ) ) then return end

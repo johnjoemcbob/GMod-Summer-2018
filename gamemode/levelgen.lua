@@ -43,13 +43,13 @@ local HelperModels = {
 }
 
 local SpawnEditorEnt = {}
-SpawnEditorEnt["Vendor"] = function( pos )
-	local ent = PRK_CreateEnt( "prk_uimachine", nil, pos, Angle() )
+SpawnEditorEnt["Vendor"] = function( pos, ang )
+	local ent = PRK_CreateEnt( "prk_uimachine", nil, pos, ang )
 end
-SpawnEditorEnt["Spawner"] = function( pos )
+SpawnEditorEnt["Spawner"] = function( pos, ang )
 	local ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
 end
-SpawnEditorEnt["Rock"] = function( pos )
+SpawnEditorEnt["Rock"] = function( pos, ang )
 	local ent = PRK_CreateEnt( "prk_rock", nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
 end
 
@@ -294,6 +294,7 @@ function PRK_Gen_Step( zone )
 
 						-- Set attach helper position
 						helper:SetPos( temp_room.Origin + v.Pos )
+						helper:SetAngles( v.Angles )
 
 						-- Parent back to anchor
 						helper:SetParent( anchor )
@@ -305,7 +306,7 @@ function PRK_Gen_Step( zone )
 						anchor:SetPos( temp_room.Origin )
 
 						-- Spawn entity
-						SpawnEditorEnt[v.Editor_Ent]( helper:GetPos() )
+						SpawnEditorEnt[v.Editor_Ent]( helper:GetPos(), helper:GetAngles() )
 					end
 				end
 			end

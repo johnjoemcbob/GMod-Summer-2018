@@ -20,6 +20,7 @@ function ENT:Initialize()
 	if ( CLIENT ) then
 		self.Visuals = {}
 
+		local boneparent = 0
 		local forw_off = 12
 		self:SetAngles( Angle() )
 		for eye = -1, 1, 2 do
@@ -31,7 +32,7 @@ function ENT:Initialize()
 			local eye_col = PRK_Colour_Enemy_Eye
 
 			local vis = PRK_AddModel( eye_mod, eye_pos, eye_ang, eye_sca, eye_mat, eye_col )
-				vis:SetParent( self, 2 )
+				vis:SetParent( self, boneparent )
 			table.insert( self.Visuals, vis )
 		end
 
@@ -68,7 +69,7 @@ function ENT:Initialize()
 			local too_col = PRK_Colour_Enemy_Tooth
 
 			local vis = PRK_AddModel( too_mod, too_pos, too_ang, too_sca, too_mat, too_col )
-				vis:SetParent( self, 2 )
+				vis:SetParent( self, boneparent )
 			table.insert( self.Visuals, vis )
 		end
 
@@ -80,7 +81,7 @@ function ENT:Initialize()
 		local mou_mat = "models/debug/debugwhite"
 		local mou_col = PRK_Colour_Enemy_Mouth
 		local vis = PRK_AddModel( mou_mod, mou_pos, mou_ang, mou_sca, mou_mat, mou_col )
-			vis:SetParent( self, 2 )
+			vis:SetParent( self, boneparent )
 		table.insert( self.Visuals, vis )
 
 		-- Scale
@@ -101,7 +102,6 @@ function ENT:Initialize()
 	self.Coins = 3
 	self.BiteRange = 100
 	self.BiteBetween = 0.5
-
 end
 
 function ENT:OnKilled( dmginfo )
@@ -125,9 +125,10 @@ end
 if ( CLIENT ) then
 	function ENT:Draw()
 		-- self:SetAngles( self:GetAngles() + Angle( 0, 180, 0 ) )
-		-- for k, vis in pairs( self.Visuals ) do
+		for k, vis in pairs( self.Visuals ) do
+			-- vis:SetPos( self:GetPos() + vis.Pos + Vector( 0, 0, ( ( math.random( 10, 100 ) / 100 ) + math.sin( CurTime() * 1 ) ) * 4 ) )
 			-- vis:SetPos( vis:GetPos() + Vector( 0, 0, math.sin( CurTime() * 50 ) * 1 ) )
-		-- end
+		end
 		self:DrawModel()
 	end
 end

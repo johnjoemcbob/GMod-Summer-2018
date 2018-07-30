@@ -188,7 +188,9 @@ function GM:PlayerSpawn( ply )
 		"phoenix_storms/wire/pcb_red",
 		"phoenix_storms/wire/pcb_blue",
 	}
-	ply:SetMaterial( mats[math.random( 1, #mats )] )
+	-- ply:SetMaterial( mats[math.random( 1, #mats )] )
+	ply:SetMaterial( "models/debug/debugwhite" )
+	ply:SetColor( PRK_HUD_Colour_Shadow )
 	-- ply:SetMaterial( "phoenix_storms/wire/pcb_red" )
 	-- ply:SetMaterial( "models/props_combine/tprings_globe" )
 	-- ply:SetMaterial( "debug/env_cubemap_model" )

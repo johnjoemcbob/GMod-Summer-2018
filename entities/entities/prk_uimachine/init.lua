@@ -109,7 +109,7 @@ function ENT:Initialize()
 	self:SetColor( col_green )
 	-- Position correctly
 	timer.Simple(
-		0.05,
+		1,
 		function()
 			-- To ground
 			local pos = self:GetPos() + self:GetForward() * PRK_Plate_Size

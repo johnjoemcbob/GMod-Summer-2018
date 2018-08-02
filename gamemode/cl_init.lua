@@ -11,6 +11,13 @@ include( "cl_editor_room.lua" )
 
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
+local mats = {
+	Material( "prk_splat1.png", "noclamp" ),
+	Material( "prk_splat2.png", "noclamp" ),
+}
+PRK_Material_Splat = function()
+	return mats[math.random( 1, #mats - 1 )]
+end
 
 -- Resolution sccaling
 local BaseResW = 1600
@@ -99,11 +106,20 @@ net.Receive( "PRK_KeyValue", function( len, ply )
 end )
 
 net.Receive( "PRK_TakeDamage", function( len, ply )
+	local ply = net.ReadEntity()
 	local amount = net.ReadFloat()
 	local dir = net.ReadVector()
+	local pos = net.ReadVector()
 
-	LocalPlayer().PunchHUD = dir * amount * PRK_HUD_Punch_Amount
-	LocalPlayer().HideHurtEffect = CurTime() + PRK_Hurt_ShowTime
+	ply.PunchHUD = dir * amount * PRK_HUD_Punch_Amount
+	ply.HideHurtEffect = CurTime() + PRK_Hurt_ShowTime
+
+	-- Play blood effect
+	local effectdata = EffectData()
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal( dir )
+		effectdata:SetEntity( ply )
+	util.Effect( "prk_blood", effectdata )
 end )
 
 net.Receive( "PRK_Die", function( len, ply )
@@ -939,12 +955,30 @@ local function think_eye( ent, ply, left )
 	pos = LocalToWorld( origin, Angle(), matrix:GetTranslation(), matrix:GetAngles() )
 
 	if ( ent.Pupil ) then
-		local dist = 3 * scale
+		local dist = 1.2 * scale
 		local poi = LocalPlayer():EyePos()
 			-- Testing/fun
 			if ( LocalPlayer() == ply ) then
 				poi = ents.FindByClass( "gmod_cameraprop" )[1]:GetPos()
 			end
+			-- Wander around
+			local wander = math.max( 0, math.sin( CurTime() ) - 0.7 )
+			if ( ply.Wandering and ply.Wandering > CurTime() ) then
+				-- Wait
+			elseif ( !ply.NextWander or ply.NextWander <= CurTime() ) then
+				local effect = 10
+				ply.TargetEyePos = pos + ( ply:EyeAngles():Up() * math.random( -effect, effect ) + ply:EyeAngles():Right() * math.random( -effect, effect ) + ply:EyeAngles():Forward() * 10 )
+				ply.NextWander = CurTime() + math.random( 0, 150 ) / 10
+				ply.Wandering = CurTime() + 0.5-- + math.random( 10, 10 ) / 10
+			else
+				ply.TargetEyePos = poi
+			end
+			-- Lerp last
+			if ( !ply.CurrentEyePos ) then
+				ply.CurrentEyePos = ply.TargetEyePos
+			end
+			ply.CurrentEyePos = LerpVector( FrameTime() * 5, ply.CurrentEyePos, ply.TargetEyePos )
+			poi = ply.CurrentEyePos
 		local dir = ( poi - pos ):GetNormal()
 		pos = pos + dir * dist
 	end
@@ -963,7 +997,7 @@ models = {
 		"models/ichthyosaur.mdl",
 		Vector( height * scale, -13.6 * scale, 0 ),
 		Angle( 180, 90, 90 ),
-		PRK_HUD_Colour_Shadow,
+		true,
 		SpawnFunc = function( ent )
 			ent.Bite = 0
 
@@ -1027,7 +1061,7 @@ models = {
 		"models/Combine_Helicopter/helicopter_bomb01.mdl",
 		Vector( height * scale, 23.6 * scale, 0 ),
 		Angle( 0, 0, 0 ),
-		PRK_HUD_Colour_Shadow,
+		true,
 		SpawnFunc = function( ent )
 			ent:SetModelScale( scale * 1.75 )
 		end,
@@ -1113,13 +1147,59 @@ hook.Add( "PostPlayerDraw" , "manual_model_draw_example" , function( ply )
 		ent:SetPos( newpos )
 		ent:SetAngles( newang )
 		ent:SetMaterial( "models/debug/debugwhite" )
-		render.SetColorModulation( mod[4].r / 255, mod[4].g / 255, mod[4].b / 255 )
+		local col = mod[4]
+			if ( col == true ) then
+				col = ply:GetColor()
+			end
+		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
 			if ( mod.Think ) then
 				mod.Think( ent, ply )
 			end
 			ent:SetupBones()
 			ent:DrawModel()
 		render.SetColorModulation( 1, 1, 1 )
+	end
+end )
+
+function PRK_Decal( pos, col )
+	if ( !LocalPlayer().PRK_Decals ) then
+		LocalPlayer().PRK_Decals = {}
+	end
+
+	local decal = {
+		pos = pos,
+		col = col,
+		rot = math.random( 0, 360 ),
+		mat = PRK_Material_Splat(),
+		siz = math.random( 10, 20 ) / 10,
+	}
+	if ( #LocalPlayer().PRK_Decals >= PRK_Decal_Max ) then
+		table.remove( LocalPlayer().PRK_Decals, 1 )
+	end
+	table.insert( LocalPlayer().PRK_Decals, decal )
+	print( #LocalPlayer().PRK_Decals .. "/" .. PRK_Decal_Max )
+end
+
+hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Decal", function( depth, skybox )
+	if ( !PRK_ShouldDraw() ) then return end
+	if ( depth or skybox ) then return end
+
+	-- Render decals
+	if ( PRK_Decal and LocalPlayer().PRK_Decals ) then
+		local width = 1
+		-- print( PRK_Material_Splat())
+		local size = 48
+		local rendercount = 0
+		for k, decal in pairs( LocalPlayer().PRK_Decals ) do
+			render.SetMaterial( decal.mat )
+			render.DrawQuadEasy(
+				decal.pos,
+				Vector( 0, 0, 1 ),
+				decal.siz * size * width, decal.siz * size * width,
+				decal.col,
+				decal.rot
+			)
+		end
 	end
 end )
 

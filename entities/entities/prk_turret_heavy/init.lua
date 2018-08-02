@@ -84,6 +84,7 @@ end
 
 function ENT:Think()
 	-- Find target
+	-- print( self.Target )
 	if ( !self.Target or !self.Target:IsValid() ) then
 		self.Target = nil
 
@@ -113,7 +114,7 @@ function ENT:Think()
 		end
 
 		-- Wait for target
-		if ( !self.Target ) then
+		if ( !self.Target or !self.Target:IsValid() ) then
 			return
 		end
 	end
@@ -130,7 +131,7 @@ function ENT:Think()
 	local dif = self.Rotator:GetAngles():Forward():Distance( targetang:Forward() )
 	-- local dif = 100000
 	-- print( dif )
-	if ( dif < self.LookAtApprox ) then
+	if ( self.Barrel and self.Barrel:IsValid() and dif < self.LookAtApprox ) then
 		if ( !self.NextFire or self.NextFire <= CurTime() ) then
 			-- Fire projectile
 			local bullet = ents.Create( "prk_laser_heavy" )

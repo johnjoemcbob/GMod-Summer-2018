@@ -204,7 +204,6 @@ end
 
 function ENT:InitializeNewClient()
 	self:SendStock()
-	print( "init late vendor!!" )
 end
 
 function ENT:Think()

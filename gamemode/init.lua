@@ -16,13 +16,15 @@ include( "levelgen.lua" )
 include( "buffs.lua" )
 
 -- Resource Downloads
+local dir = "gamemodes/prickly_summer_2018/content/"
 function resource.AddDir( localdir )
 	local srchpath = localdir .. "*"
 	-- print( srchpath )
 	local files, directories = file.Find( srchpath, "GAME" )
 	for k, file in pairs( files ) do
-		-- print( localdir .. file )
-		resource.AddFile( localdir .. file )
+		local res = string.gsub( localdir .. file, dir, "" )
+		-- print( res )
+		resource.AddFile( res )
 	end
 	for k, dir in pairs( directories ) do
 		-- print( localdir )
@@ -33,7 +35,7 @@ end
 print( "PRK" )
 print( "----------------" )
 print( "Add resources..." )
-resource.AddDir( "gamemodes/prickly_summer_2018/content/" )
+resource.AddDir( dir )
 print( "Finish resources..." )
 print( "-------------------" )
 
@@ -52,11 +54,13 @@ function SendKeyValue( ply, key, val )
 	net.Send( ply )
 end
 
-function SendTakeDamage( ply, amount, dir )
+function SendTakeDamage( ply, amount, dir, pos )
 	net.Start( "PRK_TakeDamage" )
+		net.WriteEntity( ply )
 		net.WriteFloat( amount )
 		net.WriteVector( dir )
-	net.Send( ply )
+		net.WriteVector( pos )
+	net.Broadcast()
 end
 
 function SendDie( ply, pos, ang, killname )
@@ -150,7 +154,7 @@ function GM:InitPostEntity()
 	end
 
 	PRK_Zones = self:FlatgrassZones()
-	timer.Simple( 10, function()
+	timer.Simple( 5, function()
 		gen( 1 )
 		-- timer.Simple( 20, function()
 			-- gen( 2 )
@@ -190,7 +194,8 @@ function GM:PlayerSpawn( ply )
 	}
 	-- ply:SetMaterial( mats[math.random( 1, #mats )] )
 	ply:SetMaterial( "models/debug/debugwhite" )
-	ply:SetColor( PRK_HUD_Colour_Shadow )
+	local cols = PRK_Colour_Player
+	ply:SetColor( cols[math.random( 1, #cols )] )
 	-- ply:SetMaterial( "phoenix_storms/wire/pcb_red" )
 	-- ply:SetMaterial( "models/props_combine/tprings_globe" )
 	-- ply:SetMaterial( "debug/env_cubemap_model" )
@@ -232,6 +237,13 @@ function GM:PlayerSpawn( ply )
 	-- Store spawn time
 	ply.SpawnTime = CurTime()
 	SendSpawn( ply, ply.SpawnTime )
+
+	-- Init collisions
+	ply:SetNoCollideWithTeammates( true )
+	ply:SetTeam( 1 )
+
+	-- Add head collider
+	
 end
 
 function GM:Think()
@@ -265,7 +277,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 		if ( dmginfo:GetDamage() > 0 ) then
 			local dir = dmginfo:GetInflictor():GetPos() - target:GetPos()
 				dir:Normalize()
-			SendTakeDamage( target, dmginfo:GetDamage(), dir )
+			SendTakeDamage( target, dmginfo:GetDamage(), dir, dmginfo:GetInflictor():GetPos() )
 
 			-- Play sound
 			local pitchhealth = 1 - ( target:Health() / target:GetMaxHealth() )

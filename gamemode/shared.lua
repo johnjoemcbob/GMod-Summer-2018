@@ -37,6 +37,16 @@ PRK_HUD_Colour_Highlight						= Color( 100, 190, 190, 255 )
 PRK_HUD_Colour_Heart_Dark						= Color( 70, 20, 30, 255 )
 PRK_HUD_Colour_Heart_Light						= Color( 150, 20, 70, 255 )
 
+PRK_Colour_Player								= {
+													Color( 255, 100, 150, 255 ),
+													Color( 253, 203, 110, 255 ),
+													Color( 0, 206, 201, 255 ),
+													Color( 85, 239, 196, 255 ),
+													Color( 162, 155, 254, 255 ),
+													Color( 255, 118, 117, 255 ),
+													Color( 89, 98, 117, 255 ),
+}
+
 PRK_Colour_Enemy_Skin							= Color( 0, 0, 5, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
 PRK_Colour_Enemy_Tooth							= PRK_HUD_Colour_Main
@@ -80,6 +90,9 @@ PRK_Wall_Detail_Mesh_Count						= function()
 													-- return 0
 												end
 
+PRK_Decal										= true
+PRK_Decal_Max									= 1000
+
 -- Visuals
 PRK_Epsilon										= 0.001
 PRK_Plate_Size									= 47.45
@@ -122,7 +135,7 @@ PRK_Editor_Square_Border_Add					= 4
 -- Level Generation
 PRK_Gen_SizeModifier							= 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
-PRK_Gen_StepBetweenTime							= 0--5
+PRK_Gen_StepBetweenTime							= 0.1 --0--5
 PRK_Gen_IgnoreEnts								= { false, false, true, false }
 
 -- Damage/Death
@@ -132,6 +145,7 @@ PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 
 -- Enemy
+PRK_Enemy_Scale									= 2.5 -- 3
 PRK_Enemy_Types									= {
 													["Biter"] = "prk_npc_biter",
 													["Sploder"] = "prk_npc_sploder",
@@ -388,6 +402,27 @@ function PRK_GetCirclePoints( x, y, radius, seg, rotate )
 		-- local a = math.rad( 0 ) -- This is need for non absolute segment counts
 		-- table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
 	return cir
+end
+
+function ColourToVector( col, range )
+	if ( range == nil ) then range = 1 end
+
+	local vector = Vector()
+		vector.x = col.r / 255 * range
+		vector.y = col.g / 255 * range
+		vector.z = col.b / 255 * range
+	return vector
+end
+
+function VectorToColour( vector, range )
+	if ( range == nil ) then range = 1 end
+
+	local col = Color( 255, 255, 255, 255 )
+		col.r = vector.x / range * 255
+		col.g = vector.y / range * 255
+		col.b = vector.z / range * 255
+		col.a = 255
+	return col
 end
 
 function math.Wrap( cur, min, max )

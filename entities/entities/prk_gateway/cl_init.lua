@@ -72,7 +72,6 @@ function ENT:Think()
 end
 
 function ENT:Draw()
-	
 end
 
 function ENT:OnRemove()
@@ -357,6 +356,22 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 			util.Effect( "prk_gateway", effectdata )
 			self.NextParticle = CurTime() + PRK_Gateway_ParticleDelay
 		end
+
+		-- Title
+		local ang = self:GetAngles()
+			ang:RotateAroundAxis( Vector( 0, 1, 0 ), 90 )
+			ang:RotateAroundAxis( Vector( 0, 0, 1 ), 90 )
+		cam.Start3D2D( self:GetPos() + Vector( 0, 0, 200 ), ang, 1 )
+			draw.SimpleText(
+				"CO-OPERATIVE",
+				"HeavyHUD128",
+				0,
+				0,
+				PRK_HUD_Colour_Shadow,
+				TEXT_ALIGN_CENTER,
+				TEXT_ALIGN_CENTER
+			)
+		cam.End3D2D()
 
 		local tunnelscalemult = 1
 		PRK_RenderScale( tunnel, Vector( self.Scale * tunnelscalemult, self.Scale * tunnelscalemult, length ) )

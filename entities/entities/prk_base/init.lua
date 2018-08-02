@@ -6,6 +6,8 @@ include( "shared.lua" )
 util.AddNetworkString( "PRK_EntZone" )
 
 function ENT:SendZone( zone )
+	if ( !zone ) then return end
+
 	net.Start( "PRK_EntZone" )
 		net.WriteEntity( self )
 		net.WriteFloat( zone )

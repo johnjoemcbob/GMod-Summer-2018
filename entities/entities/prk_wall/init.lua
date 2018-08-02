@@ -4,7 +4,6 @@ AddCSLuaFile( "cl_init.lua" )
 include( "shared.lua" )
 
 function ENT:Initialize()
-	self:SetModel( "models/hunter/plates/plate1x1.mdl" )
 	local length = math.max( math.abs( self.Size[1] ), math.abs( self.Size[2] ) )
 	local height = 8 * PRK_Editor_Square_Size
 	local min = Vector( -height / 2, -length / 2, -2 )

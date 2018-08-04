@@ -12,9 +12,14 @@ list.Set( "NPC", "prk_npc_biter", {
 
 function ENT:Initialize()
 	self:SetModel( "models/headcrabclassic.mdl" )
-	self:SetModelScale( PRK_Enemy_Scale, 0 )
+	-- self:SetModelScale( PRK_Enemy_Scale, 0 )
+	self:SetModelScale( PRK_Enemy_PhysScale, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
-	self:SetColor( PRK_Colour_Enemy_Skin )
+	-- self:SetColor( PRK_Colour_Enemy_Skin )
+	self:SetColor( Color( 255, 255, 255, 255 ) )
+	-- local hori = 12
+	-- local vert = 32
+	-- self:SetCollisionBounds( Vector( -hori, -hori ,0 ), Vector( hori, hori, vert ) ) 
 
 	-- Extra visual details
 	if ( CLIENT ) then
@@ -85,7 +90,7 @@ function ENT:Initialize()
 		table.insert( self.Visuals, vis )
 
 		-- Scale
-		local sca = Vector( 1, 1, 1.5 )
+		local sca = Vector( 1, 1, 1.5 ) * PRK_Enemy_Scale / PRK_Enemy_PhysScale
 		local mat = Matrix()
 			mat:Scale( sca )
 		self:EnableMatrix( "RenderMultiply", mat )
@@ -98,7 +103,7 @@ function ENT:Initialize()
 	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
 	self.SearchRadius 	= 1000	-- How far to search for enemies
 
-	self.Speed = 500
+	self.Speed = PRK_Enemy_Speed
 	self.Coins = 3
 	self.BiteRange = 100
 	self.BiteBetween = 0.5
@@ -152,5 +157,5 @@ function ENT:MoveCallback()
 end
 
 function ENT:Attack( victim )
-	victim:TakeDamage( 1, self, self )
+	-- victim:TakeDamage( 1, self, self )
 end

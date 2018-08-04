@@ -1,66 +1,87 @@
 include( "shared.lua" )
 
-local models = {
-	-- CSS
-	{ -- Small
-		"models/props/de_inferno/bushgreensmall.mdl",
-		Vector( 0, 0, 0 ),
-		Angle( 0, 0, 0 ),
-		Vector( 1, 1, 1 ),
-		{ 0.75, 1 },
-	},
-	{ -- Good
-		"models/props/pi_fern.mdl",
-		Vector( 0, 0, 0 ),
-		Angle( 0, 0, 0 ),
-		Vector( 1.7, 1.7, 1.7 ),
-		{ 0.75, 1 },
-	},
-	{ -- Grass
-		"models/props/de_inferno/cactus.mdl",
-		Vector( 0, 0, 0 ),
-		Angle( 0, 0, 0 ),
-		Vector( 0.2, 0.2, 1 ),
-		{ 0.75, 1 },
-	},
-	{ -- Grass
-		"models/props/de_inferno/cactus2.mdl",
-		Vector( 0, 0, 0 ),
-		Angle( 0, 0, 0 ),
-		Vector( 0.2, 0.2, 1 ),
-		{ 0.75, 1 },
-	},
-	-- { -- Large
-		-- "models/props/cs_militia/fern01.mdl",
-		-- Vector( 0, 0, 15 ),
-		-- Angle( 0, 0, 0 ),
-		-- Vector( 1.7, 1.7, 1.7 ),
-	-- },
-	-- { -- Fancy
-		-- "models/props/de_inferno/succulant.mdl",
-		-- Vector( 0, 0, 0 ),
-		-- Angle( 0, 0, 0 ),
-		-- Vector( 1, 1, 0.5 ),
-	-- },
-}
-
 PRK_Material_Grass = Material( "prk_grass.png", "noclamp smooth" )
 PRK_Material_Grass_Multiple = Material( "prk_grass_multiple.png", "noclamp smooth" )
 
-local colours = {
-	-- Color( 92, 4, 40, 255 ),
-	-- Blue/purple
-	Color( 80, 4, 90, 255 ),
-	Color( 65, 4, 90, 255 ),
-	Color( 47, 4, 90, 255 ),
-	Color( 12, 4, 90, 255 ),
-	Color( 4, 12, 90, 255 ),
-	Color( 4, 47, 90, 255 ),
-	-- Green
-	-- Color( 12, 90, 4, 255 ),
-	-- Color( 47, 90, 4, 255 ),
-	-- Color( 65, 90, 4, 255 ),
-}
+net.Receive( "PRK_Floor_Grass", function( len, ply )
+	local zone = net.ReadFloat()
+	local pos = net.ReadVector()
+	local min = net.ReadVector()
+	local max = net.ReadVector()
+
+	local sca = Vector( max.x / PRK_Plate_Size * 2, max.y / PRK_Plate_Size * 2, 1 )
+
+	-- Grass billboards
+	local between = 1
+	local function creategrass()
+		if ( !LocalPlayer().Grasses ) then
+			LocalPlayer().Grasses = {}
+		end
+		if ( zone != nil and LocalPlayer().Grasses ) then
+			if ( !LocalPlayer().Grasses[zone] ) then
+				LocalPlayer().Grasses[zone] = {}
+			end
+
+			local grasscount = PRK_Grass_Billboard_Count * ( sca.x + sca.y )
+			local grasses = {}
+			for i = 1, grasscount do
+				table.insert( grasses, {
+					pos + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
+					Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
+					math.random( 10, 50 ) / 10,
+				} )
+			end
+			LocalPlayer().Grasses[zone][pos] = grasses
+			print( pos )
+		else
+			timer.Simple( between, function() creategrass() end )
+		end
+	end
+	creategrass()
+end )
+
+net.Receive( "PRK_Floor_Plant", function( len, ply )
+	local zone = net.ReadFloat()
+	local count = net.ReadFloat()
+	local plants = {}
+	for i = 1, count do
+		table.insert( plants, {
+			ind = net.ReadFloat(), -- Index
+			pos = net.ReadVector(),
+			ang = net.ReadAngle(),
+			sca = net.ReadFloat(),
+			col = net.ReadFloat(), -- Index
+		} )
+	end
+
+	local function try()
+		if ( !LocalPlayer().Plants ) then
+			LocalPlayer().Plants = {}
+		end
+		-- Couldn't initialise, wait
+		if ( !LocalPlayer().Plants ) then
+			timer.Simple( 1, function()
+				try()
+			end )
+		else
+			LocalPlayer().Plants[zone] = plants
+
+			PRK_Floor_InitializePlantModels()
+		end
+	end
+	try()
+end )
+
+function PRK_Floor_InitializePlantModels()
+	if ( PRK_Floor_Models[1].Ent and PRK_Floor_Models[1].Ent:IsValid() ) then return end
+
+	local mat = "models/debug/debugwhite"
+	for k, plant in pairs( PRK_Floor_Models ) do
+		local ent = PRK_AddModel( plant[1], Vector(), Angle(), 1, mat, Color( 255, 255, 255, 255 ) )
+			ent:SetNoDraw( true )
+		plant.Ent = ent
+	end
+end
 
 function ENT:Initialize()
 	-- Floor scale
@@ -91,78 +112,6 @@ function ENT:Initialize()
 
 	-- Delay grass/plant creation until floor is positioned
 	self.Models = {}
-	timer.Simple( PRK_Gen_DetailWaitTime, function()
-		if ( !self or !self:IsValid() ) then return end
-
-		-- Plant models
-		local between = 1
-		local function createplants()
-			if ( self.Zone != nil ) then
-				if ( !LocalPlayer().Plants ) then
-					LocalPlayer().Plants = {}
-				end
-				if ( !LocalPlayer().Plants[self.Zone] ) then
-					LocalPlayer().Plants[self.Zone] = {}
-				end
-
-				local min = self:OBBMins()
-				local max = self:OBBMaxs()
-				local precision = 10
-				local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * precision, PRK_Grass_Mesh_CountRange[2] * precision ) / precision * ( sca.x + sca.y ) )
-				for i = 1, amount do
-					local rnd = models[math.random( 1, #models )]
-					local mdl = rnd[1]
-					local pos = Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) + rnd[2]
-					local ang = rnd[3] + Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
-					local mat = "models/debug/debugwhite"
-					local col = colours[math.random( 1, #colours )]
-
-					local ent = PRK_AddModel( mdl, self:GetPos() + pos, ang, 1, mat, col )
-						-- Scale
-						local mult = math.random( rnd[5][1] * 100, rnd[5][2] * 100 ) / 100
-						local sca = rnd[4] * mult
-						local mat = Matrix()
-							mat:Scale( sca )
-						ent.Scale = sca
-						ent:EnableMatrix( "RenderMultiply", mat )
-						ent:SetNoDraw( true )
-					table.insert( LocalPlayer().Plants[self.Zone], ent )
-				end
-			else
-				timer.Simple( between, function() createplants() end )
-			end
-		end
-		createplants()
-
-		-- Grass billboards
-		local between = 1
-		local function creategrass()
-			if ( self.Zone != nil ) then
-				if ( !LocalPlayer().Grasses ) then
-					LocalPlayer().Grasses = {}
-				end
-				if ( !LocalPlayer().Grasses[self.Zone] ) then
-					LocalPlayer().Grasses[self.Zone] = {}
-				end
-
-				local grasscount = PRK_Grass_Billboard_Count * ( sca.x + sca.y )
-				local grasses = {}
-				for i = 1, grasscount do
-					table.insert( grasses, {
-						self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
-						Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
-						math.random( 10, 50 ) / 10,
-						Entity = self.Entity
-					} )
-				end
-				self.GrassPos = self:GetPos()
-				LocalPlayer().Grasses[self.Zone][self.GrassPos] = grasses
-			else
-				timer.Simple( between, function() creategrass() end )
-			end
-		end
-		creategrass()
-	end )
 end
 
 -- Hooked to main GAMEMODE:Think to avoid calling whole thing for each entity each frame
@@ -208,16 +157,16 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 					end
 				-- print( speed )
 				if ( moving ) then
-					for k, v in pairs( LocalPlayer().Plants[zone] ) do
-						if ( v and v:IsValid() and ( !v.NextTouch or v.NextTouch <= CurTime() ) ) then
-							local dist = ent:GetPos():Distance( v:GetPos() )
+					for k, plant in pairs( LocalPlayer().Plants[zone] ) do
+						if ( plant and ( !plant.NextTouch or plant.NextTouch <= CurTime() ) ) then
+							local dist = ent:GetPos():Distance( plant.pos )
 							local maxdist = PRK_Grass_Mesh_DisruptorInnerRange
 								if ( overridedist ) then
 									maxdist = overridedist
 								end
 							local close = dist < maxdist
 							if ( close ) then
-								local forward = ( ent:GetPos() + ent:GetVelocity() - v:GetPos() ):GetNormal()
+								local forward = ( ent:GetPos() + ent:GetVelocity() - plant.pos ):GetNormal()
 
 								if ( effects ) then
 									-- Sound effect
@@ -235,15 +184,15 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 								-- Lean away from entity
 								local up = Vector( 0, 0, 1 )
 								local right = up:Cross( forward )
-								local ang = Angle( v.Ang.p, v.Ang.y, v.Ang.r )
+								local ang = Angle( plant.ang.p, plant.ang.y, plant.ang.r )
 									ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
-								v.TargetAngles = ang
+								plant.TargetAngles = ang
 
 								-- Bounce up/down scale
-								v.TargetScaleOffset = 3 * magnitude + scaleoff
+								plant.TargetScaleOffset = 3 * magnitude + scaleoff
 
 								-- Delay next
-								-- v.NextTouch = CurTime() + 1
+								-- plant.NextTouch = CurTime() + 1
 							end
 						end
 					end
@@ -252,33 +201,31 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 		end
 
 		-- Lerp plants
-		for k, v in pairs( LocalPlayer().Plants[zone] ) do
+		for k, plant in pairs( LocalPlayer().Plants[zone] ) do
 			-- Lerp angles
-			if ( v.TargetAngles ) then
+			if ( plant.TargetAngles ) then
 				local speed = 5
-				local ang = LerpAngle( FrameTime() * speed, v:GetAngles(), v.TargetAngles )
-				v:SetAngles( ang )
-				v.TargetAngles = v.Ang
+				local ang = LerpAngle( FrameTime() * speed, plant.CurrentAng, plant.TargetAngles )
+				plant.CurrentAng = ang
+				plant.TargetAngles = plant.ang
 			end
 
 			-- Lerp scale
-			if ( v.TargetScaleOffset ) then
+			if ( plant.TargetScaleOffset ) then
 				local speed = 10
 				local scalemulthori = 0.1
 				local scalemultvert = -0.2
-				v.TargetScaleOffset = math.Approach( v.TargetScaleOffset, 0, FrameTime() * speed )
-				local scaleoffset = v.TargetScaleOffset - 2
+				plant.TargetScaleOffset = math.Approach( plant.TargetScaleOffset, 0, FrameTime() * speed )
+				local scaleoffset = plant.TargetScaleOffset - 2
 					if ( scaleoffset < -1 ) then
 						scaleoffset = ( 1 - scaleoffset ) - 3
 					end
-				local sca = v.Scale + Vector( scaleoffset * scalemulthori, scaleoffset * scalemulthori, scaleoffset * scalemultvert )
-				local mat = Matrix()
-					mat:Scale( sca )
-				v:EnableMatrix( "RenderMultiply", mat )
+				local sca = PRK_Floor_Models[plant.ind][4] + Vector( scaleoffset * scalemulthori, scaleoffset * scalemulthori, scaleoffset * scalemultvert )
+				plant.Scale = sca * plant.sca
 
 				-- End scale
-				if ( v.TargetScaleOffset == 0 ) then
-					v.TargetScaleOffset = nil
+				if ( plant.TargetScaleOffset == 0 ) then
+					plant.TargetScaleOffset = nil
 				end
 			end
 		end
@@ -317,10 +264,28 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Gr
 
 	-- Render plants
 	if ( PRK_Grass_Mesh and LocalPlayer().Plants and LocalPlayer().Plants[zone] ) then
-		for k, v in pairs( LocalPlayer().Plants[zone] ) do
-			local col = v:GetColor()
+		for k, plant in pairs( LocalPlayer().Plants[zone] ) do
+			local ent = PRK_Floor_Models[plant.ind].Ent
+				if ( !ent or !ent:IsValid() ) then
+					PRK_Floor_InitializePlantModels()
+				end
+			local col = PRK_Floor_Colours[plant.col]
 			render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
-			v:DrawModel()
+				ent:SetPos( plant.pos )
+				if ( !plant.CurrentAng ) then
+					plant.CurrentAng = plant.ang
+				end
+				ent:SetAngles( plant.CurrentAng )
+				if ( !plant.Scale ) then
+					plant.Scale = PRK_Floor_Models[plant.ind][4] * plant.sca
+				end
+				local mat = Matrix()
+					mat:Scale( plant.Scale )
+				ent:EnableMatrix( "RenderMultiply", mat )
+				ent:SetupBones()
+
+				ent:DrawModel()
+			render.SetColorModulation( 1, 1, 1 )
 		end
 	end
 

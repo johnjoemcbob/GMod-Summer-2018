@@ -35,6 +35,11 @@ function ENT:RunBehaviour()
 	end
 end
 
+function ENT:OnStuck()
+	-- print( "stuck!" )
+	self:SetPos( self:GetPos() + VectorRand() * 2 )
+end
+
 -- Move in a straight line towards the player until reached or path impeded
 function ENT:MoveDirectlyToEnemy()
 	while ( self:HaveEnemy() ) do
@@ -128,6 +133,7 @@ function ENT:FindEnemy()
 	if ( #possibletargets > 0 ) then
 		-- We found one so lets set it as our enemy and return true
 		self:SetEnemy( possibletargets[math.random( 1, #possibletargets ) ] )
+		self:OnNewEnemy()
 		return true
 	end
 	-- We found nothing so we will set our enemy as nil ( nothing ) and return false
@@ -146,6 +152,11 @@ function ENT:GetEnemy()
 	return self.Enemy
 end
 
+function ENT:OnNewEnemy()
+end
+function ENT:OnNoEnemy()
+end
+
 ----------------------------------------------------
 -- ENT:HaveEnemy()
 -- Returns true if we have a enemy
@@ -160,6 +171,7 @@ function ENT:HaveEnemy()
 			-- return self:FindEnemy()
 		-- If the enemy is dead( we have to check if its a player before we use Alive() )
 		if ( self:GetEnemy():IsPlayer() and !self:GetEnemy():Alive() ) then
+			self:OnNoEnemy()
 			return self:FindEnemy()		-- Return false if the search finds nothing
 		end
 		-- The enemy is neither too far nor too dead so we can return true

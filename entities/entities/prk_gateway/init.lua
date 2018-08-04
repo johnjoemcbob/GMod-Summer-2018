@@ -94,7 +94,7 @@ function ENT:Exit( ply )
 	-- Move the player to destination
 	ply:SetPos( self.Destination + Vector( 0, 0, 200 ) )
 	ply:SetMoveType( MOVETYPE_WALK )
-	ply:SetNWInt( "PRK_Zone", self.DestinationZone )
+	GAMEMODE:MoveToZone( ply, self.DestinationZone )
 	ply:Freeze( false )
 
 	-- Request client effects

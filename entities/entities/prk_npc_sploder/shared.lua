@@ -26,6 +26,7 @@ function ENT:Initialize()
 	self:SetModelScale( PRK_Enemy_Scale, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
+	self:SetCollisionGroup( COLLISION_GROUP_WORLD )
 
 	-- Extra visual details
 	if ( CLIENT ) then
@@ -72,14 +73,17 @@ function ENT:Initialize()
 	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
 	self.SearchRadius 	= 1000	-- How far to search for enemies
 
-	self.Speed = 500 --* PRK_Enemy_Scale
+	self.Speed = PRK_Enemy_Speed --* PRK_Enemy_Scale
 	self.Coins = 3
 	self.SplodeRange = 200 --/ 3 * PRK_Enemy_Scale
+	self.Playing = false
 
 	local length = 1.5
 	local function play()
 		if ( self and self:IsValid() ) then
-			self:EmitSound( "prk_sploder_loop" )
+			if ( self.Playing ) then
+				self:EmitSound( "prk_sploder_loop" )
+			end
 			timer.Simple( length, function()
 				play()
 			end )
@@ -90,6 +94,16 @@ end
 
 function ENT:OnKilled( dmginfo )
 	self:Remove()
+end
+
+function ENT:OnNoEnemy()
+	self.Playing = false
+	self:StopSound( "prk_sploder_loop" )
+end
+
+function ENT:OnNewEnemy()
+	self.Playing = true
+	self:EmitSound( "prk_sploder_loop" )
 end
 
 function ENT:OnRemove()

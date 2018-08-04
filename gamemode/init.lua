@@ -144,7 +144,7 @@ function GM:InitPostEntity()
 		},
 	}
 	local function gen( num )
-		math.randomseed( 0 )
+		math.randomseed( PRK_Gen_Seed )
 		PRK_Gen( PRK_Zones[num].pos, num )
 		math.randomseed( os.time() )
 
@@ -154,25 +154,33 @@ function GM:InitPostEntity()
 	end
 
 	PRK_Zones = self:FlatgrassZones()
-	timer.Simple( 5, function()
+	timer.Simple( 1, function()
 		gen( 1 )
-		-- timer.Simple( 20, function()
-			-- gen( 2 )
-			-- timer.Simple( 20, function()
-				-- gen( 3 )
-				-- timer.Simple( 20, function()
-					-- gen( 4 )
-				-- end )
-			-- end )
-		-- end )
 	end )
 end
 
 function GM:PlayerInitialSpawn( ply )
-	-- Initialise in the lobby
-	ply:SetNWInt( "PRK_Zone", 0 )
-
 	-- Send any required client data to the new client
+	-- timer.Simple( 2, function()
+		-- for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
+			-- if ( v.InitializeNewClient ) then
+				-- v:InitializeNewClient()
+			-- end
+		-- end
+	-- end )
+end
+
+function GM:MoveToZone( ply, zone )
+	ply:SetNWInt( "PRK_Zone", zone )
+
+	-- Reset player info
+	self:PlayerSetup( ply )
+
+	-- Floors
+	PRK_Floor_MoveToZone( ply, zone )
+
+	-- Request any entity client info
+		-- Send any required client data to the new client
 	timer.Simple( 2, function()
 		for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
 			if ( v.InitializeNewClient ) then
@@ -184,7 +192,7 @@ end
 
 function GM:PlayerSpawn( ply )
 	-- Reset to the lobby
-	ply:SetNWInt( "PRK_Zone", 0 )
+	self:MoveToZone( ply, 0 )
 
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
 	local mats = {
@@ -201,6 +209,10 @@ function GM:PlayerSpawn( ply )
 	-- ply:SetMaterial( "debug/env_cubemap_model" )
 	-- ply:SetMaterial( "models/shadertest/shader5" )
 
+	self:PlayerSetup( ply )
+end
+
+function GM:PlayerSetup( ply )
 	-- Init health
 	ply:SetMaxHealth( PRK_Health )
 	ply:SetHealth( PRK_Health )
@@ -211,6 +223,7 @@ function GM:PlayerSpawn( ply )
     ply:SetNWFloat( "PRK_MoneyFract", 0.0 )
 
 	-- Init gun
+	ply:StripWeapons()
 	local wep = ply:Give( "prk_gun", true )
 	wep:Initialize()
 
@@ -337,11 +350,6 @@ function GM:SpawnCoins( pos, coins )
 	end
 end
 
--- gateway
--- lid				models/hunter/blocks/cube025x2x025.mdl
--- head				models/hunter/blocks/cube1x4x1.mdl
--- pillar			models/hunter/blocks/cube1x4x1.mdl
-
 function GM:GenerateLobby()
 	local size = PRK_Plate_Size
 	local hsize = size / 2
@@ -419,6 +427,15 @@ function GM:GenerateLobby()
 	-- Play zones
 	local flatsize = 15345 * 2
 	createceil( Vector( 0, 0, -12800 ) + Vector( 0, 0, size * 8 ), flatsize, flatsize )
+
+	timer.Simple( PRK_Floor_Delete_Time * 1.2, function()
+		-- Update any players already in this zone (primarily for server host in lobby)
+		for k, ply in pairs( player.GetAll() ) do
+			if ( ply:GetNWInt( "PRK_Zone" ) == 0 ) then
+				PRK_Floor_MoveToZone( ply, 0 )
+			end
+		end
+	end )
 end
 
 function PRK_Explosion( attacker, pos, radius )

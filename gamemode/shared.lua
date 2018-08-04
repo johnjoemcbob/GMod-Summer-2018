@@ -91,7 +91,8 @@ PRK_Wall_Detail_Mesh_Count						= function()
 												end
 
 PRK_Decal										= true
-PRK_Decal_Max									= 1000
+-- PRK_Decal										= false -- FPS test
+PRK_Decal_Max									= 400
 
 -- Visuals
 PRK_Epsilon										= 0.001
@@ -101,7 +102,7 @@ PRK_DrawDistance								= 4000
 PRK_MaxAverageFrameTimes						= 10
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter								= ""
-PRK_CursorSize									= 8
+PRK_CursorSize									= 6
 
 -- Gateway
 PRK_Gateway_StartOpenRange						= 500
@@ -133,7 +134,8 @@ PRK_Editor_Square_Border_Min					= 8
 PRK_Editor_Square_Border_Add					= 4
 
 -- Level Generation
-PRK_Gen_SizeModifier							= 7 -- 5 --0.01 -- 10
+PRK_Gen_Seed									= 2
+PRK_Gen_SizeModifier							= 6 -- 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
 PRK_Gen_StepBetweenTime							= 0.1 --0--5
 PRK_Gen_IgnoreEnts								= { false, false, true, false }
@@ -145,7 +147,9 @@ PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 
 -- Enemy
-PRK_Enemy_Scale									= 2.5 -- 3
+PRK_Enemy_PhysScale								= 2
+PRK_Enemy_Scale									= 2 -- 3
+PRK_Enemy_Speed									= 300 -- 500
 PRK_Enemy_Types									= {
 													["Biter"] = "prk_npc_biter",
 													["Sploder"] = "prk_npc_sploder",
@@ -166,6 +170,7 @@ PRK_Gun_HUDLerpSpeed							= 5
 PRK_Gun_HUDScaleMultiplier						= 8
 
 -- Misc
+PRK_Floor_Delete_Time							= ( PRK_Gen_StepBetweenTime * 4 ) + 1
 PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 PRK_DataPath									= "prickly/"
@@ -465,6 +470,11 @@ function table.length(T)
 	return count
 end
 
+function math.approx( num, target )
+	local dif = math.abs( num - target )
+	return dif < PRK_Epsilon
+end
+
 function LerpAngleBasic( t, from, to )
 	local ret = from
 		ret.p = Lerp( t, from.p, to.p )
@@ -485,6 +495,14 @@ function VectorNegate( V )
 		if ( ret.z == -0 ) then
 			ret.z = 0
 		end
+	return ret
+end
+
+function VectorAbs( V )
+	local ret = V - Vector()
+		ret.x = math.abs( ret.x )
+		ret.y = math.abs( ret.y )
+		ret.z = math.abs( ret.z )
 	return ret
 end
 

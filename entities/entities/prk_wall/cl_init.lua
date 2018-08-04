@@ -54,6 +54,17 @@ local models = {
 	-- },
 }
 
+local wallmod = "models/hunter/blocks/cube1x1x1.mdl"
+local wallent = PRK_AddModel(
+	wallmod,
+	Vector(),
+	Angle(),
+	1,
+	"prk_gradient",
+	Color( 255, 255, 255, 255 )
+)
+wallent:SetNoDraw( true )
+
 local reload = true
 function ENT:Think()
 	-- Autoreload helper
@@ -85,21 +96,21 @@ function ENT:Initialize()
 
 	local size = PRK_Editor_Square_Size
 	self.Models = {}
-	local ent = self:AddModel(
-		"models/hunter/plates/plate1x1.mdl",
-		Vector(),
-		Angle(),
-		1,
-		"prk_gradient",
-		Color( 255, 255, 255, 255 )
-	)
-		local collision = self:OBBMaxs() - self:OBBMins()
-		local border = 0.004
-		local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
-		local mat = Matrix()
-			mat:Scale( scale )
-	ent:EnableMatrix( "RenderMultiply", mat )
-	ent:SetNoDraw( true )
+	-- local ent = self:AddModel(
+		-- "models/hunter/plates/plate1x1.mdl",
+		-- Vector(),
+		-- Angle(),
+		-- 1,
+		-- "prk_gradient",
+		-- Color( 255, 255, 255, 255 )
+	-- )
+		-- local collision = self:OBBMaxs() - self:OBBMins()
+		-- local border = 0.004
+		-- local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
+		-- local mat = Matrix()
+			-- mat:Scale( scale )
+		-- ent:EnableMatrix( "RenderMultiply", mat )
+	-- ent:SetNoDraw( true )
 
 	-- Delay detail creation until wall is positioned
 	timer.Simple( PRK_Gen_DetailWaitTime, function()
@@ -135,25 +146,41 @@ function ENT:Initialize()
 		end
 	end )
 
+	local collision = self:OBBMaxs() - self:OBBMins()
+	local border = 0.004
+	local scale = Vector( collision.x / size, collision.y / size + border, 0.01 * collision.z / size + border )
 	local min = -scale * size
 	local max = scale * size
-	ent:SetRenderBounds( min, max )
+	-- ent:SetRenderBounds( min, max )
 	self:SetRenderBounds( min, max )
-end
-
-function ENT:Think()
-	-- Fail safe, can be removed if client graphic settings are changed
-	if ( self.Models[1] and self.Models[1]:IsValid() ) then
-		self.Models[1]:SetPos( self:GetPos() )
-		self.Models[1]:SetAngles( self:GetAngles() )
-	else
-		self:Initialize()
-	end
 end
 
 function ENT:Draw()
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
 
+	-- Wall model
+	local size = PRK_Editor_Square_Size
+	wallent:SetPos( self:GetPos() )
+	local ang = self:GetAngles()
+		ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+	local collision = self:OBBMaxs() - self:OBBMins()
+	local border = 0.004
+	local scale = Vector()
+		scale = scale + VectorAbs( ang:Forward() * collision.y / size + ang:Forward() * border )
+		scale = scale + VectorAbs( ang:Right()   * collision.z / size * 0.15 )
+		scale = scale + VectorAbs( ang:Up()      * collision.x / size )
+		if ( math.approx( math.abs( ang.y ), 180 ) or math.approx( math.abs( ang.y ), 0 ) ) then
+			ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
+		end
+	local mat = Matrix()
+		mat:Scale( scale )
+	wallent:EnableMatrix( "RenderMultiply", mat )
+	wallent:SetAngles( ang )
+	wallent:SetupBones()
+
+	wallent:DrawModel()
+
+	-- Details
 	for k, v in pairs( self.Models ) do
 		local col = v:GetColor()
 		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )

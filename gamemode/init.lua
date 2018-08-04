@@ -43,6 +43,7 @@ print( "-------------------" )
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
 util.AddNetworkString( "PRK_Die" )
+util.AddNetworkString( "PRK_Drink" )
 util.AddNetworkString( "PRK_Spawn" )
 util.AddNetworkString( "PRK_Editor" )
 util.AddNetworkString( "PRK_EditorExport" )
@@ -69,6 +70,12 @@ function SendDie( ply, pos, ang, killname )
 		net.WriteAngle( ang )
 		net.WriteString( killname )
 	net.Send( ply )
+end
+
+function SendDrink( ply )
+	net.Start( "PRK_Drink" )
+		net.WriteEntity( ply )
+	net.Broadcast()
 end
 
 function SendSpawn( ply, time )
@@ -147,6 +154,7 @@ function GM:InitPostEntity()
 	}
 	local function gen( num )
 		math.randomseed( PRK_Gen_Seed )
+		PRK_Gen_Remove()
 		PRK_Gen( PRK_Zones[num].pos, num )
 		-- math.randomseed( os.time() ) -- Reset on PRK_Gen_End
 
@@ -156,7 +164,14 @@ function GM:InitPostEntity()
 	end
 
 	PRK_Zones = self:FlatgrassZones()
-	timer.Simple( 1, function()
+	-- local function verytest()
+		-- gen( 1 )
+		-- timer.Simple( 20, function()
+			-- verytest()
+		-- end )
+	-- end
+	-- verytest()
+	timer.Simple( 10, function()
 		gen( 1 )
 	end )
 end

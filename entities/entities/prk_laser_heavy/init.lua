@@ -48,11 +48,6 @@ function ENT:Initialize()
 	util.PrecacheSound( "buttons/lever7.wav" )
 end
 
-function ENT:Think()
-	self:NextThink( CurTime() )
-	return true
-end
-
 function ENT:OnRemove()
 	self:StopSound( "prk_laser_heavy_fly" )
 end

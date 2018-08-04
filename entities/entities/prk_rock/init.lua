@@ -29,11 +29,6 @@ function ENT:Initialize()
 	self.PRK_Health = 3
 end
 
-function ENT:Think()
-	self:NextThink( CurTime() )
-	return true
-end
-
 function ENT:OnTakeDamage( dmg )
 	self.PRK_Health = self.PRK_Health - 1
 

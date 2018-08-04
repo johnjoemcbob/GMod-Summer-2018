@@ -88,6 +88,7 @@ function ENT:Initialize()
 		if ( self and self:IsValid() ) then
 			-- Store position for visuals
 			local min, max = self:GetCollisionBounds()
+			-- print( self.Zone )
 			if ( self.Zone ) then
 				if ( !PRK_Floors[self.Zone] ) then
 					PRK_Floors[self.Zone] = {}

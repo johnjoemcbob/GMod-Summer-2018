@@ -224,13 +224,6 @@ function ENT:InitializeNewClient()
 	self:SendStock()
 end
 
-function ENT:Think()
-	
-
-	-- self:NextThink( CurTime() )
-	-- return true
-end
-
 function ENT:OnRemove()
 	self:StopSound( "prk_uimachine_hum" )
 

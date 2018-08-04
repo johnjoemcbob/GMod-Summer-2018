@@ -103,6 +103,8 @@ PRK_MaxAverageFrameTimes						= 10
 PRK_CurrencyBefore								= "€"
 PRK_CurrencyAfter								= ""
 PRK_CursorSize									= 6
+PRK_MouthDefault								= -15
+PRK_MouthVoice									= 75
 
 -- Gateway
 PRK_Gateway_StartOpenRange						= 500
@@ -135,7 +137,7 @@ PRK_Editor_Square_Border_Add					= 4
 
 -- Level Generation
 PRK_Gen_Seed									= 2
-PRK_Gen_SizeModifier							= 3 -- 6 -- 7 -- 5 --0.01 -- 10
+PRK_Gen_SizeModifier							= 2 -- 6 -- 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
 PRK_Gen_StepBetweenTime							= 0.1 --0--5
 PRK_Gen_FloorDeleteTime							= ( PRK_Gen_StepBetweenTime * 4 ) + 5 -- Gotta wait around long enough to collide
@@ -149,7 +151,7 @@ PRK_Death_Material								= "pp/texturize/plain.png"
 PRK_Death_Sound									= "music/stingers/hl1_stinger_song27.mp3"
 
 -- Enemy
-PRK_Enemy_PhysScale								= 2
+PRK_Enemy_PhysScale								= 2.75
 PRK_Enemy_Scale									= 2 -- 3
 PRK_Enemy_Speed									= 300 -- 500
 PRK_Enemy_Types									= {
@@ -172,6 +174,7 @@ PRK_Gun_HUDLerpSpeed							= 5
 PRK_Gun_HUDScaleMultiplier						= 8
 
 -- Misc
+PRK_ContextMenu									= false
 PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 PRK_DataPath									= "prickly/"
@@ -210,7 +213,7 @@ function GM:FlatgrassZones()
 						pos.y = max.y - width / 2
 					end
 				table.insert( zones, {
-					pos = pos,
+					pos = pos + Vector( width / 2, 0, 0 ), -- Offset since entry always faces same direction
 					width = width,
 					breadth = breadth,
 				} )

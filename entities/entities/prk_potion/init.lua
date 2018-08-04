@@ -143,19 +143,13 @@ function ENT:InitializeNewClient()
 	print( "init potion late!" )
 end
 
-function ENT:Think()
-	
-
-	self:NextThink( CurTime() )
-	return true
-end
-
 function ENT:Use( ply, caller, useType, value )
 	if ( self:GetPos():Distance( ply:GetPos() ) > self.MaxUseRange ) then return end
 
 	local consumed = self.PotionType:Drink( self, ply )
 	if ( consumed ) then
 		ply:EmitSound( "npc/barnacle/barnacle_gulp1.wav", 75, math.random( 150, 200 ) )
+		SendDrink( ply )
 		self:Remove()
 	end
 end

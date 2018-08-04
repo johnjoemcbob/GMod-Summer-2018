@@ -162,9 +162,6 @@ function ENT:Think()
 		self.CurrentOutOfWorld = self.CurrentOutOfWorld + 1
 		self:SetVelocity( Vector() )
 	end
-
-	self:NextThink( CurTime() )
-	return true
 end
 
 function ENT:OnTakeDamage( dmg )

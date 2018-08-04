@@ -37,11 +37,6 @@ function ENT:Initialize()
 	self.Collide = 0
 end
 
-function ENT:Think()
-	self:NextThink( CurTime() )
-	return true
-end
-
 function ENT:OnTakeDamage( dmg )
 	-- Destroy anything linked
 	if ( self.Attached and self.Attached:IsValid() ) then

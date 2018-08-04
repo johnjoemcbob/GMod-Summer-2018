@@ -47,6 +47,11 @@ SpawnEditorEnt["Vendor"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prk_uimachine", nil, pos, ang )
 	return ent
 end
+SpawnEditorEnt["Gateway"] = function( pos, ang, scale, model )
+	local ent = PRK_CreateEnt( "prk_gateway", nil, pos, ang )
+		ent.LevelChange = true
+	return ent
+end
 SpawnEditorEnt["Spawner"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
 	return ent
@@ -56,7 +61,6 @@ SpawnEditorEnt["Rock"] = function( pos, ang, scale, model )
 	return ent
 end
 SpawnEditorEnt["Prop"] = function( pos, ang, scale, model )
-	print( "prop ay" )
 	local ent = PRK_CreateEnt( "prop_physics", model, pos, ang )
 		ent:SetMaterial( "models/debug/debugwhite" )
 		ent:SetModelScale( scale )
@@ -68,12 +72,12 @@ local ToGen = {} -- Table of rooms still to try attach points for
 local CurrentRoomID = 0 -- Indices for rooms
 local room
 
-concommand.Add( "prk_gen", function( ply, cmd, args )
-	PRK_Gen_Remove()
-	PRK_Gen( ply:GetPos() - Vector( 0, 0, 100 ), 1 )
-end )
+-- concommand.Add( "prk_gen", function( ply, cmd, args )
+	-- PRK_Gen_Remove()
+	-- PRK_Gen( ply:GetPos() - Vector( 0, 0, 100 ), 1 )
+-- end )
 
-local rooms, starts, finishes, navs
+local rooms, starts, finishes, navs, endroom
 function PRK_Gen( origin, zone )
 	LastGen = {}
 	CurrentRoomID = 0
@@ -86,6 +90,7 @@ function PRK_Gen( origin, zone )
 	navs = {}
 
 	-- Generate first room
+	endroom = false
 	ToGen = {}
 	PRK_Gen_RoomStart( rooms.start[1], zone, origin )
 	PRK_Gen_RoomEnd( room, true )
@@ -98,7 +103,7 @@ function PRK_Gen( origin, zone )
 			-- }
 		-- }
 	-- }
-	PrintTable( ToGen )
+	-- PrintTable( ToGen )
 	PRK_Gen_Step( zone )
 end
 
@@ -108,14 +113,16 @@ local index_try = 1
 local orient_try = 1
 local function next_attach()
 	-- Ensure parents are removed
-	for k, v in pairs( room.Ents ) do
-		v:SetParent( nil )
+	if ( room ) then
+		for k, v in pairs( room.Ents ) do
+			v:SetParent( nil )
+		end
 	end
 
 	-- Reset for next point
 	room = nil
 	orient_try = 1
-	inde = 1
+	-- inde = 1
 	CurrentRoomID = CurrentRoomID + 1
 
 	-- Remove ToGen element if no more attachpoints to try
@@ -124,6 +131,13 @@ local function next_attach()
 		if ( #ToGen[1].AttachPoints == 0 ) then
 			table.remove( ToGen, 1 )
 		end
+	end
+end
+local function next_step( zone )
+	if ( PRK_Gen_StepBetweenTime == 0 ) then
+		PRK_Gen_Step( zone )
+	else
+		timer.Simple( PRK_Gen_StepBetweenTime, function() PRK_Gen_Step( zone ) end )
 	end
 end
 local function getrotatedfloor( v, anchor )
@@ -147,77 +161,29 @@ local function getrotatedfloor( v, anchor )
 	return min, max
 end
 function PRK_Gen_Step( zone )
-	if ( !ToGen or #ToGen == 0 or #ToGen[1].AttachPoints == 0 ) then
+	if ( !ToGen or #ToGen == 0 or ( #ToGen == 1 and #ToGen[1].AttachPoints == 0 ) ) then
 		PRK_Gen_End()
 		return
 	end
-
-	local function next_step()
-		if ( PRK_Gen_StepBetweenTime == 0 ) then
-			PRK_Gen_Step( zone )
-		else
-			timer.Simple( PRK_Gen_StepBetweenTime, function() PRK_Gen_Step( zone ) end )
-		end
+	if ( #ToGen[1].AttachPoints == 0 ) then
+		next_attach()
+		next_step( zone )
 	end
 
 	if ( !room ) then
 		local roomid = math.random( 1, #rooms )
-		PRK_Gen_RoomStart( rooms[roomid], zone, ToGen[1].AttachPoints[1].Pos )
-	else
-		local att = room.AttachPoints[index_try]
-		-- print( "-0" )
-		-- print( index_try )
-		-- PrintTable( room.AttachPoints )
-
-		-- Move anchor to correct position
-		local anchor = HelperModels["Anchor"].Ent
-		anchor:SetPos( room.Origin + att.Pos )
-		anchor:SetAngles( HelperModels["Anchor"].Angle )
-
-		-- Parent all to anchor helper
-		for k, v in pairs( room.Ents ) do
-			v:SetParent( anchor )
+		-- PrintTable( ToGen[1] )
+		if ( #ToGen[1].AttachPoints != 0 ) then
+			PRK_Gen_RoomStart( rooms[roomid], zone, ToGen[1].AttachPoints[1].Pos )
 		end
-
-		-- Rotate
-		anchor:SetAngles( HelperModels["Anchor"].Angle + Angle( 0, 90 * ( orient_try - 1 ), 0 ) )
-
-		-- Move anchor to origin attach point
-		anchor:SetPos( room.Origin )
-
-		-- If no collision then store this room
-		local collide = false
-		for _, v in pairs( room.Ents ) do
-			if ( v.Collide ) then
-				local pos = v:GetPos()
-				local min, max = getrotatedfloor( v, anchor )
-				for k, collision in pairs( ents.FindInBox( pos + min, pos + max ) ) do
-					if ( collision.Collide and collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
-						collide = true
-						debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 0, 0, 100 ) )
-						break
-					end
-				end
-				debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 255, 0, 100 ) )
-			end
-			-- Break out early, only needs to collide once to fail
-			if ( collide ) then
-				break
-			end
-		end
+	elseif ( room.AttachPoints[index_try] ) then
+		local collide = PRK_Gen_Step_Try( true )
 		if ( !collide ) then
 			PRK_Gen_RoomEnd( room )
 
-			next_step()
+			next_step( zone )
 
 			return
-		end
-
-		-- Otherwise undo rotation and parents
-		anchor:SetPos( room.Origin + att.Pos )
-		anchor:SetAngles( HelperModels["Anchor"].Angle )
-		for k, v in pairs( room.Ents ) do
-			v:SetParent( nil )
 		end
 
 		-- Setup next
@@ -229,14 +195,65 @@ function PRK_Gen_Step( zone )
 				for p, ent in pairs( room.Ents ) do
 					ent:Remove()
 				end
-				print( "no attach, closing..." )
-				PRK_Gen_RoomClose( ToGen[1].AttachPoints[1], zone )
+				local pointtemp = table.shallowcopy( ToGen[1].AttachPoints[1] )
 				next_attach()
+				PRK_Gen_RoomClose( pointtemp, zone ) -- No fitting attached
 			end
 		end
 	end
 
-	next_step()
+	next_step( zone )
+end
+
+function PRK_Gen_Step_Try( undo )
+	local att = room.AttachPoints[index_try]
+
+	-- Move anchor to correct position
+	local anchor = HelperModels["Anchor"].Ent
+	anchor:SetPos( room.Origin + att.Pos )
+	anchor:SetAngles( HelperModels["Anchor"].Angle )
+
+	-- Parent all to anchor helper
+	for k, v in pairs( room.Ents ) do
+		v:SetParent( anchor )
+	end
+
+	-- Rotate
+	anchor:SetAngles( HelperModels["Anchor"].Angle + Angle( 0, 90 * ( orient_try - 1 ), 0 ) )
+
+	-- Move anchor to origin attach point
+	anchor:SetPos( room.Origin )
+
+	-- If no collision then store this room
+	local collide = false
+	for _, v in pairs( room.Ents ) do
+		if ( v.Collide ) then
+			local pos = v:GetPos()
+			local min, max = getrotatedfloor( v, anchor )
+			for k, collision in pairs( ents.FindInBox( pos + min, pos + max ) ) do
+				if ( collision.Collide and collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
+					collide = true
+					debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 0, 0, 100 ) )
+					break
+				end
+			end
+			-- debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 255, 0, 100 ) )
+			debugoverlay.Box( pos, min, max, 100, Color( 255, 255, 0, 100 ) )
+		end
+		-- Break out early, only needs to collide once to fail
+		if ( collide ) then
+			break
+		end
+	end
+	if ( undo and collide ) then
+		-- Undo rotation and parents
+		anchor:SetPos( room.Origin + att.Pos )
+		anchor:SetAngles( HelperModels["Anchor"].Angle )
+		for k, v in pairs( room.Ents ) do
+			v:SetParent( nil )
+		end
+	end
+	return collide
 end
 
 function PRK_Gen_RoomAddModel( mod, zone, off, world )
@@ -324,7 +341,6 @@ function PRK_Gen_RoomEnd( room, force )
 			local point = {
 				Pos = temp_room.Origin + v.Pos,
 			}
-			debugoverlay.Sphere( point.Pos, 10, PRK_Gen_StepBetweenTime, Color( 255, 0, 0, 255 ) )
 			table.insert( attachpoints, point )
 		else
 			-- Undo parent
@@ -364,14 +380,14 @@ function PRK_Gen_RoomEnd( room, force )
 					if ( yaw == 90 || yaw == 270 ) then
 						ang = 90
 					end
-				print( yaw )
 				point.Size = size
 				point.Ang = ang
-			if ( use and k != index_try ) then
-				table.insert( attachpoints, point )
-			elseif ( !use ) then
-				print( "randomly not using point.. closing.." )
-				PRK_Gen_RoomClose( point )
+			if ( k != index_try ) then
+				if ( use ) then
+					table.insert( attachpoints, point )
+				elseif ( !use ) then
+					PRK_Gen_RoomClose( point, zone ) -- Randomly not using
+				end
 			end
 		end
 	end
@@ -439,41 +455,41 @@ function PRK_Gen_RoomEnd( room, force )
 	end
 	-- Connect navmeshes
 	-- This crashes the game (?????)
-	local maxdist = 500
-	for _, nav1 in pairs( navs ) do
-		for m, nav2 in pairs( navs ) do
-			-- Check each nav against every other nav (other than self)
-			if ( nav1 != nav2 ) then
-				-- If it's close and has no raycast hit between then it can link
-				local function getmid( nav )
-					return (
-						nav:GetCorner( 0 ) +
-						nav:GetCorner( 1 ) +
-						nav:GetCorner( 2 ) +
-						nav:GetCorner( 3 )
-					) / 4
-				end
-				local pos1 = getmid( nav1 )
-				local pos2 = getmid( nav2 )
-				local dist = pos1:Distance( pos2 )
-				-- print( dist )
-				local tr = util.TraceLine( {
-					start = pos1,
-					endpos = pos2,
-				} )
-				if ( dist <= maxdist and !tr.Hit ) then
-					print( nav1 )
-					print( nav2 )
-					-- timer.Simple( 1, function()
-						nav1:ConnectTo( nav2 )
-					-- end )
-					nav2:ConnectTo( nav1 )
-					-- break -- temp
-				end
-			end
-		end
-		-- break -- temp
-	end
+	--local maxdist = 500
+	--for _, nav1 in pairs( navs ) do
+	--	for m, nav2 in pairs( navs ) do
+	--		-- Check each nav against every other nav (other than self)
+	--		if ( nav1 != nav2 ) then
+	--			-- If it's close and has no raycast hit between then it can link
+	--			local function getmid( nav )
+	--				return (
+	--					nav:GetCorner( 0 ) +
+	--					nav:GetCorner( 1 ) +
+	--					nav:GetCorner( 2 ) +
+	--					nav:GetCorner( 3 )
+	--				) / 4
+	--			end
+	--			local pos1 = getmid( nav1 )
+	--			local pos2 = getmid( nav2 )
+	--			local dist = pos1:Distance( pos2 )
+	--			-- print( dist )
+	--			local tr = util.TraceLine( {
+	--				start = pos1,
+	--				endpos = pos2,
+	--			} )
+	--			if ( dist <= maxdist and !tr.Hit ) then
+	--				print( nav1 )
+	--				print( nav2 )
+	--				-- timer.Simple( 1, function()
+	--					nav1:ConnectTo( nav2 )
+	--				-- end )
+	--				nav2:ConnectTo( nav1 )
+	--				-- break -- temp
+	--			end
+	--		end
+	--	end
+	--	-- break -- temp
+	--end
 
 	-- Must be after attach point etc
 	next_attach()
@@ -482,19 +498,49 @@ function PRK_Gen_RoomEnd( room, force )
 end
 
 function PRK_Gen_RoomClose( point, zone )
-	local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
-	local ang = Angle( -90, 0, 0 )
-		if ( point.Ang != 0 ) then ang = Angle( -90, 90, 0 ) end
-	local mod = {
-		Pos = pos,
-		Ang = ang,
-		Size = { point.Size, point.Size },
-		Mod = "models/hunter/plates/plate1x1.mdl",
-		Type = PRK_GEN_TYPE_WALL,
-	}
-	print( point.Pos )
-	PRK_BasicDebugSphere( point.Pos )
-	PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+	-- Find number of remaining attach points, if this is the last then it should generate a finish
+	-- room instead of closing
+	print( "closing" )
+	local count = 0
+		for k, gen in pairs( ToGen ) do
+			count = count + #gen.AttachPoints
+		end
+		print( count )
+	if ( count <= 1 and !endroom ) then
+		print( "adding end room; " )
+		timer.Simple( 1, function()
+			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
+			orient_try = 1
+			while ( orient_try <= 4 ) do
+				local collide = PRK_Gen_Step_Try( orient_try != 4 )
+				print( "try: " .. orient_try )
+				print( collide )
+				if ( !collide ) then
+					break
+				end
+				orient_try = orient_try + 1
+			end
+			PRK_Gen_RoomEnd( room, true )
+			PRK_Gen_End()
+		end )
+		endroom = true
+		-- print( room )
+		-- PrintTable( room )
+	else
+		local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
+		local ang = Angle( -90, 0, 0 )
+			if ( point.Ang != 0 ) then ang = Angle( -90, 90, 0 ) end
+		local mod = {
+			Pos = pos,
+			Ang = ang,
+			Size = { point.Size, point.Size },
+			Mod = "models/hunter/plates/plate1x1.mdl",
+			Type = PRK_GEN_TYPE_WALL,
+		}
+		-- print( point.Pos )
+		PRK_BasicDebugSphere( point.Pos )
+		PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+	end
 end
 
 function PRK_Gen_End()
@@ -502,8 +548,10 @@ function PRK_Gen_End()
 
 	-- Remove each helper model entity
 	for k, v in pairs( HelperModels ) do
-		v.Ent:Remove()
-		v.Ent = nil
+		if ( v.Ent and v.Ent:IsValid() ) then
+			v.Ent:Remove()
+			v.Ent = nil
+		end
 	end
 end
 

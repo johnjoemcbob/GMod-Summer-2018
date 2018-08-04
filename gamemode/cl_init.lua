@@ -142,6 +142,12 @@ net.Receive( "PRK_Die", function( len, ply )
 	LocalPlayer().PRK_Gateway = nil
 end )
 
+net.Receive( "PRK_Drink", function( len )
+	local ply = net.ReadEntity()
+
+	ply.Bite = 0
+end )
+
 net.Receive( "PRK_Spawn", function( len, ply )
 	local time = net.ReadFloat()
 
@@ -385,7 +391,7 @@ function GM:HUDShouldDraw( name )
 	return PRK_ShouldDraw()
 end
 
-if ( !PRK_SANDBOX ) then
+if ( !PRK_SANDBOX and PRK_ContextMenu ) then
 function CreateContextMenu()
 	-- Destroy any old
 	DestroyContextMenu()
@@ -983,11 +989,11 @@ local function think_eye( ent, ply, left )
 		pos = pos + dir * dist
 	end
 
-	-- if ( models[1] and models[1].Bite ) then
-		pos = pos + ang:Forward() * models[1].Ent.Bite * 0.5
-		pos = pos + ang:Right() * math.min( 0, models[1].Ent.Bite * 0.2 )
-		-- ent:SetModelScale( scale * ent.Scale * math.max( 0, models[1].Ent.Bite * 0.2 ) )
-	-- end
+	if ( ply.Bite != nil ) then
+		pos = pos + ang:Forward() * ply.Bite * 0.5
+		-- pos = pos + ang:Right() * math.min( 0, ply.Bite * 0.2 )
+		-- ent:SetModelScale( scale * ent.Scale * math.max( 0, ply.Bite * 0.2 ) )
+	end
 
 	ent:SetPos( pos )
 end
@@ -999,8 +1005,6 @@ models = {
 		Angle( 180, 90, 90 ),
 		true,
 		SpawnFunc = function( ent )
-			ent.Bite = 0
-
 			ent:SetModelScale( scale )
 
 			local scale_main = Vector( 1, 1, 1 ) * 0.5
@@ -1033,7 +1037,6 @@ models = {
 			}
 			for i = 1, ent:GetBoneCount() do
 				if ( !ignore[i] ) then
-					-- ent:ManipulateBonePosition( i, VectorRand() )
 					if ( pos[i] ) then
 						ent:ManipulateBonePosition( i, pos[i] )
 					end
@@ -1041,18 +1044,19 @@ models = {
 				else
 					ent:ManipulateBoneScale( i, scale_main )
 				end
-				-- timer.Simple( 0.1, function()
-					-- print( i .. " " .. ent:GetBoneName( i ) )
-				-- end )
 			end
 		end,
 		Think = function( ent, ply )
-			ent.Bite = 0
-			-- ent.Bite = ( math.sin( CurTime() * 10 ) - 0.7 ) * 10
+			ply.Bite = Lerp( FrameTime() * 2, ply.Bite or 0, PRK_MouthDefault )
+
+			-- If not animating bite for another reason, try get player voice
+			if ( ply:VoiceVolume() != 0 ) then
+				ply.Bite = Lerp( FrameTime() * 10, ply.Bite, PRK_MouthDefault + ply:VoiceVolume() * PRK_MouthVoice )
+			end
 
 			local head = 9
 			local jaw = 13
-			local pos = Vector( 0, 1, 0 ) * ent.Bite
+			local pos = Vector( 0, 1, 0 ) * ply.Bite
 			ent:ManipulateBonePosition( head, pos )
 			ent:ManipulateBonePosition( jaw, pos )
 		end,
@@ -1218,7 +1222,7 @@ end )
 -- Don't draw map outside of generated PRK stuff
 function GM:PreDrawOpaqueRenderables()
 	if ( !PRK_DrawMap ) then
-		render.Clear( 0, 0, 0, 255 )--, true, true )
+		render.Clear( 0, 0, 0, 255 )
 	end
 
 	return !PRK_ShouldDraw()

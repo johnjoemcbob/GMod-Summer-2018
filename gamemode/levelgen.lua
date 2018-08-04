@@ -498,6 +498,8 @@ function PRK_Gen_RoomClose( point, zone )
 end
 
 function PRK_Gen_End()
+	math.randomseed( os.time() )
+
 	-- Remove each helper model entity
 	for k, v in pairs( HelperModels ) do
 		v.Ent:Remove()
@@ -751,6 +753,7 @@ function PRK_Gen_LoadRooms_Walls( room )
 						Size = { seg[2] * scale * side.w, seg[2] * scale * side.b },
 						Mod = "models/hunter/plates/plate1x1.mdl",
 						Type = PRK_GEN_TYPE_WALL,
+						Collide = PRK_Gen_WallCollide,
 					} )
 				end
 				-- Add attach points

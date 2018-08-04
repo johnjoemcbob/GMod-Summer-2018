@@ -123,7 +123,9 @@ function GM:InitPostEntity()
 	end
 
 	-- Generate and connect world
-	self:GenerateLobby()
+	math.randomseed( 0 )
+		self:GenerateLobby()
+	math.randomseed( os.time() )
 
 	local gates = {
 		{
@@ -146,7 +148,7 @@ function GM:InitPostEntity()
 	local function gen( num )
 		math.randomseed( PRK_Gen_Seed )
 		PRK_Gen( PRK_Zones[num].pos, num )
-		math.randomseed( os.time() )
+		-- math.randomseed( os.time() ) -- Reset on PRK_Gen_End
 
 		-- Create gateway to link to this
 		local ent = PRK_CreateEnt( "prk_gateway", nil, gates[num][1], gates[num][2] )
@@ -171,10 +173,12 @@ function GM:PlayerInitialSpawn( ply )
 end
 
 function GM:MoveToZone( ply, zone )
-	ply:SetNWInt( "PRK_Zone", zone )
+	-- Reset player info if coming travelling to/from the lobby
+	if ( ply:GetNWInt( "PRK_Zone", 0 ) == 0 or zone == 0 ) then
+		self:PlayerSetup( ply )
+	end
 
-	-- Reset player info
-	self:PlayerSetup( ply )
+	ply:SetNWInt( "PRK_Zone", zone )
 
 	-- Floors
 	PRK_Floor_MoveToZone( ply, zone )
@@ -194,20 +198,14 @@ function GM:PlayerSpawn( ply )
 	-- Reset to the lobby
 	self:MoveToZone( ply, 0 )
 
+	-- Position centrally
+	ply:SetPos( Vector( 0, 0, ply:GetPos().z ) )
+
+	-- Player model/colour
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
-	local mats = {
-		"phoenix_storms/wire/pcb_green",
-		"phoenix_storms/wire/pcb_red",
-		"phoenix_storms/wire/pcb_blue",
-	}
-	-- ply:SetMaterial( mats[math.random( 1, #mats )] )
 	ply:SetMaterial( "models/debug/debugwhite" )
 	local cols = PRK_Colour_Player
 	ply:SetColor( cols[math.random( 1, #cols )] )
-	-- ply:SetMaterial( "phoenix_storms/wire/pcb_red" )
-	-- ply:SetMaterial( "models/props_combine/tprings_globe" )
-	-- ply:SetMaterial( "debug/env_cubemap_model" )
-	-- ply:SetMaterial( "models/shadertest/shader5" )
 
 	self:PlayerSetup( ply )
 end
@@ -322,6 +320,13 @@ function GM:DoPlayerDeath( ply, attacker, dmginfo )
 		if ( !killname ) then
 			killname = attacker:GetClass()
 		end
+		if ( ply.PRK_OverrideDeathMessage ) then
+			killname = ply.PRK_OverrideDeathMessage
+		end
+		-- Pick a random value in case a table of possibilities is provided
+		if ( type(killname) == "table" ) then
+			killname = killname[math.random( 1, #killname )]
+		end
 	SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
 	ply:SetPos( ply:EyePos() )
 end
@@ -339,6 +344,20 @@ end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+function PRK_OverrideDeathMessage( plytab, message )
+	local function set( ply )
+		ply.PRK_OverrideDeathMessage = message
+	end
+
+	if ( type(plytab) == "table" ) then
+		for k, ply in pairs( plytab ) do
+			set( ply )
+		end
+	else
+		set( plytab )
+	end
+end
 
 function GM:SpawnCoins( pos, coins )
 	-- Spawn upwards of position, to avoid falling through floor
@@ -428,7 +447,7 @@ function GM:GenerateLobby()
 	local flatsize = 15345 * 2
 	createceil( Vector( 0, 0, -12800 ) + Vector( 0, 0, size * 8 ), flatsize, flatsize )
 
-	timer.Simple( PRK_Floor_Delete_Time * 1.2, function()
+	timer.Simple( PRK_Gen_FloorDeleteTime * 1.1, function()
 		-- Update any players already in this zone (primarily for server host in lobby)
 		for k, ply in pairs( player.GetAll() ) do
 			if ( ply:GetNWInt( "PRK_Zone" ) == 0 ) then

@@ -1161,7 +1161,7 @@ hook.Add( "PostPlayerDraw" , "manual_model_draw_example" , function( ply )
 	end
 end )
 
-function PRK_Decal( pos, col )
+function PRK_AddDecal( pos, col )
 	if ( !LocalPlayer().PRK_Decals ) then
 		LocalPlayer().PRK_Decals = {}
 	end
@@ -1173,11 +1173,23 @@ function PRK_Decal( pos, col )
 		mat = PRK_Material_Splat(),
 		siz = math.random( 10, 20 ) / 10,
 	}
+
+	-- Try to combine this with any other close splat decals
+	for k, otherdecal in pairs( LocalPlayer().PRK_Decals ) do
+		local dist = decal.pos:Distance( otherdecal.pos )
+		if ( dist <= PRK_Decal_CombineDist ) then
+			decal.siz = ( decal.siz + otherdecal.siz + dist ) / 4
+			decal.pos = ( decal.pos + otherdecal.pos ) / 2
+			table.remove( LocalPlayer().PRK_Decals, k )
+		end
+	end
+
+	-- Remove the first if there are too many
 	if ( #LocalPlayer().PRK_Decals >= PRK_Decal_Max ) then
 		table.remove( LocalPlayer().PRK_Decals, 1 )
 	end
 	table.insert( LocalPlayer().PRK_Decals, decal )
-	print( #LocalPlayer().PRK_Decals .. "/" .. PRK_Decal_Max )
+	-- print( #LocalPlayer().PRK_Decals )
 end
 
 hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Decal", function( depth, skybox )
@@ -1193,7 +1205,7 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_De
 		for k, decal in pairs( LocalPlayer().PRK_Decals ) do
 			render.SetMaterial( decal.mat )
 			render.DrawQuadEasy(
-				decal.pos,
+				decal.pos + Vector( 0, 0, 1 ) * 0.05 * k,
 				Vector( 0, 0, 1 ),
 				decal.siz * size * width, decal.siz * size * width,
 				decal.col,

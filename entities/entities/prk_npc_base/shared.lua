@@ -123,9 +123,9 @@ function ENT:FindEnemy()
 	for k, v in pairs( player.GetAll() ) do
 		-- Check if there is line of sight between the enemy and the player
 		local tr = self:GetTrace( v )
-		if ( v:GetPos():Distance( self:GetPos() ) < 100 ) then
-			print( tr.Entity )
-		end
+		-- if ( v:GetPos():Distance( self:GetPos() ) < 100 ) then
+			-- print( tr.Entity )
+		-- end
 		if ( tr.Entity == v ) then
 			table.insert( possibletargets, v )
 		end

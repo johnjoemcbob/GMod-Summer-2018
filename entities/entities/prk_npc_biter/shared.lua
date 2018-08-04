@@ -2,7 +2,21 @@ AddCSLuaFile()
 
 ENT.Base 			= "prk_npc_base"
 ENT.Spawnable		= true
-ENT.KillName		= "Biter"
+ENT.KillName		= {
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Biter",
+	"Bob The Biter",
+}
 
 list.Set( "NPC", "prk_npc_biter", {
 	Name = "Prickly Biter",
@@ -16,7 +30,6 @@ function ENT:Initialize()
 	self:SetModelScale( PRK_Enemy_PhysScale, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	-- self:SetColor( PRK_Colour_Enemy_Skin )
-	self:SetColor( Color( 255, 255, 255, 255 ) )
 	-- local hori = 12
 	-- local vert = 32
 	-- self:SetCollisionBounds( Vector( -hori, -hori ,0 ), Vector( hori, hori, vert ) ) 
@@ -157,5 +170,5 @@ function ENT:MoveCallback()
 end
 
 function ENT:Attack( victim )
-	-- victim:TakeDamage( 1, self, self )
+	victim:TakeDamage( 1, self, self )
 end

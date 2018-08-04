@@ -79,7 +79,7 @@ function ENT:Enter( ply )
 	-- Move the player elsewhere
 	ply:SetMoveType( MOVETYPE_NOCLIP )
 	ply:SetPos( PRK_Position_Nowhere )
-	ply:SetNWInt( "PRK_Zone", -100 )
+	GAMEMODE:MoveToZone( ply, -100 )
 	ply:Freeze( true )
 
 	-- Request client effects

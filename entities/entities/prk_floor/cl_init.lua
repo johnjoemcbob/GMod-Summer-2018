@@ -3,6 +3,10 @@ include( "shared.lua" )
 PRK_Material_Grass = Material( "prk_grass.png", "noclamp smooth" )
 PRK_Material_Grass_Multiple = Material( "prk_grass_multiple.png", "noclamp smooth" )
 
+net.Receive( "PRK_Floor_Grass_Clear", function( len, ply )
+	LocalPlayer().Grasses = {}
+end )
+
 net.Receive( "PRK_Floor_Grass", function( len, ply )
 	local zone = net.ReadFloat()
 	local pos = net.ReadVector()
@@ -22,17 +26,17 @@ net.Receive( "PRK_Floor_Grass", function( len, ply )
 				LocalPlayer().Grasses[zone] = {}
 			end
 
+			-- local pos = VectorRound( pos )
 			local grasscount = PRK_Grass_Billboard_Count * ( sca.x + sca.y )
 			local grasses = {}
-			for i = 1, grasscount do
-				table.insert( grasses, {
-					pos + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
-					Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
-					math.random( 10, 50 ) / 10,
-				} )
-			end
+				for i = 1, grasscount do
+					table.insert( grasses, {
+						pos + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), 0 ),
+						Angle( 0, math.random( 0, 360 ), 0 ):Forward(),
+						math.random( 10, 50 ) / 10,
+					} )
+				end
 			LocalPlayer().Grasses[zone][pos] = grasses
-			print( pos )
 		else
 			timer.Simple( between, function() creategrass() end )
 		end

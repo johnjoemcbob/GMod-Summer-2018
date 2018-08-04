@@ -81,8 +81,7 @@ PRK_Grass_Billboard_Count						= 3
 PRK_Grass_Billboard_DrawRange					= 5000
 PRK_Grass_Billboard_Forward						= 200 --400
 PRK_Grass_Billboard_ShouldDrawTime				= 0.1
-PRK_Grass_Billboard_MaxRenderCount				= 4000
-PRK_Grass_Billboard_MaxRenderCount				= 1000 -- FPS test
+PRK_Grass_Billboard_MaxRenderCount				= 1000
 PRK_Grass_Billboard_MultipleSprite				= false
 
 PRK_Wall_Detail_Mesh_Count						= function()
@@ -92,7 +91,8 @@ PRK_Wall_Detail_Mesh_Count						= function()
 
 PRK_Decal										= true
 -- PRK_Decal										= false -- FPS test
-PRK_Decal_Max									= 400
+PRK_Decal_Max									= 200
+PRK_Decal_CombineDist							= 10
 
 -- Visuals
 PRK_Epsilon										= 0.001
@@ -135,10 +135,12 @@ PRK_Editor_Square_Border_Add					= 4
 
 -- Level Generation
 PRK_Gen_Seed									= 2
-PRK_Gen_SizeModifier							= 6 -- 7 -- 5 --0.01 -- 10
+PRK_Gen_SizeModifier							= 3 -- 6 -- 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
 PRK_Gen_StepBetweenTime							= 0.1 --0--5
+PRK_Gen_FloorDeleteTime							= ( PRK_Gen_StepBetweenTime * 4 ) + 5 -- Gotta wait around long enough to collide
 PRK_Gen_IgnoreEnts								= { false, false, true, false }
+PRK_Gen_WallCollide								= false
 
 -- Damage/Death
 PRK_Hurt_Material								= "pp/texturize/pattern1.png"
@@ -170,7 +172,6 @@ PRK_Gun_HUDLerpSpeed							= 5
 PRK_Gun_HUDScaleMultiplier						= 8
 
 -- Misc
-PRK_Floor_Delete_Time							= ( PRK_Gen_StepBetweenTime * 4 ) + 1
 PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 PRK_DataPath									= "prickly/"
@@ -498,12 +499,20 @@ function VectorNegate( V )
 	return ret
 end
 
+function VectorRound( V )
+	return Vector(
+		math.Round( V.x ),
+		math.Round( V.y ),
+		math.Round( V.z )
+	)
+end
+
 function VectorAbs( V )
-	local ret = V - Vector()
-		ret.x = math.abs( ret.x )
-		ret.y = math.abs( ret.y )
-		ret.z = math.abs( ret.z )
-	return ret
+	return Vector(
+		math.abs( V.x ),
+		math.abs( V.y ),
+		math.abs( V.z )
+	)
 end
 
 function VectorIsZero( V )

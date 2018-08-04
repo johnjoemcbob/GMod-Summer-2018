@@ -65,22 +65,45 @@ PRK_PotionTypes = {
 	["Poison"] = {
 		Colour = Color( 40, 40, 40, 255 ),
 		Drink = function( self, ent, ply )
+			PRK_OverrideDeathMessage( ply, {
+				"POISON",
+				"YOUR OWN CURIOSITY",
+				"YOUR OWN STUPIDITY",
+				"SPOILED BITER MILK",
+			} )
 			ply:TakeDamage( 1, ent, ent )
+			PRK_OverrideDeathMessage( ply, nil )
 			return true
 		end,
 	},
 	["Greater Poison"] = {
 		Colour = Color( 10, 10, 10, 255 ),
 		Drink = function( self, ent, ply )
+			PRK_OverrideDeathMessage( ply, {
+				"POISON",
+				"YOUR OWN CURIOSITY",
+				"YOUR OWN STUPIDITY",
+				"SPOILED BITER MILK",
+			} )
 			ply:TakeDamage( 2, ent, ent )
+			PRK_OverrideDeathMessage( ply, nil )
 			return true
 		end,
 	},
-	["Instant Death"] = {
+	["Boom"] = {
 		Colour = Color( 0, 0, 0, 255 ),
 		Drink = function( self, ent, ply )
+			PRK_OverrideDeathMessage( player.GetAll(), {
+				"AN EXPLOSION IN A BOTTLE",
+				"BOTTLED SPLODER ESSENCE",
+				"A BIG BOOM",
+				"YOUR OWN CURIOSITY",
+				"YOUR OWN STUPIDITY",
+				"ESPECIALLY POTENT WHISKEY",
+			} )
 			PRK_Explosion( ent, ent:GetPos(), 200 )
-			ply:TakeDamage( ply:GetMaxHealth(), ent, ent )
+			PRK_OverrideDeathMessage( player.GetAll(), nil )
+			-- ply:TakeDamage( ply:GetMaxHealth(), ent, ent )
 			return true
 		end,
 	},

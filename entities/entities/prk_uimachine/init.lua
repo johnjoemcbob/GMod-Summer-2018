@@ -60,6 +60,49 @@ local models = {
 	},
 }
 
+PRK_Vendor_Stock = {
+	["BULLET"]					= { 10, "prk_bullet_heavy" },
+	["POTION"]					= { 15, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Health Potion" )
+		end,
+	},
+	["CHAMBERS POTION"]			= { 20, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Chamber Potion" )
+		end,
+	},
+	["GOLD POTION"]				= { 28, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Gold Potion" )
+		end,
+	},
+	-- ["SPEED POTION"]			= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Speed Potion" )
+		-- end,
+	-- },
+	-- ["DAMAGE POTION"]			= { 0, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Damage Potion" )
+		-- end,
+	-- },
+	["BOOM BOTTLE"]				= { 2, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType( "Boom" )
+		end,
+	},
+	["MYSTERY POTION"]			= { 5, "prk_potion", Spawn = function( self, ent, ply )
+			ent:SetPotionType()
+			ent:SetColor( ColorRand() )
+		end,
+	},
+	["HEAL"]					= { 10, "", Spawn = function( self, ent, ply )
+			local heal = 2 -- One full heart = 2hp
+			ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
+		end,
+		ExtraRequire = function( self, ply )
+			return ( ply:Health() != ply:GetMaxHealth() )
+		end,
+	},
+	-- ["BOMB"]					= { 10, "prk_bullet_heavy" },
+	-- ["KNIFE"]					= { 30, "prk_bullet_heavy" },
+}
+
 sound.Add(
 	{ 
 		name = "prk_uimachine_hum",
@@ -162,41 +205,16 @@ function ENT:Initialize()
 	self:SetAngles( oldang )
 
 	-- Variables
-	-- Only sends data to client if index is a number
-	self.Stock = {
-		["BULLET"]				= { 10, "prk_bullet_heavy" },
-		-- ["POTION"]				= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			-- ent:SetPotionType( "Health Potion" )
-		-- end },
-		["CHAMBERS POTION"]	= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Chamber Potion" )
-		end },
-		-- ["GOLD POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			-- ent:SetPotionType( "Gold Potion" )
-		-- end },
-		-- ["SPEED POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			-- ent:SetPotionType( "Speed Potion" )
-		-- end },
-		-- ["DAMAGE POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			-- ent:SetPotionType( "Damage Potion" )
-		-- end },
-		["INSTA DEATH POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Instant Death" )
-		end },
-		["MYSTERY POTION"]		= { 0, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType()
-			ent:SetColor( ColorRand() )
-		end },
-		["HEAL"]					= { 10, "", ExtraRequire = function( self, ply )
-			return ( ply:Health() != ply:GetMaxHealth() )
-		end,
-		Spawn = function( self, ent, ply )
-			local heal = 2 -- One full heart = 2hp
-			ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
-		end },
-		-- ["BOMB"]					= { 10, "prk_bullet_heavy" },
-		-- ["KNIFE"]					= { 30, "prk_bullet_heavy" },
-	}
+	self.MaxItems = 4
+	self.PriceFlux = math.random( 80, 170 ) / 100
+	local possiblestock = table.shallowcopy( PRK_Vendor_Stock )
+	self.Stock = {}
+		for i = 1, self.MaxItems do
+			local item, rnd = table.Random( possiblestock )
+				item[1] = math.Round( item[1] * self.PriceFlux )
+			self.Stock[rnd] = table.shallowcopy( item )
+			possiblestock[rnd] = nil
+		end
 	timer.Simple( 0.1, function() self:SendStock() end )
 
 	self:EmitSound( "prk_uimachine_hum" )

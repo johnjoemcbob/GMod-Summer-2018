@@ -47,7 +47,7 @@ function EFFECT:Init( data )
 					-- print( "hi" )
 					-- util.Decal( "PaintSplatPink", hitpos + hitnormal, hitpos - hitnormal )
 					if ( math.random( 1, 100 ) < 10 ) then
-						PRK_Decal( hitpos, col )
+						PRK_AddDecal( hitpos, col )
 					end
 				end )
 

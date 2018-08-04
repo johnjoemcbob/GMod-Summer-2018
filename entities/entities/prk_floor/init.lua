@@ -6,8 +6,14 @@ include( "shared.lua" )
 PRK_Floors = {}
 PRK_Floor_Plants = {}
 
+util.AddNetworkString( "PRK_Floor_Grass_Clear" )
 util.AddNetworkString( "PRK_Floor_Grass" )
 util.AddNetworkString( "PRK_Floor_Plant" )
+
+function PRK_Send_Floor_Grass_Clear( ply )
+	net.Start( "PRK_Floor_Grass_Clear" )
+	net.Send( ply )
+end
 
 function PRK_Send_Floor_Grass( ply, zone, pos, min, max )
 	if ( !zone ) then return end
@@ -39,6 +45,7 @@ end
 
 function PRK_Floor_MoveToZone( ply, zone )
 	if ( PRK_Floors[zone] ) then
+		PRK_Send_Floor_Grass_Clear( ply )
 		for k, floor in pairs( PRK_Floors[zone] ) do
 			PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
 		end
@@ -77,7 +84,7 @@ function ENT:Initialize()
 	end
 
 	-- Lock in the floor and remove this entity
-	timer.Simple( PRK_Floor_Delete_Time * 1.1, function()
+	timer.Simple( PRK_Gen_FloorDeleteTime, function()
 		if ( self and self:IsValid() ) then
 			-- Store position for visuals
 			local min, max = self:GetCollisionBounds()

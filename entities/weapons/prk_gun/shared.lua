@@ -52,7 +52,16 @@ PRK_BulletTypeInfo = {
 		Paint = function( info, self, x, y, r )
 			
 		end,
-		CanFire = function( info )
+		CanFire = function( info, self )
+			-- if ( !self.NextEmptySpin or self.NextEmptySpin <= CurTime() ) then
+				-- self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) - 1, 1, self.MaxClip ) )
+				-- self:SpinSound()
+				-- if ( SERVER ) then
+					-- self:SendReload( 1 )
+				-- end
+
+				-- self.NextEmptySpin = CurTime() + 1
+			-- end
 			return false
 		end,
 	},
@@ -310,7 +319,9 @@ function SWEP:PrimaryAttack( right )
 
 	-- Make sure we can shoot first
 	local cham = self.Owner:GetNWInt( "PRK_CurrentChamber" )
-	if ( !PRK_BulletTypeInfo[self.ChamberBullets[cham]]:CanFire() ) then return end
+	if ( !PRK_BulletTypeInfo[self.ChamberBullets[cham]]:CanFire( self ) ) then
+		return
+	end
 
 	-- Shoot logic + take ammo
 	local takeammo, spin, shootparticles, punch

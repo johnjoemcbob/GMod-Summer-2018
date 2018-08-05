@@ -9,6 +9,7 @@
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_editor_room.lua" )
 AddCSLuaFile( "shared.lua" )
+AddCSLuaFile( "lua/includes/modules/3d2dvgui.lua" )
 
 -- LUA Includes
 include( "shared.lua" ) -- Must be first for globals

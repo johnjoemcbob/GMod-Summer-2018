@@ -221,6 +221,7 @@ function ENT:Initialize()
 end
 
 function ENT:InitializeNewClient()
+	self:SendZone( self.Zone )
 	self:SendStock()
 end
 

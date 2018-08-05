@@ -207,7 +207,7 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 		-- Lerp plants
 		for k, plant in pairs( LocalPlayer().Plants[zone] ) do
 			-- Lerp angles
-			if ( plant.TargetAngles ) then
+			if ( plant.CurrentAng and plant.TargetAngles ) then
 				local speed = 5
 				local ang = LerpAngle( FrameTime() * speed, plant.CurrentAng, plant.TargetAngles )
 				plant.CurrentAng = ang

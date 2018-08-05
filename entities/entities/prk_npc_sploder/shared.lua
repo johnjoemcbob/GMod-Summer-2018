@@ -116,27 +116,29 @@ function ENT:OnRemove()
 	end
 
 	if ( SERVER ) then
-		local debris = math.random( 3, 5 )
-		for i = 1, debris do
-			local prop = PRK_CreateEnt(
-				"prk_debris", "models/XQM/Rails/gumball_1.mdl",
-				self:GetPos() + Vector( 0, 0, 35 ),
-				AngleRand(),
-				true
-			)
-			prop:SetMaterial( "models/debug/debugwhite", true )
-			prop:SetColor( PRK_Colour_Enemy_Eye )
-			prop:SetModelScale( 1 / 3 * PRK_Enemy_Scale, 0 )
-			prop:PhysicsInitSphere( 5 * PRK_Enemy_Scale )
-			local phys = prop:GetPhysicsObject()
-			if ( phys and phys:IsValid() ) then
-				phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+		if ( !self.Cleanup ) then
+			local debris = math.random( 3, 5 )
+			for i = 1, debris do
+				local prop = PRK_CreateEnt(
+					"prk_debris", "models/XQM/Rails/gumball_1.mdl",
+					self:GetPos() + Vector( 0, 0, 35 ),
+					AngleRand(),
+					true
+				)
+				prop:SetMaterial( "models/debug/debugwhite", true )
+				prop:SetColor( PRK_Colour_Enemy_Eye )
+				prop:SetModelScale( 1 / 3 * PRK_Enemy_Scale, 0 )
+				prop:PhysicsInitSphere( 5 * PRK_Enemy_Scale )
+				local phys = prop:GetPhysicsObject()
+				if ( phys and phys:IsValid() ) then
+					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+				end
 			end
-		end
 
-		-- Only give coins if the player killed it before it exploded
-		if ( !self.ToRemove ) then
-			GAMEMODE:SpawnCoins( self:GetPos(), self.Coins )
+			-- Only give coins if the player killed it before it exploded
+			if ( !self.ToRemove ) then
+				GAMEMODE:SpawnCoins( self, self:GetPos(), self.Coins )
+			end
 		end
 	end
 

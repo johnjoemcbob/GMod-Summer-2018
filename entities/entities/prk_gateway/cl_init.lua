@@ -47,6 +47,13 @@ net.Receive( "PRK_Gateway_EnterExit", function( len, ply )
 	end
 end )
 
+net.Receive( "PRK_Gateway_GatherParty", function( len, ply )
+	local self = net.ReadEntity()
+	local toggle = net.ReadBool()
+
+	self.GatherParty = toggle
+end )
+
 function ENT:Initialize()
 	self.Scale = 0
 	self.Travellers = {}
@@ -216,8 +223,8 @@ end
 
 -- Draw inside
 hook.Add( "PostDrawHUD", "PRK_PostDrawHUD_Gateway", function()
-	if ( LocalPlayer().PRK_Gateway ) then
-		local self = LocalPlayer().PRK_Gateway
+	local self = LocalPlayer().PRK_Gateway
+	if ( self and self:IsValid() ) then
 		cam.Start3D()
 			-- Draw texture
 			local pos = LocalPlayer():EyePos() + Vector( 1, 0, 0 ) * ( 1000 - ( CurTime() - self.Travellers[LocalPlayer()] ) * 200 )
@@ -358,20 +365,22 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 		end
 
 		-- Title
-		local ang = self:GetAngles()
-			ang:RotateAroundAxis( Vector( 0, 1, 0 ), 90 )
-			ang:RotateAroundAxis( Vector( 0, 0, 1 ), 90 )
-		cam.Start3D2D( self:GetPos() + Vector( 0, 0, 200 ), ang, 1 )
-			draw.SimpleText(
-				"CO-OPERATIVE",
-				"HeavyHUD128",
-				0,
-				0,
-				PRK_HUD_Colour_Shadow,
-				TEXT_ALIGN_CENTER,
-				TEXT_ALIGN_CENTER
-			)
-		cam.End3D2D()
+		if ( self.Zone == 0 ) then
+			local ang = self:GetAngles()
+				ang:RotateAroundAxis( Vector( 0, 1, 0 ), 90 )
+				ang:RotateAroundAxis( Vector( 0, 0, 1 ), 90 )
+			cam.Start3D2D( self:GetPos() + Vector( 0, 0, 200 ), ang, 1 )
+				draw.SimpleText(
+					"CO-OPERATIVE",
+					"HeavyHUD128",
+					0,
+					0,
+					PRK_HUD_Colour_Shadow,
+					TEXT_ALIGN_CENTER,
+					TEXT_ALIGN_CENTER
+				)
+			cam.End3D2D()
+		end
 
 		local tunnelscalemult = 1
 		PRK_RenderScale( tunnel, Vector( self.Scale * tunnelscalemult, self.Scale * tunnelscalemult, length ) )
@@ -433,5 +442,34 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 			cam.End3D2D()
 		end
 		draw.StencilBasic( mask, inner )
+
+		-- Gather Party
+		if ( self.GatherParty ) then
+			local ang = self:GetAngles()
+				ang:RotateAroundAxis( self:GetForward(), 90 )
+				ang:RotateAroundAxis( self:GetUp(), 90 )
+			cam.Start3D2D( self:GetPos() + Vector( 0, 0, 0 ), ang, 0.1 )
+				PRK_DrawText(
+					"You must gather your party",
+					0,
+					0,
+					PRK_HUD_Colour_Main,
+					TEXT_ALIGN_CENTER,
+					TEXT_ALIGN_CENTER,
+					64,
+					PRK_HUD_Colour_Dark
+				)
+				PRK_DrawText(
+					"before venturing forth",
+					0,
+					64,
+					PRK_HUD_Colour_Main,
+					TEXT_ALIGN_CENTER,
+					TEXT_ALIGN_CENTER,
+					64,
+					PRK_HUD_Colour_Dark
+				)
+			cam.End3D2D()
+		end
 	end
 end )

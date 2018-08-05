@@ -16,7 +16,7 @@ include( "levelgen.lua" )
 include( "buffs.lua" )
 
 -- Resource Downloads
-local dir = "gamemodes/prickly_summer_2018/content/"
+local dir = PRK_GamemodePath .. "content/"
 function resource.AddDir( localdir )
 	local srchpath = localdir .. "*"
 	-- print( srchpath )
@@ -39,12 +39,40 @@ resource.AddDir( dir )
 print( "Finish resources..." )
 print( "-------------------" )
 
+-- Copy over initial room designs
+local dir_from = PRK_GamemodePath .. "baserooms/"
+local dir_to = PRK_DataPath
+if ( !file.Exists( dir_to, "DATA" ) ) then
+	print( "No room designs..." )
+	print( "Copying defaults..." )
+	local function copy( localdir )
+		local srchpath = localdir .. "*"
+		print( srchpath )
+		local files, directories = file.Find( srchpath, "GAME" )
+		for k, fil in pairs( files ) do
+			local src = localdir .. fil
+			local dest = dir_to .. string.gsub( localdir, dir_from, "" )
+			print( src .. " -> " .. dest )
+			local data = file.Read( localdir .. fil, "GAME" )
+			file.CreateDir( dest )
+			file.Write( dest .. fil, data )
+		end
+		for k, dir in pairs( directories ) do
+			copy( localdir .. dir .. "/" )
+		end
+	end
+	copy( dir_from )
+end
+print( "Finish copying..." )
+print( "-------------------" )
+
 -- Net
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
 util.AddNetworkString( "PRK_Die" )
 util.AddNetworkString( "PRK_Drink" )
 util.AddNetworkString( "PRK_Spawn" )
+util.AddNetworkString( "PRK_ResetZone" )
 util.AddNetworkString( "PRK_Editor" )
 util.AddNetworkString( "PRK_EditorExport" )
 
@@ -82,6 +110,12 @@ function SendSpawn( ply, time )
 	net.Start( "PRK_Spawn" )
 		net.WriteFloat( time )
 	net.Send( ply )
+end
+
+function SendResetZone( zone )
+	net.Start( "PRK_ResetZone" )
+		net.WriteFloat( zone )
+	net.Broadcast()
 end
 
 net.Receive( "PRK_Editor", function( len, ply )
@@ -152,15 +186,12 @@ function GM:InitPostEntity()
 			Angle( 0, 180, 0 ),
 		},
 	}
-	local function gen( num )
-		math.randomseed( PRK_Gen_Seed )
-		PRK_Gen_Remove()
-		PRK_Gen( PRK_Zones[num].pos, num )
-		-- math.randomseed( os.time() ) -- Reset on PRK_Gen_End
-
+	local function gen( zone )
 		-- Create gateway to link to this
-		local ent = PRK_CreateEnt( "prk_gateway", nil, gates[num][1], gates[num][2] )
-		ent:SetDestination( PRK_Zones[num].pos, num )
+		local ent = PRK_CreateEnt( "prk_gateway", nil, gates[zone][1], gates[zone][2] )
+		ent:SetDestination( PRK_Zones[zone].pos, zone )
+		ent:SetZone( 0 )
+		PRK_Destination_LevelStartTemp = PRK_Zones[zone].pos -- Temp and bad but there are only a few hours left :)
 	end
 
 	PRK_Zones = self:FlatgrassZones()
@@ -171,20 +202,36 @@ function GM:InitPostEntity()
 		-- end )
 	-- end
 	-- verytest()
-	timer.Simple( 10, function()
+	timer.Simple( 1, function()
 		gen( 1 )
+		self:GenerateNextFloor( 1 )
 	end )
 end
 
+function GM:GenerateNextFloor( zone )
+	self.Floors = ( self.Floors or 0 ) + 1
+	print( "Floor: " .. self.Floors )
+
+	-- Temp for judging so I know what's coming :)
+	math.randomseed( PRK_Gen_Seed + self.Floors )
+
+	-- Clear any remaining entities with this zone
+	-- (other than the gateway currently trasporting the players!)
+	SendResetZone( zone )
+	PRK_Floor_ResetZone( zone )
+	PRK_Gen_Remove()
+	for k, v in pairs( ents.GetAll() ) do
+		if ( v and v:IsValid() and v.Zone and v.Zone == zone and v:GetClass() != "prk_gateway" ) then
+			v.Cleanup = true
+			v:Remove()
+		end
+	end
+
+	-- Generate new
+	PRK_Gen( PRK_Zones[zone].pos, zone )
+end
+
 function GM:PlayerInitialSpawn( ply )
-	-- Send any required client data to the new client
-	-- timer.Simple( 2, function()
-		-- for k, v in pairs( ents.FindByClass( "prk_*" ) ) do
-			-- if ( v.InitializeNewClient ) then
-				-- v:InitializeNewClient()
-			-- end
-		-- end
-	-- end )
 end
 
 function GM:MoveToZone( ply, zone )
@@ -354,7 +401,7 @@ function GM:OnNPCKilled( npc, attacker, inflictor )
 	-- Testing / fun (only non-prickly NPCs)
 	if ( string.find( npc:GetClass(), "prk_" ) ) then return end
 	local coins = npc:GetMaxHealth() * PRK_Enemy_CoinDropMult
-	self:SpawnCoins( npc:GetPos(), coins )
+	self:SpawnCoins( npc, npc:GetPos(), coins )
 end
 -------------------------
   -- /Gamemode Hooks --
@@ -374,13 +421,14 @@ function PRK_OverrideDeathMessage( plytab, message )
 	end
 end
 
-function GM:SpawnCoins( pos, coins )
+function GM:SpawnCoins( source, pos, coins )
 	-- Spawn upwards of position, to avoid falling through floor
 	local pos = pos + Vector( 0, 0, 10 )
 	local r = math.min( 32, 4 * coins )
 	local points = PRK_GetCirclePoints( 0, 0, r, coins, math.random( 0, 360 ) )
 	for i = 1, coins do
-		PRK_CreateEnt( "prk_coin_heavy", nil, pos + Vector( points[i].x, points[i].y, math.random( -5, 5 ) ), AngleRand(), true )
+		local ent = PRK_CreateEnt( "prk_coin_heavy", nil, pos + Vector( points[i].x, points[i].y, math.random( -5, 5 ) ), AngleRand(), true )
+		ent:SetZone( source.Zone )
 	end
 end
 

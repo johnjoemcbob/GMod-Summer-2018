@@ -49,7 +49,7 @@ SpawnEditorEnt["Vendor"] = function( pos, ang, scale, model )
 end
 SpawnEditorEnt["Gateway"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prk_gateway", nil, pos, ang )
-		ent.LevelChange = true
+		ent.LevelAdvance = true
 	return ent
 end
 SpawnEditorEnt["Spawner"] = function( pos, ang, scale, model )
@@ -93,7 +93,7 @@ function PRK_Gen( origin, zone )
 	endroom = false
 	ToGen = {}
 	PRK_Gen_RoomStart( rooms.start[1], zone, origin )
-	PRK_Gen_RoomEnd( room, true )
+	PRK_Gen_RoomEnd( room, zone, true )
 	-- ToGen = {
 		-- {
 			-- AttachPoints = {
@@ -179,7 +179,7 @@ function PRK_Gen_Step( zone )
 	elseif ( room.AttachPoints[index_try] ) then
 		local collide = PRK_Gen_Step_Try( true )
 		if ( !collide ) then
-			PRK_Gen_RoomEnd( room )
+			PRK_Gen_RoomEnd( room, zone )
 
 			next_step( zone )
 
@@ -233,12 +233,11 @@ function PRK_Gen_Step_Try( undo )
 			for k, collision in pairs( ents.FindInBox( pos + min, pos + max ) ) do
 				if ( collision.Collide and collision.PRK_Room != nil and collision.PRK_Room != CurrentRoomID ) then
 					collide = true
-					debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 0, 0, 100 ) )
+					-- debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 0, 0, 100 ) )
 					break
 				end
 			end
 			-- debugoverlay.Box( pos, min, max, PRK_Gen_StepBetweenTime, Color( 255, 255, 0, 100 ) )
-			debugoverlay.Box( pos, min, max, 100, Color( 255, 255, 0, 100 ) )
 		end
 		-- Break out early, only needs to collide once to fail
 		if ( collide ) then
@@ -314,7 +313,7 @@ function PRK_Gen_RoomStart( plan, zone, origin )
 	orient_try = 1
 end
 
-function PRK_Gen_RoomEnd( room, force )
+function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 	table.insert( LastGen, room )
 
 	local anchor = HelperModels["Anchor"].Ent
@@ -399,14 +398,16 @@ function PRK_Gen_RoomEnd( room, force )
 				-- Undo parent
 				helper:SetParent( nil )
 
-				if ( force ) then
+				if ( force and !forceandrotate ) then
 					helper:SetPos( temp_room.Origin + v.Pos )
 					helper:SetAngles( v.Angles )
 				else
 					-- Undo move
+					local oldpos = anchor:GetPos()
 					anchor:SetPos( temp_room.Origin + att.Pos )
 
 					-- Undo rotation
+					local oldang = anchor:GetAngles()
 					anchor:SetAngles( HelperModels["Anchor"].Angle )
 
 					-- Set attach helper position
@@ -417,14 +418,17 @@ function PRK_Gen_RoomEnd( room, force )
 					helper:SetParent( anchor )
 
 					-- Rotate back
-					anchor:SetAngles( HelperModels["Anchor"].Angle + Angle( 0, 90 * ( orient_try - 1 ), 0 ) )
+					anchor:SetAngles( oldang )
 
 					-- Move back
-					anchor:SetPos( temp_room.Origin )
+					anchor:SetPos( oldpos )
 				end
 
 				-- Spawn entity
 				local ent = SpawnEditorEnt[v.Editor_Ent]( helper:GetPos(), helper:GetAngles(), v.Scale, v.Model )
+				if ( ent.SetZone ) then
+					ent:SetZone( zone )
+				end
 			end
 		end
 	end
@@ -500,32 +504,25 @@ end
 function PRK_Gen_RoomClose( point, zone )
 	-- Find number of remaining attach points, if this is the last then it should generate a finish
 	-- room instead of closing
-	print( "closing" )
 	local count = 0
 		for k, gen in pairs( ToGen ) do
 			count = count + #gen.AttachPoints
 		end
-		print( count )
 	if ( count <= 1 and !endroom ) then
-		print( "adding end room; " )
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
 			while ( orient_try <= 4 ) do
 				local collide = PRK_Gen_Step_Try( orient_try != 4 )
-				print( "try: " .. orient_try )
-				print( collide )
 				if ( !collide ) then
 					break
 				end
 				orient_try = orient_try + 1
 			end
-			PRK_Gen_RoomEnd( room, true )
+			PRK_Gen_RoomEnd( room, zone, true, true )
 			PRK_Gen_End()
 		end )
 		endroom = true
-		-- print( room )
-		-- PrintTable( room )
 	else
 		local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
 		local ang = Angle( -90, 0, 0 )
@@ -537,7 +534,6 @@ function PRK_Gen_RoomClose( point, zone )
 			Mod = "models/hunter/plates/plate1x1.mdl",
 			Type = PRK_GEN_TYPE_WALL,
 		}
-		-- print( point.Pos )
 		PRK_BasicDebugSphere( point.Pos )
 		PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
 	end

@@ -1,0 +1,30 @@
+{"TargetZoom":860.0,
+"Parts":[{"position":"[-47.45 142.35 0]",
+"width":47.45,
+"breadth":142.35},
+{"isattach":true,
+"position":"[0 142.35 0]",
+"breadth":142.35,
+"width":47.45},
+{"position":"[-284.7 189.8 0]",
+"width":237.25,
+"breadth":237.25},
+{"position":"[-237.25 237.25 0]",
+"width":142.35,
+"breadth":47.45},
+{"position":"[-237.25 -47.45 0]",
+"width":142.35,
+"breadth":47.45}],
+"Zoom":860.0,
+"Origin":"[0 0 0]",
+"CameraPos":"[-193.9444 140.0511 0]",
+"ViewOrigin":"[433.2373 95.5344 586.7378]",
+"ModelExportInstructions":[{"Angles":"{0 0 0}",
+"Pos":"[0 0 0]",
+"Model":"models/editor/axis_helper_thick.mdl",
+"Scale":2.0},
+{"Angles":"{0 0 0}",
+"Editor_Ent":"Gateway",
+"Pos":"[-264.7293 69 50]",
+"Model":"models/props_interiors/vendingmachinesoda01a.mdl",
+"Scale":1.0}]}

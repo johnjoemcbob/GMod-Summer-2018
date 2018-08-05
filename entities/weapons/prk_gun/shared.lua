@@ -102,6 +102,7 @@ PRK_BulletTypeInfo = {
 					phys:AddAngleVelocity( VectorRand() * 1000 )
 				end
 				bullet:CollideWithEnt( tr.Entity )
+				bullet:SetZone( self.Owner:GetNWInt( "PRK_Zone", 0 ) )
 			end
 
 			-- return takeammo, spin, shootparticles, punch
@@ -177,6 +178,7 @@ PRK_BulletTypeInfo = {
 					phys:AddAngleVelocity( VectorRand() * 1000 )
 				end
 				bullet:CollideWithEnt( tr.Entity )
+				bullet:SetZone( self.Owner:GetNWInt( "PRK_Zone", 0 ) )
 			end
 
 			self.Fires = self.Fires - 1

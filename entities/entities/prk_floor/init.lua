@@ -44,13 +44,22 @@ function PRK_Send_Floor_Plant( ply, zone )
 end
 
 function PRK_Floor_MoveToZone( ply, zone )
+	print( "send floors for zone: " .. zone )
 	if ( PRK_Floors[zone] ) then
 		PRK_Send_Floor_Grass_Clear( ply )
+		print( "send fllors: " .. #PRK_Floors[zone] )
 		for k, floor in pairs( PRK_Floors[zone] ) do
 			PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
 		end
+		print( "send plants: " .. #PRK_Floor_Plants[zone] )
 		PRK_Send_Floor_Plant( ply, zone )
 	end
+end
+
+function PRK_Floor_ResetZone( zone )
+	print( "reset floors for zone: " .. zone )
+	PRK_Floors[zone] = {}
+	PRK_Floor_Plants[zone] = {}
 end
 
 function ENT:Initialize()

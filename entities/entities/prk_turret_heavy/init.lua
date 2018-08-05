@@ -147,6 +147,7 @@ function ENT:Think()
 					self:Remove()
 				end
 			bullet.Owner = self
+			bullet:SetZone( self.Zone )
 			timer.Simple( self.TimeAutoRemoveLaser, function()
 				if ( bullet and bullet:IsValid() ) then
 					bullet:Remove()
@@ -188,9 +189,11 @@ function ENT:OnRemove()
 		end
 	end
 
-	-- Spawn money
-	local coins = 4
-	GAMEMODE:SpawnCoins( self:GetPos(), coins )
+	if ( !self.Cleanup ) then
+		-- Spawn money
+		local coins = 4
+		GAMEMODE:SpawnCoins( self, self:GetPos(), coins )
+	end
 end
 
 function ENT:CreateEnt( class, mod, pos, ang, mat, col, mov )

@@ -139,8 +139,8 @@ function ENT:Initialize()
 end
 
 function ENT:InitializeNewClient()
+	self:SendZone( self.Zone )
 	self:SendPotionType( table.KeyFromValue( PRK_PotionTypes, self.PotionType ) )
-	print( "init potion late!" )
 end
 
 function ENT:Use( ply, caller, useType, value )

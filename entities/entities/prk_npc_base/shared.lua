@@ -202,3 +202,7 @@ function ENT:GetCollideTrace( target )
 	local trdata = self:GetTraceData( target )
 	return util.TraceEntity( trdata, self )
 end
+
+function ENT:SetZone( zone )
+	self.Zone = zone
+end

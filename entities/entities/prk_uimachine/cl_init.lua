@@ -278,7 +278,7 @@ end
 
 hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_UIMachine", function()
 	for k, ent in pairs( ents.FindByClass( "prk_uimachine" ) ) do
-		if ( PlayerInZone( ent, ent.Zone ) ) then
+		-- if ( PlayerInZone( ent, ent.Zone ) ) then
 			if ( ent.UI ) then
 				local ang = ent:GetAngles()
 					ang:RotateAroundAxis( ent:GetAngles():Right(), -90 )
@@ -295,6 +295,6 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_UIMachine"
 					ent.UI:Paint3D2D()
 				vgui.End3D2D()
 			end
-		end
+		-- end
 	end
 end )

@@ -10,7 +10,7 @@ GM.Author = "johnjoemcbob & DrMelon"
 GM.Email = ""
 GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 
-PRK_SANDBOX = true
+-- PRK_SANDBOX = true
 if PRK_SANDBOX then
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 else
@@ -113,7 +113,7 @@ PRK_Gateway_PullRange							= 300
 PRK_Gateway_PullForce							= 100
 PRK_Gateway_EnterRange							= 100
 PRK_Gateway_OpenSpeed							= 5
-PRK_Gateway_TravelTime							= 5
+PRK_Gateway_TravelTime							= 2 -- 5
 PRK_Gateway_FlashHoldTime						= 0.2
 PRK_Gateway_FlashSpeed							= 10
 PRK_Gateway_FOVSpeedEnter						= 0.5
@@ -139,8 +139,8 @@ PRK_Editor_Square_Border_Add					= 4
 PRK_Gen_Seed									= 2
 PRK_Gen_SizeModifier							= 2 -- 6 -- 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
-PRK_Gen_StepBetweenTime							= 0.1 --0--5
-PRK_Gen_FloorDeleteTime							= ( PRK_Gen_StepBetweenTime * 4 ) + 5 -- Gotta wait around long enough to collide
+PRK_Gen_StepBetweenTime							= 0 --0.1 --0--5
+PRK_Gen_FloorDeleteTime							= ( PRK_Gen_StepBetweenTime * 4 ) + 1 -- Gotta wait around long enough to collide
 PRK_Gen_IgnoreEnts								= { false, false, true, false }
 PRK_Gen_WallCollide								= false
 
@@ -177,6 +177,7 @@ PRK_Gun_HUDScaleMultiplier						= 8
 PRK_ContextMenu									= false
 PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
+PRK_GamemodePath								= "gamemodes/prickly_summer_2018/"
 PRK_DataPath									= "prickly/"
 
 function GM:FlatgrassZones()

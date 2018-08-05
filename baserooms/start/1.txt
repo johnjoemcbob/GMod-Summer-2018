@@ -1,1 +1,32 @@
-{"TargetZoom":740.0,"Parts":[{"width":142.35,"position":"[-332.15 237.25 0]","breadth":616.85},{"isattach":true,"position":"[-427.05 189.8 0]","breadth":142.35,"width":47.45},{"width":94.9,"position":"[-189.8 -237.25 0]","breadth":142.35},{"width":189.8,"position":"[-94.9 94.9 0]","breadth":427.05},{"width":47.45,"position":"[-379.6 189.8 0]","breadth":142.35}],"DraggingModel":[],"Dragging":[[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false],[false,false,false,false,false]],"Zoom":740.0,"DragStart":"[-44 -1 0]","ViewOrigin":"[301.244 44.4949 607.8959]","CameraPos":"[-120.3322 26.1649 0]","RectangleSelector":{"End":"[-2081.373 -59.1002 0]","Start":"[-2081.373 -59.1002 0]"},"Origin":"[0 0 0]","ModelExportInstructions":[{"Angles":"{0 0 0}","Pos":"[0 0 0]","Model":"models/editor/axis_helper_thick.mdl","Scale":2.0}]}
+{"TargetZoom":740.0,
+"Parts":[{"width":142.35,
+"position":"[-332.15 237.25 0]",
+"breadth":616.85},
+{"isattach":true,
+"position":"[-427.05 189.8 0]",
+"width":47.45,
+"breadth":142.35},
+{"width":94.9,
+"position":"[-189.8 -237.25 0]",
+"breadth":142.35},
+{"width":189.8,
+"position":"[-94.9 94.9 0]",
+"breadth":427.05},
+{"width":47.45,
+"position":"[-379.6 189.8 0]",
+"breadth":142.35}],
+"Zoom":740.0,
+"Origin":"[0 0 0]",
+"CameraPos":"[-88.3323 26.0981 0]",
+"RectangleSelector":{"End":"[-19215.1895 66.0438 0]",
+"Start":"[-19215.1895 66.0438 0]"},
+"ViewOrigin":"[288.6169 25.3108 636.7956]",
+"ModelExportInstructions":[{"Angles":"{0 0 0}",
+"Pos":"[0 0 0]",
+"Model":"models/editor/axis_helper_thick.mdl",
+"Scale":2.0},
+{"Angles":"{0 90 0}",
+"Editor_Ent":"Prop",
+"Pos":"[-1.3108 89.0992 0]",
+"Model":"models/props_c17/metalladder001.mdl",
+"Scale":3.0}]}

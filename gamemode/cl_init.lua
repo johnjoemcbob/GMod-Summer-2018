@@ -154,6 +154,14 @@ net.Receive( "PRK_Spawn", function( len, ply )
 	LocalPlayer().SpawnTime = time
 end )
 
+net.Receive( "PRK_ResetZone", function( len, ply )
+	local zone = net.ReadFloat()
+
+	if ( LocalPlayer().PRK_Decals and LocalPlayer().PRK_Decals[zone] ) then
+		LocalPlayer().PRK_Decals[zone] = {}
+	end
+end )
+
 -- Gamemode Hooks
 function GM:Initialize()
 	PRK_Initialise_RevolverChambers()
@@ -1166,8 +1174,13 @@ hook.Add( "PostPlayerDraw" , "manual_model_draw_example" , function( ply )
 end )
 
 function PRK_AddDecal( pos, col )
+	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
+
 	if ( !LocalPlayer().PRK_Decals ) then
 		LocalPlayer().PRK_Decals = {}
+	end
+	if ( !LocalPlayer().PRK_Decals[zone] ) then
+		LocalPlayer().PRK_Decals[zone] = {}
 	end
 
 	local decal = {
@@ -1179,21 +1192,21 @@ function PRK_AddDecal( pos, col )
 	}
 
 	-- Try to combine this with any other close splat decals
-	for k, otherdecal in pairs( LocalPlayer().PRK_Decals ) do
+	for k, otherdecal in pairs( LocalPlayer().PRK_Decals[zone] ) do
 		local dist = decal.pos:Distance( otherdecal.pos )
 		if ( dist <= PRK_Decal_CombineDist ) then
 			decal.siz = ( decal.siz + otherdecal.siz + dist ) / 4
 			decal.pos = ( decal.pos + otherdecal.pos ) / 2
-			table.remove( LocalPlayer().PRK_Decals, k )
+			table.remove( LocalPlayer().PRK_Decals[zone], k )
 		end
 	end
 
 	-- Remove the first if there are too many
-	if ( #LocalPlayer().PRK_Decals >= PRK_Decal_Max ) then
-		table.remove( LocalPlayer().PRK_Decals, 1 )
+	if ( #LocalPlayer().PRK_Decals[zone] >= PRK_Decal_Max ) then
+		table.remove( LocalPlayer().PRK_Decals[zone], 1 )
 	end
-	table.insert( LocalPlayer().PRK_Decals, decal )
-	-- print( #LocalPlayer().PRK_Decals )
+	table.insert( LocalPlayer().PRK_Decals[zone], decal )
+	-- print( #LocalPlayer().PRK_Decals[zone] )
 end
 
 hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Decal", function( depth, skybox )
@@ -1201,12 +1214,13 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_De
 	if ( depth or skybox ) then return end
 
 	-- Render decals
-	if ( PRK_Decal and LocalPlayer().PRK_Decals ) then
+	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
+	if ( PRK_Decal and LocalPlayer().PRK_Decals and LocalPlayer().PRK_Decals[zone] ) then
 		local width = 1
 		-- print( PRK_Material_Splat())
 		local size = 48
 		local rendercount = 0
-		for k, decal in pairs( LocalPlayer().PRK_Decals ) do
+		for k, decal in pairs( LocalPlayer().PRK_Decals[zone] ) do
 			render.SetMaterial( decal.mat )
 			render.DrawQuadEasy(
 				decal.pos + Vector( 0, 0, 1 ) * 0.05 * k,
@@ -1318,7 +1332,7 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 		fontsize = 36
 	end
 	if ( shadow == nil ) then
-		shadow = true
+		shadow = PRK_HUD_Colour_Shadow
 	end
 
 	-- Shadow
@@ -1329,7 +1343,7 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 			"HeavyHUD" .. fontsize,
 			offx,
 			offy,
-			PRK_HUD_Colour_Shadow,
+			shadow,
 			xalign,
 			yalign
 		)

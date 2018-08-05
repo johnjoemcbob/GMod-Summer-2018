@@ -238,7 +238,9 @@ function ENT:OnRemove()
 	end
 
 	if ( SERVER ) then
-		GAMEMODE:SpawnCoins( self:GetPos(), self.Coins )
+		if ( !self.Cleanup ) then
+			GAMEMODE:SpawnCoins( self, self:GetPos(), self.Coins )
+		end
 	end
 end
 
@@ -299,5 +301,5 @@ function ENT:MoveCallback()
 end
 
 function ENT:Attack( victim )
-	-- victim:TakeDamage( 1, self, self )
+	victim:TakeDamage( 1, self, self )
 end

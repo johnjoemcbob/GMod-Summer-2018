@@ -4,12 +4,6 @@ ENT.Base 			= "prk_npc_base"
 ENT.Spawnable		= true
 ENT.KillName		= "Sploder"
 
-list.Set( "NPC", "prk_npc_sploder", {
-	Name = "Prickly Sploder",
-	Class = "prk_npc_sploder",
-	Category = "Prickly"
-} )
-
 sound.Add(
 	{ 
 		name = "prk_sploder_loop",
@@ -21,12 +15,18 @@ sound.Add(
 	}
 )
 
+list.Set( "NPC", "prk_npc_sploder", {
+	Name = "Prickly Sploder",
+	Class = "prk_npc_sploder",
+	Category = "Prickly"
+} )
+
 function ENT:Initialize()
 	self:SetModel( "models/headcrab.mdl" )
 	self:SetModelScale( PRK_Enemy_Scale, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
-	self:SetCollisionGroup( COLLISION_GROUP_WORLD )
+	-- self:SetCollisionGroup( COLLISION_GROUP_WORLD )
 
 	-- Extra visual details
 	if ( CLIENT ) then

@@ -48,10 +48,29 @@ local function loadfonts()
 		128
 	}
 	for k, size in pairs( fontsizes ) do
+		-- Resolution Scaled
 		surface.CreateFont( "HeavyHUD" .. size, {
 			font = "Alte Haas Grotesk",
 			extended = false,
 			size = PRK_GetResolutionIndependentH( size ),
+			weight = 2000,
+			blursize = 1,
+			scanlines = 0,
+			antialias = true,
+			underline = false,
+			italic = false,
+			strikeout = false,
+			symbol = false,
+			rotary = false,
+			shadow = false,
+			additive = false,
+			outline = false,
+		} )
+		-- Absolute
+		surface.CreateFont( "HeavyHUD" .. size .. "_Abs", {
+			font = "Alte Haas Grotesk",
+			extended = false,
+			size = size,
 			weight = 2000,
 			blursize = 1,
 			scanlines = 0,
@@ -1335,6 +1354,11 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 	end
 	if ( shadow == nil ) then
 		shadow = PRK_HUD_Colour_Shadow
+	end
+
+	-- Negative font size means absolute, don't scale with screen res
+	if ( fontsize < 0 ) then
+		fontsize = math.abs( fontsize ) .. "_Abs"
 	end
 
 	-- Shadow

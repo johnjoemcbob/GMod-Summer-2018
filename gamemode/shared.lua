@@ -137,7 +137,7 @@ PRK_Editor_Square_Border_Min					= 8
 PRK_Editor_Square_Border_Add					= 4
 
 -- Level Generation
-PRK_Gen_Seed									= 2
+PRK_Gen_Seed									= nil --2
 PRK_Gen_SizeModifier							= 2 -- 6 -- 7 -- 5 --0.01 -- 10
 PRK_Gen_DetailWaitTime							= 1
 PRK_Gen_StepBetweenTime							= 0 --0.1 --0--5

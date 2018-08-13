@@ -389,27 +389,40 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 		tunnel:SetAngles( self:GetAngles() + Angle( 90, 0, 0 ) )
 
 		-- Display portal to all players if someone is waiting (no depth)
-		-- if ( self.GatherParty != "" ) then
-			local ang = tunnel:GetAngles()
-				ang:RotateAroundAxis( Vector( 1, 0, 0 ), 90 )
-			local scale = 0.1
-			cam.Start3D2D( pos + forward * 0, ang, self.Scale * scale )
-				cam.IgnoreZ( true )
-					surface.SetDrawColor( PRK_HUD_Colour_Shadow )
-					draw.Circle( 0, 0, 24 / scale, segs, 0 )
-					PRK_DrawText(
-						self.GatherParty,
-						0,
-						0,
-						PRK_HUD_Colour_Main,
-						TEXT_ALIGN_CENTER,
-						TEXT_ALIGN_CENTER,
-						128,
-						PRK_HUD_Colour_Dark
-					)
-				cam.IgnoreZ( false )
-			cam.End3D2D()
-		-- end
+		if ( self.GatherParty != "" ) then
+			for dir = 0, 1 do
+				local ang = tunnel:GetAngles()
+					ang:RotateAroundAxis( tunnel:GetUp(), 90 )
+					ang:RotateAroundAxis( tunnel:GetForward(), 180 * dir )
+				local scale = 0.1
+				cam.Start3D2D( pos + forward * 0, ang, self.Scale * scale )
+					cam.IgnoreZ( true )
+						surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+						draw.Circle( 0, 0, 24 / scale, segs, 0 )
+						PRK_DrawText(
+							"PORTAL",
+							0,
+							-56,
+							PRK_HUD_Colour_Main,
+							TEXT_ALIGN_CENTER,
+							TEXT_ALIGN_CENTER,
+							128,
+							PRK_HUD_Colour_Dark
+						)
+						PRK_DrawText(
+							self.GatherParty,
+							0,
+							56,
+							PRK_HUD_Colour_Main,
+							TEXT_ALIGN_CENTER,
+							TEXT_ALIGN_CENTER,
+							128,
+							PRK_HUD_Colour_Dark
+						)
+					cam.IgnoreZ( false )
+				cam.End3D2D()
+			end
+		end
 
 		-- Display actual portal
 		local function inner()

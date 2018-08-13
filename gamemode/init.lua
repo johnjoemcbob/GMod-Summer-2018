@@ -214,7 +214,9 @@ function GM:GenerateNextFloor( zone )
 	print( "Floor: " .. self.Floors )
 
 	-- Temp for judging so I know what's coming :)
-	math.randomseed( PRK_Gen_Seed + self.Floors )
+	if ( PRK_Gen_Seed != nil ) then
+		math.randomseed( PRK_Gen_Seed + self.Floors )
+	end
 
 	-- Clear any remaining entities with this zone
 	-- (other than the gateway currently trasporting the players!)

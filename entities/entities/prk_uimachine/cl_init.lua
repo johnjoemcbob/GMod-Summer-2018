@@ -89,7 +89,7 @@ function ENT:Initialize()
 				col_text_title,
 				TEXT_ALIGN_CENTER,
 				TEXT_ALIGN_CENTER,
-				64,
+				-64,
 				false
 			)
 			PRK_DrawText(
@@ -99,7 +99,7 @@ function ENT:Initialize()
 				col_text_title,
 				TEXT_ALIGN_CENTER,
 				TEXT_ALIGN_CENTER,
-				24,
+				-24,
 				false
 			)
 		end
@@ -226,7 +226,7 @@ function ENT:Initialize()
 					PRK_HUD_Colour_Highlight,
 					TEXT_ALIGN_LEFT,
 					TEXT_ALIGN_CENTER,
-					36,
+					-36,
 					false
 				)
 
@@ -238,7 +238,7 @@ function ENT:Initialize()
 					PRK_HUD_Colour_Highlight,
 					TEXT_ALIGN_RIGHT,
 					TEXT_ALIGN_CENTER,
-					36,
+					-36,
 					false
 				)
 			end

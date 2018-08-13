@@ -246,6 +246,13 @@ end
 
 if ( CLIENT ) then
 	function ENT:Draw()
+		-- Draw base model
+		local col = self:GetColor()
+		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+			self:DrawModel()
+		render.SetColorModulation( 1, 1, 1 )
+
+		-- Draw details
 		local boneid = 2
 
 		if not boneid then
@@ -253,35 +260,27 @@ if ( CLIENT ) then
 		end
 
 		local matrix = self:GetBoneMatrix( boneid )
+		if matrix then
+			for k, mod in pairs( self.Visuals ) do
+				local ent = mod.Ent
+				local newpos, newang = LocalToWorld( mod[2], mod[3], matrix:GetTranslation(), matrix:GetAngles() )
 
-		if not matrix then
-			return
+				ent:SetPos( newpos )
+				ent:SetAngles( newang )
+				ent:SetMaterial( "models/debug/debugwhite" )
+				local col = mod[4]
+					if ( col == true ) then
+						col = self:GetColor()
+					end
+				render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+					if ( mod.Think ) then
+						mod.Think( ent, self )
+					end
+					ent:SetupBones()
+					ent:DrawModel()
+				render.SetColorModulation( 1, 1, 1 )
+			end
 		end
-
-		for k, mod in pairs( self.Visuals ) do
-			local ent = mod.Ent
-			local newpos, newang = LocalToWorld( mod[2], mod[3], matrix:GetTranslation(), matrix:GetAngles() )
-
-			ent:SetPos( newpos )
-			ent:SetAngles( newang )
-			ent:SetMaterial( "models/debug/debugwhite" )
-			local col = mod[4]
-				if ( col == true ) then
-					col = self:GetColor()
-				end
-			render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
-				if ( mod.Think ) then
-					mod.Think( ent, self )
-				end
-				ent:SetupBones()
-				ent:DrawModel()
-			render.SetColorModulation( 1, 1, 1 )
-		end
-
-		local col = self:GetColor()
-		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
-			self:DrawModel()
-		render.SetColorModulation( 1, 1, 1 )
 	end
 end
 

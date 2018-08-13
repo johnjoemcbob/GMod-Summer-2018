@@ -106,13 +106,13 @@ function PRK_Gen( origin, zone )
 	-- }
 	-- PrintTable( ToGen )
 	local steps = 0
-	local safety = 100000
+	local safety = 10000
 	runnextstep = true
 	while ( runnextstep and steps < safety ) do
 		PRK_Gen_Step( zone )
 		steps = steps + 1
+		print( "step: " .. steps )
 	end
-	print( "Last step: " .. steps )
 end
 
 -- local room = nil
@@ -184,11 +184,10 @@ function PRK_Gen_Step( zone )
 
 	if ( !room ) then
 		local roomid = math.random( 1, #rooms )
-		-- PrintTable( ToGen[1] )
 		if ( #ToGen[1].AttachPoints != 0 ) then
 			PRK_Gen_RoomStart( rooms[roomid], zone, ToGen[1].AttachPoints[1].Pos )
 		end
-	elseif ( room.AttachPoints[index_try] ) then
+	elseif ( room.AttachPoints[index_try] != nil ) then
 		local collide = PRK_Gen_Step_Try( true )
 		if ( !collide ) then
 			PRK_Gen_RoomEnd( room, zone )
@@ -211,6 +210,12 @@ function PRK_Gen_Step( zone )
 				PRK_Gen_RoomClose( pointtemp, zone ) -- No fitting attached
 			end
 		end
+	else
+		-- Delete none workable room
+		for p, ent in pairs( room.Ents ) do
+			ent:Remove()
+		end
+		room = nil
 	end
 
 	next_step( zone )
@@ -292,14 +297,16 @@ function PRK_Gen_RoomAddModel( mod, zone, off, world )
 			if ( mod.Type != nil ) then
 				ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
 			end
-			if ( #room.Ents != 0 ) then
+			if ( room != nil and #room.Ents != 0 ) then
 				ent:SetParent( room.Ents[1] )
 			end
 			ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
 			ent.PRK_Room = CurrentRoomID
 		ent:Spawn()
 		ent:SetZone( zone )
-		table.insert( room.Ents, ent )
+		if ( room != nil ) then
+			table.insert( room.Ents, ent )
+		end
 	end
 end
 
@@ -511,6 +518,12 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 	next_attach()
 
 	table.insert( ToGen, { AttachPoints = attachpoints } )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- PrintTable( attachpoints )
+	-- print( "ADD ATTACH TO TOGEN" )
 end
 
 function PRK_Gen_RoomClose( point, zone )
@@ -521,6 +534,7 @@ function PRK_Gen_RoomClose( point, zone )
 			count = count + #gen.AttachPoints
 		end
 	if ( count <= 1 and !endroom ) then
+		-- Finish
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
@@ -536,6 +550,7 @@ function PRK_Gen_RoomClose( point, zone )
 		end )
 		endroom = true
 	else
+		-- Close
 		local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
 		local ang = Angle( -90, 0, 0 )
 			if ( point.Ang != 0 ) then ang = Angle( -90, 90, 0 ) end
@@ -690,7 +705,9 @@ function PRK_Gen_LoadRooms_Parse( room )
 	end
 
 	-- Debug output
+	-- print( "LOADED ROOM:" )
 	-- PrintTable( room )
+	-- print( "LOADED ROOM ^" )
 
 	return room
 end

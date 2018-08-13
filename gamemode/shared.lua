@@ -10,7 +10,7 @@ GM.Author = "johnjoemcbob & DrMelon"
 GM.Email = ""
 GM.Website = "https://github.com/johnjoemcbob/GMod-Summer-2018"
 
--- PRK_SANDBOX = true
+PRK_SANDBOX = true
 if PRK_SANDBOX then
 DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 else
@@ -47,7 +47,8 @@ PRK_Colour_Player								= {
 													Color( 89, 98, 117, 255 ),
 }
 
-PRK_Colour_Enemy_Skin							= Color( 0, 0, 5, 255 )
+-- PRK_Colour_Enemy_Skin							= Color( 0, 0, 5, 255 )
+PRK_Colour_Enemy_Skin							= Color( 22, 22, 22, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
 PRK_Colour_Enemy_Tooth							= PRK_HUD_Colour_Main
 PRK_Colour_Enemy_Mouth							= Color( 100, 100, 100, 255 )

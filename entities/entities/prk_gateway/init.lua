@@ -19,7 +19,7 @@ end
 function ENT:SendGatherParty( gather )
 	net.Start( "PRK_Gateway_GatherParty" )
 		net.WriteEntity( self )
-		net.WriteBool( gather )
+		net.WriteString( gather )
 	net.Broadcast()
 end
 
@@ -89,13 +89,13 @@ function ENT:CheckPartyPresent()
 	if ( !self.NextPartyPresent or self.NextPartyPresent <= CurTime() ) then
 		-- Check if all players in the zone are close
 		self.PartyMembers = {}
-		present = true
+		present = 0
 			local close = 250
 			for k, ply in pairs( player.GetAll() ) do
 				if ( ply:GetNWInt( "PRK_Zone", 0 ) == self.Zone ) then
 					local dist = ply:GetPos():Distance( self:GetPos() )
-					if ( dist > close ) then
-						present = false
+					if ( dist <= close ) then
+						present = present + 1
 					end
 					table.insert( self.PartyMembers, ply )
 				end
@@ -103,7 +103,7 @@ function ENT:CheckPartyPresent()
 		self.LastPartyPresent = present
 
 		-- Force all to enter immediately
-		if ( present ) then
+		if ( present == #self.PartyMembers ) then
 			-- Move all players out of level, on path to new (reused old) start
 			self.Destination = PRK_Destination_LevelStartTemp
 			self.DestinationZone = self.Zone
@@ -118,7 +118,11 @@ function ENT:CheckPartyPresent()
 		end
 
 		-- Visual text info helper
-		self:SendGatherParty( !present )
+		local str = present .. "/" .. #self.PartyMembers
+			if ( present == 0 ) then
+				str = ""
+			end
+		self:SendGatherParty( str )
 
 		self.NextPartyPresent = CurTime() + 1
 	end

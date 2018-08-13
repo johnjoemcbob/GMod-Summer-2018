@@ -1,3 +1,5 @@
+THIS IS THE POST CONTEST BRANCH
+
 The Prickly Team entry to the Summer of 2018 GmodStore Garry's Mod Gamemode Competition
 
 When downloaded please rename the root folder from 'GMod-Summer-2018-master' to 'prickly_summer_2018'

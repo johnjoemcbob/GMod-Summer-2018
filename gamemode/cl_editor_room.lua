@@ -219,7 +219,7 @@ end )
 
 local lastdown = {}
 hook.Add( "Think", "PRK_Think_Editor_Room", function()
-	if ( !LocalPlayer().PRK_Editor_Room )  then return end
+	if ( !LocalPlayer().PRK_Editor_Room ) then return end
 
 	-- Mouse input
 	local codes = {
@@ -354,6 +354,7 @@ hook.Add( "Think", "PRK_Think_Editor_Room", function()
 end )
 
 function PRK_Editor_Room_RayToPlane( aim )
+	local aim = gui.ScreenToVector( gui.MousePos() )
 	local ray = {
 		position = LocalPlayer().PRK_Editor_RoomData.ViewOrigin,
 		direction = aim,
@@ -363,9 +364,6 @@ function PRK_Editor_Room_RayToPlane( aim )
 		normal = Vector( 0, 0, -1 ),
 	}
 	local pos = intersect_ray_plane( ray, plane )
-	if ( pos ) then
-		-- PRK_BasicDebugSphere( pos )
-	end
 	return pos
 end
 

@@ -26,7 +26,7 @@ list.Set( "NPC", "prk_npc_biter", {
 
 function ENT:Initialize()
 	self:SetModel( "models/headcrabclassic.mdl" )
-	self:SetModelScale( PRK_Enemy_PhysScale, 0 )
+	self:SetModelScale( PRK_Enemy_Scale, 0 )
 	self:SetMaterial( "models/debug/debugwhite", true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 	-- local hori = 12
@@ -56,7 +56,7 @@ function ENT:Initialize()
 
 		local origin = Vector( 25, 7, 0 )
 		-- local height = 0
-		local scale = PRK_Enemy_Scale / PRK_Enemy_PhysScale
+		local scale = 0.75
 		self.Visuals = {
 			{
 				"models/ichthyosaur.mdl",
@@ -205,7 +205,7 @@ function ENT:Initialize()
 		end
 
 		-- Scale
-		local sca = Vector( 1, 1, 1.5 ) * PRK_Enemy_Scale / PRK_Enemy_PhysScale
+		local sca = Vector( 1, 1, 1.5 )
 		local mat = Matrix()
 			mat:Scale( sca )
 		self:EnableMatrix( "RenderMultiply", mat )

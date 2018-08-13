@@ -49,14 +49,15 @@ end )
 
 net.Receive( "PRK_Gateway_GatherParty", function( len, ply )
 	local self = net.ReadEntity()
-	local toggle = net.ReadBool()
+	local text = net.ReadString()
 
-	self.GatherParty = toggle
+	self.GatherParty = text
 end )
 
 function ENT:Initialize()
 	self.Scale = 0
 	self.Travellers = {}
+	self.GatherParty = ""
 
 	self.SoundHum = CreateSound( self, "ambient/levels/citadel/portal_beam_loop1.wav" )
 	self.SoundHum:Play()
@@ -386,6 +387,31 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 		PRK_RenderScale( tunnel, Vector( self.Scale * tunnelscalemult, self.Scale * tunnelscalemult, length ) )
 		tunnel:SetPos( pos + forward * PRK_Plate_Size * length )
 		tunnel:SetAngles( self:GetAngles() + Angle( 90, 0, 0 ) )
+
+		-- Display portal to all players if someone is waiting (no depth)
+		-- if ( self.GatherParty != "" ) then
+			local ang = tunnel:GetAngles()
+				ang:RotateAroundAxis( Vector( 1, 0, 0 ), 90 )
+			local scale = 0.1
+			cam.Start3D2D( pos + forward * 0, ang, self.Scale * scale )
+				cam.IgnoreZ( true )
+					surface.SetDrawColor( PRK_HUD_Colour_Shadow )
+					draw.Circle( 0, 0, 24 / scale, segs, 0 )
+					PRK_DrawText(
+						self.GatherParty,
+						0,
+						0,
+						PRK_HUD_Colour_Main,
+						TEXT_ALIGN_CENTER,
+						TEXT_ALIGN_CENTER,
+						128,
+						PRK_HUD_Colour_Dark
+					)
+				cam.IgnoreZ( false )
+			cam.End3D2D()
+		-- end
+
+		-- Display actual portal
 		local function inner()
 			-- Center
 			cam.Start3D2D( pos + forward * 0, tunnel:GetAngles(), self.Scale )
@@ -444,7 +470,7 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 		draw.StencilBasic( mask, inner )
 
 		-- Gather Party
-		if ( self.GatherParty ) then
+		if ( self.GatherParty != "" ) then
 			local ang = self:GetAngles()
 				ang:RotateAroundAxis( self:GetForward(), 90 )
 				ang:RotateAroundAxis( self:GetUp(), 90 )
@@ -463,6 +489,16 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 					"before venturing forth",
 					0,
 					64,
+					PRK_HUD_Colour_Main,
+					TEXT_ALIGN_CENTER,
+					TEXT_ALIGN_CENTER,
+					64,
+					PRK_HUD_Colour_Dark
+				)
+				PRK_DrawText(
+					self.GatherParty,
+					0,
+					128,
 					PRK_HUD_Colour_Main,
 					TEXT_ALIGN_CENTER,
 					TEXT_ALIGN_CENTER,

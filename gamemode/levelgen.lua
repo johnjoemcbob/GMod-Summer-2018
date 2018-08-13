@@ -78,6 +78,7 @@ local room
 -- end )
 
 local rooms, starts, finishes, navs, endroom
+local runnextstep = true
 function PRK_Gen( origin, zone )
 	LastGen = {}
 	CurrentRoomID = 0
@@ -104,7 +105,14 @@ function PRK_Gen( origin, zone )
 		-- }
 	-- }
 	-- PrintTable( ToGen )
-	PRK_Gen_Step( zone )
+	local steps = 0
+	local safety = 100000
+	runnextstep = true
+	while ( runnextstep and steps < safety ) do
+		PRK_Gen_Step( zone )
+		steps = steps + 1
+	end
+	print( "Last step: " .. steps )
 end
 
 -- local room = nil
@@ -135,8 +143,10 @@ local function next_attach()
 end
 local function next_step( zone )
 	if ( PRK_Gen_StepBetweenTime == 0 ) then
-		PRK_Gen_Step( zone )
+		-- To avoid stack overflow, flag here to call Step again from base Gen function
+		runnextstep = true
 	else
+		runnextstep = false
 		timer.Simple( PRK_Gen_StepBetweenTime, function() PRK_Gen_Step( zone ) end )
 	end
 end
@@ -161,6 +171,7 @@ local function getrotatedfloor( v, anchor )
 	return min, max
 end
 function PRK_Gen_Step( zone )
+	runnextstep = false
 	if ( !ToGen or #ToGen == 0 or ( #ToGen == 1 and #ToGen[1].AttachPoints == 0 ) ) then
 		PRK_Gen_End()
 		return
@@ -168,6 +179,7 @@ function PRK_Gen_Step( zone )
 	if ( #ToGen[1].AttachPoints == 0 ) then
 		next_attach()
 		next_step( zone )
+		return
 	end
 
 	if ( !room ) then
@@ -182,7 +194,6 @@ function PRK_Gen_Step( zone )
 			PRK_Gen_RoomEnd( room, zone )
 
 			next_step( zone )
-
 			return
 		end
 
@@ -203,6 +214,7 @@ function PRK_Gen_Step( zone )
 	end
 
 	next_step( zone )
+	return
 end
 
 function PRK_Gen_Step_Try( undo )
@@ -540,7 +552,11 @@ function PRK_Gen_RoomClose( point, zone )
 end
 
 function PRK_Gen_End()
+	-- Return to random seed
 	math.randomseed( os.time() )
+
+	-- Don't run any more steps
+	runnextstep = false
 
 	-- Remove each helper model entity
 	for k, v in pairs( HelperModels ) do

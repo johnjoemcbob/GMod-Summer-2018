@@ -399,35 +399,37 @@ function GM:HUDShouldDraw( name )
 	return PRK_ShouldDraw()
 end
 
-if ( !PRK_SANDBOX and PRK_ContextMenu ) then
+if ( !PRK_SANDBOX ) then
 function CreateContextMenu()
 	-- Destroy any old
 	DestroyContextMenu()
 
 	-- Create new
-	g_ContextMenu = vgui.Create( "EditablePanel" )
-		function g_ContextMenu:Paint( w, h )
-			
-		end
-		g_ContextMenu:SetPos( 0, 0 )
-		g_ContextMenu:SetSize( ScrW(), ScrH() )
-		--
-		-- We're blocking clicks to the world - but we don't want to
-		-- so feed clicks to the proper functions..
-		--
-		g_ContextMenu.OnMousePressed = function( p, code )
-			hook.Run( "GUIMousePressed", code, gui.ScreenToVector( gui.MousePos() ) )
-		end
-		g_ContextMenu.OnMouseReleased = function( p, code )
-			hook.Run( "GUIMouseReleased", code, gui.ScreenToVector( gui.MousePos() ) )
-		end
-		g_ContextMenu:RequestFocus()
-		g_ContextMenu:MouseCapture()
-		g_ContextMenu:MakePopup()
-		g_ContextMenu:SetKeyboardInputEnabled( false )
-		g_ContextMenu:SetMouseInputEnabled( true )
-		g_ContextMenu:SetWorldClicker( true )
-	LocalPlayer().ContextMenu = g_ContextMenu
+	if ( PRK_ContextMenu ) then
+		g_ContextMenu = vgui.Create( "EditablePanel" )
+			function g_ContextMenu:Paint( w, h )
+				
+			end
+			g_ContextMenu:SetPos( 0, 0 )
+			g_ContextMenu:SetSize( ScrW(), ScrH() )
+			--
+			-- We're blocking clicks to the world - but we don't want to
+			-- so feed clicks to the proper functions..
+			--
+			g_ContextMenu.OnMousePressed = function( p, code )
+				hook.Run( "GUIMousePressed", code, gui.ScreenToVector( gui.MousePos() ) )
+			end
+			g_ContextMenu.OnMouseReleased = function( p, code )
+				hook.Run( "GUIMouseReleased", code, gui.ScreenToVector( gui.MousePos() ) )
+			end
+			g_ContextMenu:RequestFocus()
+			g_ContextMenu:MouseCapture()
+			g_ContextMenu:MakePopup()
+			g_ContextMenu:SetKeyboardInputEnabled( false )
+			g_ContextMenu:SetMouseInputEnabled( true )
+			g_ContextMenu:SetWorldClicker( true )
+		LocalPlayer().ContextMenu = g_ContextMenu
+	end
 end
 
 function DestroyContextMenu()

@@ -220,7 +220,7 @@ function ENT:Initialize()
 
 				-- Left
 				PRK_DrawText(
-					self.ButtonLeftText,
+					string.upper( self.ButtonLeftText ),
 					32,
 					h / 2,
 					PRK_HUD_Colour_Highlight,

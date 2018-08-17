@@ -6,7 +6,7 @@ function EFFECT:Init( data )
 	local origin = data:GetOrigin()
 	local dir = data:GetNormal()
 		dir = dir + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), math.Rand( -1, 1 ) ) * 0.1
-	local col = data:GetEntity():GetColor()
+	local col = VectorToColour( data:GetStart() )
 	local delay = data:GetScale() or 0
 
 	local emitter = ParticleEmitter( origin, true )
@@ -53,8 +53,6 @@ function EFFECT:Init( data )
 
 				particle:SetCollide( true )
 				particle:SetCollideCallback( function( part, hitpos, hitnormal )
-					-- print( "hi" )
-					-- util.Decal( "PaintSplatPink", hitpos + hitnormal, hitpos - hitnormal )
 					if ( math.random( 1, 100 ) < 10 ) then
 						PRK_AddDecal( hitpos, col )
 					end

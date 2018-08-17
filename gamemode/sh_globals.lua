@@ -91,6 +91,7 @@ PRK_Wall_Detail_Mesh_Count						= function()
 
 PRK_Decal										= true
 -- PRK_Decal										= false -- FPS test
+PRK_Decal_NonDamage								= true
 PRK_Decal_Max									= 200
 PRK_Decal_CombineDist							= 10
 

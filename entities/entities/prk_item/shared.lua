@@ -30,22 +30,7 @@ function ENT:Think()
 	
 
 	if ( CLIENT ) then
-		if ( !self.Visuals ) then
-			self:Initialize()
-		end
-		if ( self.Visuals ) then
-			for k, vis in pairs( self.Visuals ) do
-				if ( vis and vis:IsValid() ) then
-					vis:SetPos(
-						self:GetPos() +
-						self:GetUp() * vis.Pos.z
-					)
-					local ang = self:GetAngles()
-						ang:RotateAroundAxis( self:GetForward(), vis.Ang.p )
-					vis:SetAngles( ang )
-				end
-			end
-		end
+		
 	end
 
 	if ( SERVER ) then

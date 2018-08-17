@@ -166,55 +166,57 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 				return moving, nil, 1, 0, true
 			end
 		for _, dis in pairs( disruptors ) do
-			local effects = dis.prt
-			local overridedist = nil
-			local speed = dis.vel:Length()
-			local moving = speed > 100
-			local scaleoff = 0
-			local magnitude = 1
-				-- Special case for gateways
-				local spc = specialcases[dis.cls]
-				if ( spc ) then
-					moving, overridedist, magnitude, scaleoff, effects = spc( dis, moving )
-				end
-			-- print( speed )
-			if ( moving ) then
-				for k, plant in pairs( LocalPlayer().Plants[zone] ) do
-					if ( plant and ( !plant.NextTouch or plant.NextTouch <= CurTime() ) ) then
-						local dist = dis.pos:Distance( plant.pos )
-						local maxdist = dis.rng or PRK_Grass_Mesh_DisruptorInnerRange
-							if ( overridedist ) then
-								maxdist = overridedist
+			if ( !dis.ent or dis.ent:IsValid() ) then
+				local effects = dis.prt
+				local overridedist = nil
+				local speed = dis.vel:Length()
+				local moving = speed > 100
+				local scaleoff = 0
+				local magnitude = 1
+					-- Special case for gateways
+					local spc = specialcases[dis.cls]
+					if ( spc ) then
+						moving, overridedist, magnitude, scaleoff, effects = spc( dis, moving )
+					end
+				-- print( speed )
+				if ( moving ) then
+					for k, plant in pairs( LocalPlayer().Plants[zone] ) do
+						if ( plant and ( !plant.NextTouch or plant.NextTouch <= CurTime() ) ) then
+							local dist = dis.pos:Distance( plant.pos )
+							local maxdist = dis.rng or PRK_Grass_Mesh_DisruptorInnerRange
+								if ( overridedist ) then
+									maxdist = overridedist
+								end
+							local close = dist < maxdist
+							if ( close ) then
+								local forward = ( dis.pos + dis.vel - plant.pos ):GetNormal()
+
+								if ( effects ) then
+									-- Sound effect
+									-- ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
+
+									-- Particle burst
+									local effectdata = EffectData()
+										local pos = dis.pos - forward
+										effectdata:SetOrigin( pos )
+										effectdata:SetNormal( -forward )
+										-- effectdata:SetColor( ent:GetColor() )
+									util.Effect( "prk_hit", effectdata )
+								end
+
+								-- Lean away from entity
+								local up = Vector( 0, 0, 1 )
+								local right = up:Cross( forward )
+								local ang = Angle( plant.ang.p, plant.ang.y, plant.ang.r )
+									ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
+								plant.TargetAngles = ang
+
+								-- Bounce up/down scale
+								plant.TargetScaleOffset = 3 * magnitude + scaleoff
+
+								-- Delay next
+								-- plant.NextTouch = CurTime() + 1
 							end
-						local close = dist < maxdist
-						if ( close ) then
-							local forward = ( dis.pos + dis.vel - plant.pos ):GetNormal()
-
-							if ( effects ) then
-								-- Sound effect
-								-- ent:EmitSound( "npc/combine_soldier/gear" .. math.random( 4, 6 ) .. ".wav", 55, 170 + 30 / PRK_Speed * speed + math.random( -10, 10 ), 0.1 )
-
-								-- Particle burst
-								local effectdata = EffectData()
-									local pos = dis.pos - forward
-									effectdata:SetOrigin( pos )
-									effectdata:SetNormal( -forward )
-									-- effectdata:SetColor( ent:GetColor() )
-								util.Effect( "prk_hit", effectdata )
-							end
-
-							-- Lean away from entity
-							local up = Vector( 0, 0, 1 )
-							local right = up:Cross( forward )
-							local ang = Angle( plant.ang.p, plant.ang.y, plant.ang.r )
-								ang:RotateAroundAxis( right, magnitude * dist / maxdist * ( 50 + math.random( -10, 30 ) ) )
-							plant.TargetAngles = ang
-
-							-- Bounce up/down scale
-							plant.TargetScaleOffset = 3 * magnitude + scaleoff
-
-							-- Delay next
-							-- plant.NextTouch = CurTime() + 1
 						end
 					end
 				end

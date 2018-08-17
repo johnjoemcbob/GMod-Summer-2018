@@ -2,6 +2,7 @@ PRK_AddItem( "Knife", "", {
 	PrettyName = "Knife",
 	KillName = "KNIFE",
 	UseLabel = "TAKE",
+	Price = 30,
 	Cooldown = 0.5,
 	ThumbOffset = Vector( 0, 5, -10 ),
 	Colour = Color( 0, 0, 0, 255 ),

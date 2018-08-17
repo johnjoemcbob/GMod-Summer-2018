@@ -2,6 +2,8 @@ PRK_AddItem( "Base_Potion", "", {
 	PrettyName = "Potion Base",
 	KillName = "POTION",
 	UseLabel = "TAKE",
+	Cooldown = 0.1,
+	DisableDropOnSelfDeath = true, -- Don't drop any potion if it caused the player's death
 	Colour = Color( 0, 0, 0, 255 ),
 	InitShared = function( info, self )
 		self.KillName = info.KillName
@@ -26,14 +28,14 @@ PRK_AddItem( "Base_Potion", "", {
 
 		local scale = 1
 
-		local dir = ( LocalPlayer():EyePos() - pos ):GetNormal()
+		local dir = ( LocalPlayer():EyePos() - pos ):GetNormal() * 3
 		-- print( dir )
 		-- print( ang:Up() )
 		local rotang = ang - Angle()
 			rotang:RotateAroundAxis( ang:Forward(), 180 )
 		PRK_RenderCachedModel(
 			"models/XQM/Rails/funnel.mdl",
-			pos + ang:Up() * scale * 2 - dir * 3,
+			pos + ang:Up() * scale * 2 - dir,
 			rotang,
 			Vector( 1, 1, 1.5 ) * scale * 0.2,
 			"models/shiny",
@@ -80,14 +82,14 @@ PRK_AddItem( "Base_Potion", "", {
 		timer.Simple( 0.3, function()
 			ply:EmitSound( "physics/glass/glass_pottery_break" .. math.random( 1, 4 ) .. ".wav", 75, math.random( 120, 140 ), 0.2 )
 
+			local dir = ply:EyeAngles():Forward()
+			local pos = ply:EyePos() + dir * 20 + ply:EyeAngles():Up() * -10
 			if ( SERVER ) then
 				local models = {
 					"models/props_junk/glassjug01_chunk01.mdl",
 					"models/props_junk/glassjug01_chunk02.mdl",
 					"models/props_junk/glassjug01_chunk03.mdl",
 				}
-				local dir = ply:EyeAngles():Forward()
-				local pos = ply:EyePos() + dir * 20 + ply:EyeAngles():Up() * -10
 				for i = 1, 3 do
 					local debris = PRK_CreateEnt(
 						"prk_debris",
@@ -103,6 +105,18 @@ PRK_AddItem( "Base_Potion", "", {
 					if ( phys and phys:IsValid() ) then
 						phys:AddVelocity( dir * 200 + VectorRand() * 100 )
 					end
+				end
+			end
+
+			if ( CLIENT ) then
+				-- Potion splat
+				if ( PRK_Decal_NonDamage ) then
+					local effectdata = EffectData()
+						effectdata:SetOrigin( pos )
+						effectdata:SetNormal( -dir / 2 ) -- Chuck backwards as if drinking badly
+						effectdata:SetStart( ColourToVector( info.Colour ) )
+						effectdata:SetScale( 0 )
+					util.Effect( "prk_blood", effectdata )
 				end
 			end
 		end )

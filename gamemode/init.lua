@@ -407,7 +407,9 @@ function GM:DoPlayerDeath( ply, attacker, dmginfo )
 	ply:SetPos( ply:EyePos() )
 
 	-- Drop old use items
-	PRK_DropItem( ply )
+	if ( !ply.PRK_Item_DisableDropOnDeath ) then
+		PRK_DropItem( ply )
+	end
 end
 
 function GM:PlayerDeathSound()

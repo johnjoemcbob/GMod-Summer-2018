@@ -129,15 +129,21 @@ if ( SERVER ) then
 		if ( ply.PRK_Item_Cooldown and ply.PRK_Item_Cooldown > CurTime() ) then return end
 
 		if ( PRK_GetItem( ply ) ) then
+			-- Disable item-drop-on-death in case this caused the player's death
+			ply.PRK_Item_DisableDropOnDeath = PRK_Items[PRK_GetItem( ply )].DisableDropOnSelfDeath
+
 			-- Use effect
 			PRK_SendItemUse( ply, PRK_GetItem( ply ) )
 			local remove = PRK_Items[PRK_GetItem( ply )]:Use( ply )
-			ply.PRK_Item_Cooldown = CurTime() + ( PRK_Items[PRK_GetItem( ply )].Cooldown or 0 )
+			if ( PRK_GetItem( ply ) ) then -- Catch in case of death
+				ply.PRK_Item_Cooldown = CurTime() + ( PRK_Items[PRK_GetItem( ply )].Cooldown or 0 )
+			end
 
 			-- Remove from held
 			if ( remove ) then
 				PRK_SetItem( ply, "" )
 			end
+			ply.PRK_Item_DisableDropOnDeath = nil
 		end
 	end
 

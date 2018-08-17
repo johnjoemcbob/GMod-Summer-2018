@@ -254,6 +254,15 @@ function PRK_GetCirclePoints( x, y, radius, seg, rotate )
 	return cir
 end
 
+function LerpColour( dif, current, target )
+	return Color(
+		Lerp( dif, current.r, target.r ),
+		Lerp( dif, current.g, target.g ),
+		Lerp( dif, current.b, target.b ),
+		Lerp( dif, current.a, target.a )
+	)
+end
+
 function ColourToVector( col, range )
 	if ( range == nil ) then range = 1 end
 

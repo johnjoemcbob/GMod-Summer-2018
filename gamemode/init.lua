@@ -8,6 +8,7 @@
 -- LUA Downloads
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_editor_room.lua" )
+AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "shared.lua" )
 AddCSLuaFile( "lua/includes/modules/3d2dvgui.lua" )
 
@@ -95,10 +96,11 @@ end
 
 function SendDie( ply, pos, ang, killname )
 	net.Start( "PRK_Die" )
+		net.WriteEntity( ply )
 		net.WriteVector( pos )
 		net.WriteAngle( ang )
 		net.WriteString( killname )
-	net.Send( ply )
+	net.Broadcast()
 end
 
 function SendDrink( ply )
@@ -268,7 +270,7 @@ function GM:PlayerSpawn( ply )
 
 	-- Player model/colour
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
-	ply:SetMaterial( "models/debug/debugwhite" )
+	ply:SetMaterial( PRK_Material_Base )
 	local cols = PRK_Colour_Player
 	ply:SetColor( cols[math.random( 1, #cols )] )
 
@@ -323,7 +325,13 @@ function GM:PlayerSetup( ply )
 end
 
 function GM:Think()
-	
+	-- Handle player input 
+	for k, ply in pairs( player.GetAll() ) do
+		-- Trace use
+		if ( ply:KeyDown( IN_USE ) ) then
+			PRK_HandleUse( ply )
+		end
+	end
 end
 
 -- function GM:PlayerDeathThink( ply )
@@ -373,6 +381,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 end
 
 function GM:DoPlayerDeath( ply, attacker, dmginfo )
+	-- Send killer name to client
 	local killname = attacker.KillName
 		if ( killname == "OWNER" ) then
 			attacker = attacker.Owner
@@ -393,7 +402,12 @@ function GM:DoPlayerDeath( ply, attacker, dmginfo )
 			killname = killname[math.random( 1, #killname )]
 		end
 	SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
+
+	-- Smooth transition into falling eyes anim
 	ply:SetPos( ply:EyePos() )
+
+	-- Drop old use items
+	PRK_DropItem( ply )
 end
 
 function GM:PlayerDeathSound()
@@ -409,6 +423,32 @@ end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+function PRK_HandleUse( ply )
+	if ( !ply.PRK_NextUse or ply.PRK_NextUse <= CurTime() ) then
+		local tr = util.TraceLine( {
+			start = ply:EyePos(),
+			endpos = ply:EyePos() + ply:EyeAngles():Forward() * PRK_UseRange,
+			filter = { ply },
+		} )
+		if ( tr.Entity ) then
+			if ( tr.Entity.TraceUse ) then
+				tr.Entity:TraceUse( ply )
+				ply.PRK_NextUse = CurTime() + PRK_UseBetween
+			end
+		end
+	end
+end
+
+function PRK_HandleJump( ply, cmd, args )
+	PRK_UseItem( ply )
+end
+concommand.Add( "+prk_jump", PRK_HandleJump )
+
+function PRK_HandleDuck( ply, cmd, args )
+	PRK_DropItem( ply )
+end
+concommand.Add( "+prk_duck", PRK_HandleDuck )
 
 function PRK_OverrideDeathMessage( plytab, message )
 	local function set( ply )
@@ -513,8 +553,33 @@ function GM:GenerateLobby()
 	local flatsize = 15345 * 2
 	createceil( Vector( 0, 0, -12800 ) + Vector( 0, 0, size * 8 ), flatsize, flatsize )
 
+	-- Add details
+	local floor = origin - Vector( 0, 0, hsize * 8 )
+	local lobbydetails = {
+		-- {
+			-- "models/xqm/button3.mdl",
+			-- floor,
+			-- Angle(),
+			-- 10,
+			-- PRK_Material_Base,
+			-- Color( 100, 190, 190, 255 ),
+		-- },
+	}
+	for k, v in pairs( lobbydetails ) do
+		local ent = PRK_CreateEnt(
+			"prop_physics",
+			v[1],
+			v[2],
+			v[3]
+		)
+		ent:SetModelScale( v[4] )
+		PRK_ResizePhysics( ent, v[4] )
+		ent:SetMaterial( v[5] )
+		ent:SetColor( v[6] )
+	end
+
+	-- Update any players already in this zone (primarily for server host in lobby)
 	timer.Simple( PRK_Gen_FloorDeleteTime * 1.1, function()
-		-- Update any players already in this zone (primarily for server host in lobby)
 		for k, ply in pairs( player.GetAll() ) do
 			if ( ply:GetNWInt( "PRK_Zone" ) == 0 ) then
 				PRK_Floor_MoveToZone( ply, 0 )
@@ -554,7 +619,7 @@ function PRK_Explosion( attacker, pos, radius )
 			pos,
 			Angle( 0, 0, 0 )
 		)
-			sphere:SetMaterial( "models/debug/debugwhite", true )
+			sphere:SetMaterial( PRK_Material_Base, true )
 			sphere:SetColor( col )
 			sphere:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
 			sphere:SetModelScale( 0, time )
@@ -612,6 +677,30 @@ function PRK_CreateEnt( class, mod, pos, ang, mov, nospawn )
 			end
 		end
 	return ent
+end
+
+function PRK_ResizePhysics( ent, scale )
+	ent:PhysicsInit( SOLID_VPHYSICS )
+
+	local phys = ent:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		local physmesh = phys:GetMeshConvexes()
+			if ( not istable( physmesh ) ) or ( #physmesh < 1 ) then return end
+
+			for convexkey, convex in pairs( physmesh ) do
+				for poskey, postab in pairs( convex ) do
+					convex[ poskey ] = postab.pos * scale
+				end
+			end
+		ent:PhysicsInitMultiConvex( physmesh )
+
+		ent:EnableCustomCollisions( true )
+	end
+
+	local phys = ent:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( false )
+	end
 end
 ---------------
   -- /Util --

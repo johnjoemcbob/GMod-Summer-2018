@@ -24,7 +24,7 @@ list.Set( "NPC", "prk_npc_sploder", {
 function ENT:Initialize()
 	self:SetModel( "models/headcrab.mdl" )
 	self:SetModelScale( PRK_Enemy_Scale, 0 )
-	self:SetMaterial( "models/debug/debugwhite", true )
+	self:SetMaterial( PRK_Material_Base, true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 	-- self:SetCollisionGroup( COLLISION_GROUP_WORLD )
 
@@ -46,7 +46,7 @@ function ENT:Initialize()
 			local berry_pos = v / 3 * self:GetModelScale()
 			local berry_ang = Angle()
 			local berry_sca = ( 0.8 + math.random( 10, 50 ) / 100 ) / 3 * self:GetModelScale()
-			local berry_mat = "models/debug/debugwhite"
+			local berry_mat = PRK_Material_Base
 			local berry_col = Color(
 				PRK_Colour_Enemy_Eye.r * ( 0.7 + math.random( 10, 100 ) / 100 ),
 				PRK_Colour_Enemy_Eye.g,
@@ -125,7 +125,7 @@ function ENT:OnRemove()
 					AngleRand(),
 					true
 				)
-				prop:SetMaterial( "models/debug/debugwhite", true )
+				prop:SetMaterial( PRK_Material_Base, true )
 				prop:SetColor( PRK_Colour_Enemy_Eye )
 				prop:SetModelScale( 1 / 3 * PRK_Enemy_Scale, 0 )
 				prop:PhysicsInitSphere( 5 * PRK_Enemy_Scale )

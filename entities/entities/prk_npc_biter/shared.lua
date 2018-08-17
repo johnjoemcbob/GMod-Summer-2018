@@ -27,7 +27,7 @@ list.Set( "NPC", "prk_npc_biter", {
 function ENT:Initialize()
 	self:SetModel( "models/headcrabclassic.mdl" )
 	self:SetModelScale( PRK_Enemy_Scale, 0 )
-	self:SetMaterial( "models/debug/debugwhite", true )
+	self:SetMaterial( PRK_Material_Base, true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
 	-- local hori = 12
 	-- local vert = 32
@@ -267,7 +267,7 @@ if ( CLIENT ) then
 
 				ent:SetPos( newpos )
 				ent:SetAngles( newang )
-				ent:SetMaterial( "models/debug/debugwhite" )
+				ent:SetMaterial( PRK_Material_Base )
 				local col = mod[4]
 					if ( col == true ) then
 						col = self:GetColor()

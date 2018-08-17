@@ -132,7 +132,7 @@ function ENT:Initialize()
 				ang:RotateAroundAxis( self:GetAngles():Forward(), rnd[3].p )
 				ang:RotateAroundAxis( self:GetAngles():Up(), rnd[3].y )
 				ang:RotateAroundAxis( self:GetAngles():Right(), rnd[3].r )
-			local mat = "models/debug/debugwhite"
+			local mat = PRK_Material_Base
 			local col = rnd[5][math.random( 1, #rnd[5] )]
 
 			local ent = self:AddModel( mdl, pos, ang, 1, mat, col )
@@ -192,21 +192,4 @@ function ENT:OnRemove()
 	for k, v in pairs( self.Models ) do
 		v:Remove()
 	end
-end
-
-function ENT:AddModel( mdl, pos, ang, scale, mat, col )
-	local model = ClientsideModel( mdl )
-		model:SetPos( self:GetPos() + pos )
-		model:SetAngles( ang )
-		model:SetModelScale( scale )
-		model:SetMaterial( mat )
-		model:SetColor( col )
-		model.Pos = pos
-		model.Ang = ang
-		-- model.RenderBoundsMin, model.RenderBoundsMax = model:GetRenderBounds()
-	table.insert(
-		self.Models,
-		model
-	)
-	return model
 end

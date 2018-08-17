@@ -335,7 +335,7 @@ hook.Add( "PostDrawOpaqueRenderables", "PRK_PostDrawOpaqueRenderables_Gateway", 
 				pos + forward * PRK_Plate_Size * 4,
 				Angle( 90, 90, 0 ),
 				1,
-				"models/debug/debugwhite",
+				PRK_Material_Base,
 				Color( 0, 200, 0, 255 )
 			)
 			tunnel:SetNoDraw( true )

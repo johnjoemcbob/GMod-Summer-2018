@@ -79,6 +79,17 @@ net.Receive( "PRK_Gun_BulletUpdate", function( len, ply )
 	self.ChamberBullets = tab
 end )
 
+net.Receive( "PRK_Gun_ChamberWarning", function( len, ply )
+	local self = net.ReadEntity()
+	local chamber = net.ReadFloat()
+
+	if ( !LocalPlayer().ChamberWarning ) then
+		LocalPlayer().ChamberWarning = {}
+	end
+	LocalPlayer().ChamberWarning[chamber] = 255
+	self.Weapon:EmitSound( "weapons/pistol/pistol_empty.wav" )
+end )
+
 function SWEP:OnEntityCreated()
 	PRK_Initialise_RevolverChambers()
 
@@ -106,7 +117,7 @@ end
 
 function SWEP:DrawWorldModel()
 	render.SetColorModulation( 1, 1, 1 )
-	self:SetMaterial( "models/debug/debugwhite" )
+	self:SetMaterial( PRK_Material_Base )
 	self:DrawModel()
 end
 

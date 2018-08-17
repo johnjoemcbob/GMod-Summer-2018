@@ -62,7 +62,7 @@ SpawnEditorEnt["Rock"] = function( pos, ang, scale, model )
 end
 SpawnEditorEnt["Prop"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prop_physics", model, pos, ang )
-		ent:SetMaterial( "models/debug/debugwhite" )
+		ent:SetMaterial( PRK_Material_Base )
 		ent:SetModelScale( scale )
 	return ent
 end
@@ -111,7 +111,7 @@ function PRK_Gen( origin, zone )
 	while ( runnextstep and steps < safety ) do
 		PRK_Gen_Step( zone )
 		steps = steps + 1
-		print( "step: " .. steps )
+		-- print( "step: " .. steps )
 	end
 end
 

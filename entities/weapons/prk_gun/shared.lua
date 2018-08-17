@@ -47,21 +47,34 @@ SWEP.SoundPitchReloadIncrease	= 10
 SWEP.SoundPitchReloadSpeed		= 0.4
 
 PRK_BulletTypeInfo = {
+	-- Gold
+	[-1] = {
+		Paint = function( info, self, x, y, r )
+			
+		end,
+		CanFire = function( info, self )
+			return true
+		end,
+		Fire = function( info, self )
+			return false, false, true, true
+		end,
+	},
 	-- Empty
 	[0] = {
 		Paint = function( info, self, x, y, r )
 			
 		end,
 		CanFire = function( info, self )
-			-- if ( !self.NextEmptySpin or self.NextEmptySpin <= CurTime() ) then
-				-- self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) - 1, 1, self.MaxClip ) )
-				-- self:SpinSound()
-				-- if ( SERVER ) then
-					-- self:SendReload( 1 )
-				-- end
+			if ( !self.NextEmptySpin or self.NextEmptySpin <= CurTime() ) then
+				self.Owner:SetNWInt( "PRK_CurrentChamber", math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) - 1, 1, self.MaxClip ) )
+				self:SpinSound()
+				if ( SERVER ) then
+					self:SendChamberWarning( math.Wrap( self.Owner:GetNWInt( "PRK_CurrentChamber" ) + 1, 1, self.MaxClip ) )
+					self:SendReload( -1 )
+				end
 
-				-- self.NextEmptySpin = CurTime() + 1
-			-- end
+				self.NextEmptySpin = CurTime() + self.TimeReload
+			end
 			return false
 		end,
 	},
@@ -223,6 +236,7 @@ if ( SERVER ) then
 	util.AddNetworkString( "PRK_Gun_NoAmmo" )
     util.AddNetworkString( "PRK_Gun_SetNumChambers" )
     util.AddNetworkString( "PRK_Gun_BulletUpdate" )
+    util.AddNetworkString( "PRK_Gun_ChamberWarning" )
 
 	function SWEP:SendFire( bullettype, spin )
 		net.Start( "PRK_Gun_Fire" )
@@ -261,6 +275,13 @@ if ( SERVER ) then
 			net.WriteTable( self.ChamberBullets )
         net.Send( self.Owner )
 	end
+
+	function SWEP:SendChamberWarning( chamber )
+        net.Start( "PRK_Gun_ChamberWarning" )
+            net.WriteEntity( self )
+            net.WriteFloat( chamber )
+        net.Send( self.Owner )
+	end
 end
 
 function SWEP:Initialize()
@@ -295,6 +316,14 @@ function SWEP:Think()
 		if ( self.GunModel and self.GunModel:IsValid() ) then
 			self.GunModel:SetNoDraw( !PRK_ShouldDraw() )
 		end
+
+		-- Chamber warning effect
+		local speed = 3
+		if ( LocalPlayer().ChamberWarning ) then
+			for chamber, warn in pairs( LocalPlayer().ChamberWarning ) do
+				LocalPlayer().ChamberWarning[chamber] = Lerp( FrameTime() * speed, warn, 0 )
+			end
+		end
 	end
 
 	self:NextThink( CurTime() + 1 )
@@ -308,6 +337,7 @@ end
 function SWEP:PrimaryAttack( right )
 	if ( PRK_InEditor( self.Owner ) ) then return end
 	if ( self.Owner:JustSpawned() ) then return end
+	if ( self.NextEmptySpin and self.NextEmptySpin > CurTime() ) then return end
 
 	-- Communicate warning
 	if ( SERVER ) then
@@ -368,7 +398,93 @@ function SWEP:PrimaryAttack( right )
 end
 
 function SWEP:SecondaryAttack()
-	
+	if ( PRK_InEditor( self.Owner ) ) then return end
+	if ( self.Owner:JustSpawned() ) then return end
+
+	-- Shoot coin
+	if ( self.Owner:GetNWInt( "PRK_Money" ) > 0 ) then
+		-- Play first impact effect at spawn point
+		local tr = self.Owner:GetEyeTrace()
+		local effectdata = EffectData()
+			local pos = tr.HitPos
+			effectdata:SetOrigin( pos )
+			effectdata:SetNormal( tr.HitNormal )
+		util.Effect( "prk_hit", effectdata )
+
+		if ( SERVER ) then
+			self.Owner:SetNWInt( "PRK_Money", self.Owner:GetNWInt( "PRK_Money" ) - 1 )
+			-- self.Owner:SetNWInt( "PRK_Money_Add", self.Owner:GetNWInt( "PRK_Money_Add" ) - 1 )
+
+			-- Play shoot sound
+			PRK_ChainPitchedSounds[self.Owner:Nick() .. "_PRK_Coin_Pickup"] = nil
+			local chain = PRK_EmitChainPitchedSound(
+				self.Owner:Nick() .. "_PRK_Coin_Shoot",
+				self.Owner,
+				"garrysmod/balloon_pop_cute.wav",
+				75,
+				1,
+				170,
+				-10,
+				0.5,
+				1,
+				function()
+					if ( self and self:IsValid() and self.Owner and self.Owner:GetNWInt( "PRK_Money_Add" ) != 0 ) then
+						self.Owner:EmitSound( "items/medshot4.wav", 75, 255 )
+						self.Owner:SetNWInt( "PRK_Money_Add", 0 )
+					end
+				end,
+				1
+			)
+			self.Owner:SetNWInt( "PRK_Money_Add", -chain )
+
+			local coin = ents.Create( "prk_coin_heavy" )
+			coin:Spawn()
+			coin.Owner = self.Owner
+			-- Appear at hit point and bounce back towards player
+			local out = 10
+			local pos = tr.HitPos + tr.HitNormal * out
+				-- Clamp pos to max distance
+				local dir = pos - self.Owner:EyePos()
+				if ( dir:LengthSqr() > self.MaxDistanceSqr ) then
+					pos = self.Owner:GetPos() + dir:GetNormalized() * self.MaxDistance
+				end
+			local mult = 200
+			local dir = ( self.Owner:EyePos() + Vector( 0, 0, 100 ) - tr.HitPos ):GetNormalized() * mult * 3
+			-- coin:Launch( pos, dir )
+			coin:SetPos( pos )
+			local phys = coin:GetPhysicsObject()
+			if ( phys and phys:IsValid() ) then
+				phys:AddVelocity( dir )
+				phys:AddAngleVelocity( VectorRand() * 1000 )
+			end
+			coin:CollideWithEnt( tr.Entity )
+			coin:SetZone( self.Owner:GetNWInt( "PRK_Zone", 0 ) )
+
+			-- Communicate with client
+			self:SendFire( -1, false )
+		end
+
+		-- Punch FOV
+		local vel = self.Owner:GetVelocity()
+		local bac = -self.Owner:GetForward()
+		local movingback = vel:Dot( bac ) > 0
+		if ( !self.FOVBase ) then
+			self.FOVBase = self.Owner:GetFOV()
+		end
+		local base = self.FOVBase
+		local fov = base + self.DistFOVPunch
+			-- Punch in reverse if running backwards (otherwise feels like the player is not moving)
+			if ( movingback ) then
+				fov = base - self.DistFOVPunch
+			end
+		self.Owner:SetFOV( fov, self.TimeFOVPunch )
+		self.FOVPunch = CurTime() + self.TimeFOVPunch + self.TimeHoldFOVPunch
+
+		-- Punch the player's view
+		self.Owner:ViewPunch( Angle( -5, math.random( -1, 1 ), 0 ) )
+	end
+
+	self:SetNextSecondaryFire( CurTime() + self.TimeFire )
 end
 
 function SWEP:Reload( dir )

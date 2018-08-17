@@ -173,7 +173,7 @@ function ENT:Exit( ply )
 			end
 		if ( !hastravellers ) then
 			timer.Simple( 2, function()
-				print( "late remove travel gateway" )
+				-- print( "late remove travel gateway" )
 				self:Remove()
 			end )
 		end

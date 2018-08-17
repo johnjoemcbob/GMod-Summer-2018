@@ -8,6 +8,7 @@
 include( "shared.lua" )
 
 include( "cl_editor_room.lua" )
+include( "cl_modelcache.lua" )
 
 -- Materials
 PRK_Material_Icon_Bullet = Material( "icon_bullet.png", "noclamp smooth" )
@@ -138,27 +139,68 @@ net.Receive( "PRK_TakeDamage", function( len, ply )
 		effectdata:SetOrigin( pos )
 		effectdata:SetNormal( dir )
 		effectdata:SetEntity( ply )
+		effectdata:SetScale( 0 )
 	util.Effect( "prk_blood", effectdata )
 end )
 
-net.Receive( "PRK_Die", function( len, ply )
+net.Receive( "PRK_Die", function( len )
+	local ply = net.ReadEntity()
 	local pos = net.ReadVector()
 	local ang = net.ReadAngle()
 	local killname = net.ReadString()
 
-	LocalPlayer().DieEffect = {
-		pos,
-		ang,
-		0,
-		killname,
-		TimeMin = CurTime() + 1,
-	}
+	-- Try death particles at bone positions (inspired by Panic Ritual)
+	local points = {}
+		-- Add playermodel bones
+		local bones = ply:GetBoneCount()
+		for bone = 0, bones - 1 do
+			local name = ply:GetBoneName( bone )
+			if ( !string.find( name, "Finger" ) ) then
+				local pos = ply:GetBonePosition( bone )
+				local dir = VectorRand()
+					if ( ply:GetBoneMatrix( bone ) ) then
+						dir = ply:GetBoneMatrix( bone ):GetForward()
+					end
+				table.insert( points, {
+					pos = pos,
+					dir = dir,
+				} )
+			end
+		end
+		-- Extra for head and shell
+		local head = ply:GetBonePosition( 6 )
+		table.Add( points, {
+			{ pos = head + Vector( 0, 0, 15 ) },
+			{ pos = head + Vector( -15, 0, 15 ) },
+			{ pos = head + Vector( 15, 0, 10 ) },
+		} )
+	for k, point in pairs( points ) do
+		local effectdata = EffectData()
+			effectdata:SetOrigin( point.pos )
+			effectdata:SetNormal( point.dir or VectorRand() )
+			effectdata:SetEntity( ply )
+			effectdata:SetScale( 0.1 )
+		util.Effect( "prk_blood", effectdata )
+	end
 
-	LocalPlayer():EmitSound( "prk_death" )
+	-- Self death effect
+	if ( ply == LocalPlayer() ) then
+		LocalPlayer().DieEffect = {
+			pos,
+			ang,
+			0,
+			killname,
+			TimeMin = CurTime() + 1,
+		}
 
-	-- Reset everything
-	PRK_Initialise_RevolverChambers()
-	LocalPlayer().PRK_Gateway = nil
+		LocalPlayer():EmitSound( "prk_death" )
+
+		-- Reset everything
+		PRK_Initialise_RevolverChambers()
+		LocalPlayer().PRK_Gateway = nil
+		LocalPlayer().PunchHUD = Vector()
+		LocalPlayer().HideHurtEffect = 0
+	end
 end )
 
 net.Receive( "PRK_Drink", function( len )
@@ -192,6 +234,7 @@ function GM:Think()
 	PRK_Think_RevolverChambers()
 	PRK_Think_Punch()
 	PRK_Think_Use()
+	PRK_Think_Item()
 end
 
 function PRK_Think_Punch()
@@ -230,9 +273,9 @@ end
 function PRK_Think_Use()
 	-- Look at entity
 	local tr = LocalPlayer():GetEyeTrace()
-	if ( tr.Entity and tr.Entity:IsValid() and tr.Entity.UseLabel and tr.Entity.MaxUseRange ) then
-		local dist = LocalPlayer():GetPos():Distance( tr.Entity:GetPos() )
-		if ( dist <= tr.Entity.MaxUseRange ) then
+	if ( tr.Entity and tr.Entity:IsValid() and tr.Entity.UseLabel ) then
+		local dist = LocalPlayer():EyePos():Distance( tr.Entity:GetPos() )
+		if ( dist <= PRK_UseRange ) then
 			PRK_LookAtUsable( tr.Entity )
 		else
 			PRK_LookAwayFromUsable()
@@ -245,6 +288,22 @@ function PRK_Think_Use()
 	if ( LocalPlayer().LookingAtUsable and !LocalPlayer().LookingAtUsable:IsValid() ) then
 		PRK_LookAwayFromUsable()
 	end
+end
+
+function PRK_Think_Item()
+	if ( !LocalPlayer().Item_CurrentY ) then
+		LocalPlayer().Item_CurrentY = 0
+		LocalPlayer().Item_TargetY = 0
+	end
+
+	-- Remove target if no item (set every frame in HUDPaint_Item)
+	if ( !PRK_GetItem( LocalPlayer() ) ) then
+		LocalPlayer().Item_TargetY = ScrH() * 1.2
+	end
+
+	-- Lerp
+	local speed = 10
+	LocalPlayer().Item_CurrentY = Lerp( FrameTime() * speed, LocalPlayer().Item_CurrentY, LocalPlayer().Item_TargetY )
 end
 
 function PRK_LookAtUsable( ent, text )
@@ -298,9 +357,12 @@ function GM:HUDPaint()
 	PRK_HUDPaint_ExtraAmmo()
 	PRK_HUDPaint_RevolverChambers()
 
+	PRK_HUDPaint_Item()
+
+	-- Should also be last
 	PRK_HUDPaint_Crosshair()
 
-	-- Must be last!
+	-- Must be last! (for HUD lag)
 	if ( !LocalPlayer().LastEyeAngles ) then
 		LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
 	end
@@ -489,11 +551,17 @@ local blockdefault = {
 hook.Add( "PlayerBindPress", "PRK_PlayerBindPress_BlockInput", function( ply, bind )
 	-- Blocking with overrides
 	if string.find( bind, "+jump" ) then
-		-- ply:ConCommand( "prk_effect" )
+		ply.Jumping = !ply.Jumping
+		if ( ply.Jumping ) then
+			ply:ConCommand( "+prk_jump" )
+		end
 		return true
 	end
 	if string.find( bind, "+duck" ) then
-		-- ply:ConCommand( "prk_effect" )
+		ply.Ducking = !ply.Ducking
+		if ( ply.Ducking ) then
+			ply:ConCommand( "+prk_duck" )
+		end
 		return true
 	end
 
@@ -727,7 +795,10 @@ function PRK_HUDPaint_Money()
 	local money_add = LocalPlayer():GetNWInt( "PRK_Money_Add" )
 	local money = LocalPlayer():GetNWInt( "PRK_Money" )
 		if ( money_add ) then
-			money = money - money_add
+			-- money = money - money_add
+			local temp = money
+			money = math.max( 0, money - money_add )
+			money_add = temp - money
 		end
 	local w, h = PRK_DrawText(
 		PRK_GetAsCurrency( money ),
@@ -740,13 +811,80 @@ function PRK_HUDPaint_Money()
 
 	if ( money_add and money_add != 0 ) then
 		local offy = 0
+		local plus = ""
+			if ( money_add > 0 ) then
+				plus = "+"
+			end
 		PRK_DrawText(
-			"+" .. PRK_GetAsCurrency( money_add ),
+			plus .. PRK_GetAsCurrency( money_add ),
 			x + w,
 			y + offy,
 			PRK_HUD_Colour_Money,
 			TEXT_ALIGN_LEFT,
 			TEXT_ALIGN_CENTER
+		)
+	end
+end
+
+function PRK_HUDPaint_Item()
+	local r = PRK_GetResolutionIndependent( 96 )
+	local w = r * 4
+	local h = r * 2
+	local dx = ScrW() / 2
+	local dy = LocalPlayer().Item_CurrentY or 0
+	LocalPlayer().Item_TargetY = ScrH() - r * 0.1
+	-- Move slightly with player
+	local x, y = PRK_GetUIPosVelocity( dx, dy, LagX, LagY )
+
+	local function drw( x, y, col )
+		surface.SetDrawColor( col )
+		draw.RoundedBox( r / 4, x - w / 2, y - r / 2, w, h, col )
+		draw.NoTexture()
+		draw.Circle( x, y, r, 32, 0 )
+	end
+
+	-- Draw shadow
+	local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
+	drw( offx, offy, PRK_HUD_Colour_Shadow )
+
+	-- Draw real
+	drw( x, y, PRK_HUD_Colour_Use )
+
+	local item = PRK_GetItem( LocalPlayer() )
+	if ( item ) then
+		-- Draw model thumb
+		render.SuppressEngineLighting( true )
+			cam.Start3D()
+				local div = 4
+				local lagx = -( dx - x ) / div
+				local lagy = ( dy - y ) / div
+				local off = Vector()
+					if ( PRK_Items[item].ThumbOffset ) then
+						off = PRK_Items[item].ThumbOffset
+					end
+				local pos = LocalPlayer():EyePos() +
+					LocalPlayer():EyeAngles():Forward() * ( 200 + off.x ) +
+					LocalPlayer():EyeAngles():Right() * ( -4 + lagx + off.y ) +
+					LocalPlayer():EyeAngles():Up() * ( -LocalPlayer().Item_CurrentY / ScrH() * 85 + lagy + off.z )
+				local ang = LocalPlayer():EyeAngles()
+					ang:RotateAroundAxis( LocalPlayer():EyeAngles():Up(), -20 + CurTime() * 10 )
+					ang:RotateAroundAxis( LocalPlayer():EyeAngles():Forward(), -15 + math.sin( CurTime() ) * 2 )
+					ang:RotateAroundAxis( LocalPlayer():EyeAngles():Right(), 10 )
+				PRK_Items[item]:Draw( LocalPlayer(), pos, ang )
+			cam.End3D()
+		render.SuppressEngineLighting( false )
+
+		-- Draw info
+		local y = y - ( r / 4 )
+		PRK_DrawText(
+			PRK_Items[item].PrettyName,
+			x,
+			y,
+			Color( 255, 255, 255, 255 ),
+			TEXT_ALIGN_CENTER,
+			TEXT_ALIGN_CENTER,
+			48,
+			false
 		)
 	end
 end
@@ -849,6 +987,10 @@ function PRK_HUDPaint_RevolverChambers()
 			local info = PRK_BulletTypeInfo[wep.ChamberBullets[chamber]]
 			if ( info ) then
 				info:Paint( wep, point.x, point.y, math.min( 18, cham_rad ) )
+			end
+			if ( LocalPlayer().ChamberWarning and LocalPlayer().ChamberWarning[chamber] ) then
+				surface.SetDrawColor( 255, 20, 20, LocalPlayer().ChamberWarning[chamber] )
+				draw.Circle( point.x, point.y, math.min( 18, cham_rad ), 32, 0 )
 			end
 		end
 		local function mask()
@@ -960,10 +1102,11 @@ function PRK_Gun_UseAmmo()
 end
 
 function PRK_Gun_AddAmmo( dir )
-	if ( LocalPlayer():GetActiveWeapon() and LocalPlayer():GetActiveWeapon():IsValid() ) then
-		local chambers = LocalPlayer():GetActiveWeapon().MaxClip or 6
+	local wep = LocalPlayer():GetActiveWeapon()
+	if ( wep and wep:IsValid() ) then
+		local chambers = wep.MaxClip or 6
 		PRK_RevolverChambers.TargetAng = PRK_RevolverChambers.TargetAng + ( 360 / chambers ) * dir
-		PRK_RevolverChambers.NoAmmoWarning = false
+		PRK_RevolverChambers.NoAmmoWarning = ( wep:GetFilledChamberCount() == 0 )
 		PRK_RevolverChambers.ExtraChange = 1
 	end
 end
@@ -1179,7 +1322,7 @@ hook.Add( "PostPlayerDraw" , "manual_model_draw_example" , function( ply )
 
 		ent:SetPos( newpos )
 		ent:SetAngles( newang )
-		ent:SetMaterial( "models/debug/debugwhite" )
+		ent:SetMaterial( PRK_Material_Base )
 		local col = mod[4]
 			if ( col == true ) then
 				col = ply:GetColor()
@@ -1499,6 +1642,26 @@ function draw.SetDrawColor( color )
 	surface.SetDrawColor( color.r, color.g, color.b, color.a )
 end
 
+-- Points table of { x, y, width }
+function draw.Line( dir, points )
+	local verts = {}
+		for point = 2, #points do
+			local last = points[point-1]
+				-- last.x = last.x - 100
+				-- last.y = last.y - 100
+			local curr = points[point]
+			table.Add( verts, {
+				{ x = last.x + dir.x * last.width, y = last.y + dir.y * last.width },
+				{ x = last.x - dir.x * last.width, y = last.y - dir.y * last.width },
+				{ x = curr.x + dir.x * curr.width, y = curr.y + dir.y * curr.width },
+				{ x = curr.x + dir.x * curr.width, y = curr.y + dir.y * curr.width },
+				{ x = curr.x - dir.x * curr.width, y = curr.y - dir.y * curr.width },
+				{ x = last.x - dir.x * last.width, y = last.y - dir.y * last.width },
+			} )
+		end
+	surface.DrawPoly( verts )
+end
+
 function draw.Heart( x, y, radius, seg )
 	local circle_rad = radius / 2
 	local circle_off = circle_rad
@@ -1602,8 +1765,10 @@ function draw.StencilCut( mask, inner )
 	render.SetStencilEnable(false)
 end
 
-function PRK_AddModel( mdl, pos, ang, scale, mat, col )
-	local model = ClientsideModel( mdl )
+function PRK_AddModel( mdl, pos, ang, scale, mat, col, ren )
+	if ( !ren ) then ren = RENDERGROUP_OTHER end
+
+	local model = ClientsideModel( mdl, ren )
 		model:SetPos( pos )
 		model:SetAngles( ang )
 		model:SetModelScale( scale )

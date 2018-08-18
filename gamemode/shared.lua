@@ -171,6 +171,39 @@ function PRK_GetFrameTime()
 	return PRK_AverageFrameTime -- FrameTime() -- 0.016
 end
 
+function PRK_ResizePhysics( ent, scale )
+	-- Parameter can be a float instead of Vector if all axes should be same scale
+	if ( scale == tonumber( scale ) ) then
+		scale = Vector( 1, 1, 1 ) * scale
+	end
+
+	ent:PhysicsInit( SOLID_VPHYSICS )
+
+	local phys = ent:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		local physmesh = phys:GetMeshConvexes()
+			if ( not istable( physmesh ) ) or ( #physmesh < 1 ) then return end
+
+			for convexkey, convex in pairs( physmesh ) do
+				for poskey, postab in pairs( convex ) do
+					local pos = postab.pos
+						pos.x = pos.x * scale.x
+						pos.y = pos.y * scale.y
+						pos.z = pos.z * scale.z
+					convex[ poskey ] = pos
+				end
+			end
+		ent:PhysicsInitMultiConvex( physmesh )
+
+		ent:EnableCustomCollisions( true )
+	end
+
+	local phys = ent:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( false )
+	end
+end
+
 -- Sounds with pitch asc/desc when played in a row
 PRK_ChainPitchedSounds = {}
 hook.Add( "Think", "PRK_Think_PitchSounds", function()
@@ -252,6 +285,16 @@ function PRK_GetCirclePoints( x, y, radius, seg, rotate )
 		-- local a = math.rad( 0 ) -- This is need for non absolute segment counts
 		-- table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
 	return cir
+end
+
+-- For non-sequential tables (table.Random didn't work properly?)
+function TableRandom( tab )
+	local keys = {}
+		for k, v in pairs( tab ) do
+			table.insert( keys, k )
+		end
+	local key = keys[math.random( 1, #keys )]
+	return tab[key], key
 end
 
 function LerpColour( dif, current, target )

@@ -41,36 +41,10 @@ resource.AddDir( dir )
 print( "Finish resources..." )
 print( "-------------------" )
 
--- Copy over initial room designs
-local dir_from = PRK_GamemodePath .. "baserooms/"
-local dir_to = PRK_DataPath
-if ( !file.Exists( dir_to, "DATA" ) ) then
-	print( "No room designs..." )
-	print( "Copying defaults..." )
-	local function copy( localdir )
-		local srchpath = localdir .. "*"
-		print( srchpath )
-		local files, directories = file.Find( srchpath, "GAME" )
-		for k, fil in pairs( files ) do
-			local src = localdir .. fil
-			local dest = dir_to .. string.gsub( localdir, dir_from, "" )
-			print( src .. " -> " .. dest )
-			local data = file.Read( localdir .. fil, "GAME" )
-			file.CreateDir( dest )
-			file.Write( dest .. fil, data )
-		end
-		for k, dir in pairs( directories ) do
-			copy( localdir .. dir .. "/" )
-		end
-	end
-	copy( dir_from )
-end
-print( "Finish copying..." )
-print( "-------------------" )
-
 -- Net
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
+util.AddNetworkString( "PRK_Blood" )
 util.AddNetworkString( "PRK_Die" )
 util.AddNetworkString( "PRK_Drink" )
 util.AddNetworkString( "PRK_Spawn" )
@@ -78,14 +52,14 @@ util.AddNetworkString( "PRK_ResetZone" )
 util.AddNetworkString( "PRK_Editor" )
 util.AddNetworkString( "PRK_EditorExport" )
 
-function SendKeyValue( ply, key, val )
+function PRK_SendKeyValue( ply, key, val )
 	net.Start( "PRK_KeyValue" )
 		net.WriteString( key )
 		net.WriteString( val )
 	net.Send( ply )
 end
 
-function SendTakeDamage( ply, amount, dir, pos )
+function PRK_SendTakeDamage( ply, amount, dir, pos )
 	net.Start( "PRK_TakeDamage" )
 		net.WriteEntity( ply )
 		net.WriteFloat( amount )
@@ -94,7 +68,15 @@ function SendTakeDamage( ply, amount, dir, pos )
 	net.Broadcast()
 end
 
-function SendDie( ply, pos, ang, killname )
+function PRK_SendBlood( pos, dir, col )
+	net.Start( "PRK_Blood" )
+		net.WriteVector( pos )
+		net.WriteVector( dir )
+		net.WriteColor( col )
+	net.Broadcast()
+end
+
+function PRK_SendDie( ply, pos, ang, killname )
 	net.Start( "PRK_Die" )
 		net.WriteEntity( ply )
 		net.WriteVector( pos )
@@ -103,19 +85,19 @@ function SendDie( ply, pos, ang, killname )
 	net.Broadcast()
 end
 
-function SendDrink( ply )
+function PRK_SendDrink( ply )
 	net.Start( "PRK_Drink" )
 		net.WriteEntity( ply )
 	net.Broadcast()
 end
 
-function SendSpawn( ply, time )
+function PRK_SendSpawn( ply, time )
 	net.Start( "PRK_Spawn" )
 		net.WriteFloat( time )
 	net.Send( ply )
 end
 
-function SendResetZone( zone )
+function PRK_SendResetZone( zone )
 	net.Start( "PRK_ResetZone" )
 		net.WriteFloat( zone )
 	net.Broadcast()
@@ -222,7 +204,7 @@ function GM:GenerateNextFloor( zone )
 
 	-- Clear any remaining entities with this zone
 	-- (other than the gateway currently trasporting the players!)
-	SendResetZone( zone )
+	PRK_SendResetZone( zone )
 	PRK_Floor_ResetZone( zone )
 	PRK_Gen_Remove()
 	for k, v in pairs( ents.GetAll() ) do
@@ -267,6 +249,10 @@ function GM:PlayerSpawn( ply )
 
 	-- Position centrally
 	ply:SetPos( Vector( 0, 0, ply:GetPos().z ) )
+
+	-- Fix weird view punch issue, and give nice spawn effect
+	ply:SetFOV( 0, 0 )
+	ply:ViewPunch( Angle( -50, 0, 0 ) )
 
 	-- Player model/colour
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
@@ -314,7 +300,7 @@ function GM:PlayerSetup( ply )
 
 	-- Store spawn time
 	ply.SpawnTime = CurTime()
-	SendSpawn( ply, ply.SpawnTime )
+	PRK_SendSpawn( ply, ply.SpawnTime )
 
 	-- Init collisions
 	ply:SetNoCollideWithTeammates( true )
@@ -361,7 +347,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 		if ( dmginfo:GetDamage() > 0 ) then
 			local dir = dmginfo:GetInflictor():GetPos() - target:GetPos()
 				dir:Normalize()
-			SendTakeDamage( target, dmginfo:GetDamage(), dir, dmginfo:GetInflictor():GetPos() )
+			PRK_SendTakeDamage( target, dmginfo:GetDamage(), dir, dmginfo:GetInflictor():GetPos() )
 
 			-- Play sound
 			local pitchhealth = 1 - ( target:Health() / target:GetMaxHealth() )
@@ -401,7 +387,7 @@ function GM:DoPlayerDeath( ply, attacker, dmginfo )
 		if ( type(killname) == "table" ) then
 			killname = killname[math.random( 1, #killname )]
 		end
-	SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
+	PRK_SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
 
 	-- Smooth transition into falling eyes anim
 	ply:SetPos( ply:EyePos() )
@@ -679,30 +665,6 @@ function PRK_CreateEnt( class, mod, pos, ang, mov, nospawn )
 			end
 		end
 	return ent
-end
-
-function PRK_ResizePhysics( ent, scale )
-	ent:PhysicsInit( SOLID_VPHYSICS )
-
-	local phys = ent:GetPhysicsObject()
-	if ( phys and phys:IsValid() ) then
-		local physmesh = phys:GetMeshConvexes()
-			if ( not istable( physmesh ) ) or ( #physmesh < 1 ) then return end
-
-			for convexkey, convex in pairs( physmesh ) do
-				for poskey, postab in pairs( convex ) do
-					convex[ poskey ] = postab.pos * scale
-				end
-			end
-		ent:PhysicsInitMultiConvex( physmesh )
-
-		ent:EnableCustomCollisions( true )
-	end
-
-	local phys = ent:GetPhysicsObject()
-	if ( phys and phys:IsValid() ) then
-		phys:EnableMotion( false )
-	end
 end
 ---------------
   -- /Util --

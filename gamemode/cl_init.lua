@@ -143,6 +143,20 @@ net.Receive( "PRK_TakeDamage", function( len, ply )
 	util.Effect( "prk_blood", effectdata )
 end )
 
+net.Receive( "PRK_Blood", function( len )
+	local pos = net.ReadVector()
+	local dir = net.ReadVector()
+	local col = net.ReadColor()
+
+	-- Play blood effect
+	local effectdata = EffectData()
+		effectdata:SetOrigin( pos )
+		effectdata:SetNormal( dir )
+		effectdata:SetStart( ColourToVector( col ) )
+		effectdata:SetScale( 0 )
+	util.Effect( "prk_blood", effectdata )
+end )
+
 net.Receive( "PRK_Die", function( len )
 	local ply = net.ReadEntity()
 	local pos = net.ReadVector()
@@ -241,6 +255,10 @@ end
 function PRK_Think_Punch()
 	if ( LocalPlayer().PunchHUD ) then
 		LocalPlayer().PunchHUD = LerpVector( FrameTime() * PRK_HUD_Punch_Speed, LocalPlayer().PunchHUD, Vector() )
+		-- Reset any punches on death
+		if ( !LocalPlayer():Alive() ) then
+			LocalPlayer().PunchHUD = Vector()
+		end
 	end
 end
 
@@ -1388,7 +1406,7 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_De
 		for k, decal in pairs( LocalPlayer().PRK_Decals[zone] ) do
 			render.SetMaterial( decal.mat )
 			render.DrawQuadEasy(
-				decal.pos + Vector( 0, 0, 1 ) * 0.05 * k,
+				decal.pos + Vector( 0, 0, 1 ) * 0.01 * k,
 				Vector( 0, 0, 1 ),
 				decal.siz * size * width, decal.siz * size * width,
 				decal.col,
@@ -1397,6 +1415,24 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_De
 		end
 	end
 end )
+
+-- Converts an existing ClientsideModel into a physics debris object
+function PRK_ModelToDebris( ent )
+	ent:PhysicsInitSphere( 5, SOLID_VPHYSICS )
+	ent:PhysWake()
+	local phys = ent:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( true )
+		phys:AddVelocity( Vector( 0, 0, -10 ) )
+	end
+	ent:SetNoDraw( false )
+
+	timer.Simple( 2, function()
+		if ( ent and ent:IsValid() ) then
+			ent:Remove()
+		end
+	end )
+end
 
 -- Don't draw map outside of generated PRK stuff
 function GM:PreDrawOpaqueRenderables()

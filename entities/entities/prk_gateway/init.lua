@@ -154,6 +154,7 @@ function ENT:Exit( ply )
 	ply:SetMoveType( MOVETYPE_WALK )
 	GAMEMODE:MoveToZone( ply, self.DestinationZone )
 	ply:Freeze( false )
+	ply:ViewPunch( Angle( -150, 0, 0 ) )
 
 	-- Request client effects
 	self:SendEnterExit( ply, false )

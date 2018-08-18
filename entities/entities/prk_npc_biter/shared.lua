@@ -51,153 +51,161 @@ function ENT:Initialize()
 	-- end
 
 	-- Extra visual details
+	local origin = Vector( 25, 7, 0 )
+	local scale = 0.75
+	self.ParentBone = 2
+	self.Debris = {
+		{
+			"models/hunter/misc/sphere025x025.mdl",
+			( origin + Vector( 2, 15, 8 ) ) * scale,
+			Angle( 0, 0, 0 ),
+			PRK_Colour_Enemy_Eye,
+			SpawnFunc = function( ent )
+				ent.Scale = 0.7
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+		{
+			"models/hunter/misc/sphere025x025.mdl",
+			( origin + Vector( 2, 15, -8 ) ) * scale,
+			Angle( 0, 0, 0 ),
+			PRK_Colour_Enemy_Eye,
+			SpawnFunc = function( ent )
+				ent.Scale = 0.7
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+		{
+			"models/hunter/misc/sphere025x025.mdl",
+			( origin + Vector( -10, 3, 0 ) ) * scale,
+			Angle( 0, 0, 0 ),
+			-- PRK_Colour_Enemy_Eye,
+			PRK_Colour_Enemy_Mouth,
+			SpawnFunc = function( ent )
+				ent.Scale = 1.7
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			-- Debris = true,
+		},
+		{
+			"models/gibs/antlion_gib_small_1.mdl",
+			( origin + Vector( 3, 6, 3 ) ) * scale,
+			Angle( 15, -60, -90 ),
+			PRK_Colour_Enemy_Tooth,
+			SpawnFunc = function( ent )
+				ent.Scale = 1.5
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+		{
+			"models/gibs/antlion_gib_small_1.mdl",
+			( origin + Vector( 5, 6, -4 ) ) * scale,
+			Angle( -15, -60, -90 ),
+			PRK_Colour_Enemy_Tooth,
+			SpawnFunc = function( ent )
+				ent.Scale = 1.5
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+		{
+			"models/gibs/antlion_gib_small_1.mdl",
+			( origin + Vector( 0, -6, 6 ) ) * scale,
+			Angle( -15, 30, 90 ),
+			PRK_Colour_Enemy_Tooth,
+			SpawnFunc = function( ent )
+				ent.Scale = 1.5
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+		{
+			"models/gibs/antlion_gib_small_1.mdl",
+			( origin + Vector( 0, -6, -6 ) ) * scale,
+			Angle( 15, 30, 90 ),
+			PRK_Colour_Enemy_Tooth,
+			SpawnFunc = function( ent )
+				ent.Scale = 1.5
+				ent:SetModelScale( scale * ent.Scale )
+			end,
+			Debris = true,
+		},
+	}
 	if ( CLIENT ) then
-		self.Visuals = {}
+		self.Visuals = self.Debris
 
-		local origin = Vector( 25, 7, 0 )
-		-- local height = 0
-		local scale = 0.75
-		self.Visuals = {
-			{
-				"models/ichthyosaur.mdl",
-				origin * scale,
-				Angle( 180, 160, 90 ),
-				true,
-				SpawnFunc = function( ent )
-					ent.Bite = 0
+		table.insert( self.Visuals, {
+			"models/ichthyosaur.mdl",
+			origin * scale,
+			Angle( 180, 160, 90 ),
+			true,
+			SpawnFunc = function( ent )
+				ent.Bite = 0
 
-					ent:SetModelScale( scale )
+				ent:SetModelScale( scale )
 
-					local scale_main = Vector( 1, 1, 1 ) * 0.5
-					local scale_ignore = Vector( 1, 1, 1 ) * 0.01
-					local ignore = {
-						[9] = true,
-						[13] = true,
-					}
-					local pos = {
-						Vector( 0, 0, 0 ), -- Root
-						Vector( 0, 0, 0 ),
-						Vector( -50, 0, 0 ),
-						Vector( -20, 0, 0 ),
-						Vector( -50, 0, 0 ),
-						Vector( -20, 0, 0 ),
-						Vector( -20, 0, 0 ),
-						Vector( -20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( 20, 0, 0 ),
-						Vector( -20, 10, 10 ),
-						Vector( -10, 0, 10 ),
-						Vector( -10, 0, 10 ),
-						Vector( -10, 10, -10 ),
-						Vector( 0, -20, 0 ),
-						Vector( -10, 0, -10 ),
-					}
-					for i = 1, ent:GetBoneCount() do
-						if ( !ignore[i] ) then
-							-- ent:ManipulateBonePosition( i, VectorRand() )
-							if ( pos[i] ) then
-								ent:ManipulateBonePosition( i, pos[i] )
-							end
-							ent:ManipulateBoneScale( i, scale_ignore )
-						else
-							ent:ManipulateBoneScale( i, scale_main )
+				local scale_main = Vector( 1, 1, 1 ) * 0.5
+				local scale_ignore = Vector( 1, 1, 1 ) * 0.01
+				local ignore = {
+					[9] = true,
+					[13] = true,
+				}
+				local pos = {
+					Vector( 0, 0, 0 ), -- Root
+					Vector( 0, 0, 0 ),
+					Vector( -50, 0, 0 ),
+					Vector( -20, 0, 0 ),
+					Vector( -50, 0, 0 ),
+					Vector( -20, 0, 0 ),
+					Vector( -20, 0, 0 ),
+					Vector( -20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( 20, 0, 0 ),
+					Vector( -20, 10, 10 ),
+					Vector( -10, 0, 10 ),
+					Vector( -10, 0, 10 ),
+					Vector( -10, 10, -10 ),
+					Vector( 0, -20, 0 ),
+					Vector( -10, 0, -10 ),
+				}
+				for i = 1, ent:GetBoneCount() do
+					if ( !ignore[i] ) then
+						-- ent:ManipulateBonePosition( i, VectorRand() )
+						if ( pos[i] ) then
+							ent:ManipulateBonePosition( i, pos[i] )
 						end
-						-- timer.Simple( 0.1, function()
-							-- print( i .. " " .. ent:GetBoneName( i ) )
-						-- end )
+						ent:ManipulateBoneScale( i, scale_ignore )
+					else
+						ent:ManipulateBoneScale( i, scale_main )
 					end
-				end,
-				Think = function( ent, self )
-					ent.Bite = 0
-					-- ent.Bite = ( math.sin( CurTime() * 10 ) - 0.7 ) * 10
+					-- timer.Simple( 0.1, function()
+						-- print( i .. " " .. ent:GetBoneName( i ) )
+					-- end )
+				end
+			end,
+			Think = function( ent, self )
+				ent.Bite = 0
+				-- ent.Bite = ( math.sin( CurTime() * 10 ) - 0.7 ) * 10
 
-					local head = 9
-					local jaw = 13
-					local pos = Vector( 0, 1, 0 ) * ent.Bite
-					ent:ManipulateBonePosition( head, pos )
-					ent:ManipulateBonePosition( jaw, pos )
-				end,
-			},
-			{
-				"models/hunter/misc/sphere025x025.mdl",
-				( origin + Vector( 2, 15, 8 ) ) * scale,
-				Angle( 0, 0, 0 ),
-				PRK_Colour_Enemy_Eye,
-				SpawnFunc = function( ent )
-					ent.Scale = 0.7
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/hunter/misc/sphere025x025.mdl",
-				( origin + Vector( 2, 15, -8 ) ) * scale,
-				Angle( 0, 0, 0 ),
-				PRK_Colour_Enemy_Eye,
-				SpawnFunc = function( ent )
-					ent.Scale = 0.7
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/hunter/misc/sphere025x025.mdl",
-				( origin + Vector( -10, 3, 0 ) ) * scale,
-				Angle( 0, 0, 0 ),
-				-- PRK_Colour_Enemy_Eye,
-				PRK_Colour_Enemy_Mouth,
-				SpawnFunc = function( ent )
-					ent.Scale = 1.7
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/gibs/antlion_gib_small_1.mdl",
-				( origin + Vector( 3, 6, 3 ) ) * scale,
-				Angle( 15, -60, -90 ),
-				PRK_Colour_Enemy_Tooth,
-				SpawnFunc = function( ent )
-					ent.Scale = 1.5
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/gibs/antlion_gib_small_1.mdl",
-				( origin + Vector( 5, 6, -4 ) ) * scale,
-				Angle( -15, -60, -90 ),
-				PRK_Colour_Enemy_Tooth,
-				SpawnFunc = function( ent )
-					ent.Scale = 1.5
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/gibs/antlion_gib_small_1.mdl",
-				( origin + Vector( 0, -6, 6 ) ) * scale,
-				Angle( -15, 30, 90 ),
-				PRK_Colour_Enemy_Tooth,
-				SpawnFunc = function( ent )
-					ent.Scale = 1.5
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-			{
-				"models/gibs/antlion_gib_small_1.mdl",
-				( origin + Vector( 0, -6, -6 ) ) * scale,
-				Angle( 15, 30, 90 ),
-				PRK_Colour_Enemy_Tooth,
-				SpawnFunc = function( ent )
-					ent.Scale = 1.5
-					ent:SetModelScale( scale * ent.Scale )
-				end,
-			},
-		}
+				local head = 9
+				local jaw = 13
+				local pos = Vector( 0, 1, 0 ) * ent.Bite
+				ent:ManipulateBonePosition( head, pos )
+				ent:ManipulateBonePosition( jaw, pos )
+			end,
+		} )
 
 		for k, mod in pairs( self.Visuals ) do
 			local ent = ClientsideModel( mod[1] )
 				ent:SetNoDraw( true )
+				ent:SetColor( mod[4] )
 				if ( mod.SpawnFunc ) then
 					mod.SpawnFunc( ent )
 				end
@@ -224,24 +232,50 @@ function ENT:Initialize()
 	self.BiteBetween = 0.5
 end
 
+function ENT:OnNewEnemy()
+	self:EmitSound( "npc/antlion_guard/angry1.wav", 130, math.random( 150, 200 ), 1 )
+end
+
+function ENT:OnNoEnemy()
+end
+
 function ENT:OnKilled( dmginfo )
+	self.Killer = dmginfo:GetAttacker()
 	self:Remove()
 end
 
 function ENT:OnRemove()
 	if ( CLIENT ) then
+		-- Add Debris/remove visuals
 		for k, vis in pairs( self.Visuals ) do
 			if ( vis and vis.Ent and vis.Ent:IsValid() ) then
-				vis.Ent:Remove()
+				if ( vis.Debris ) then
+					-- Spawn a clientside physics debris
+					PRK_ModelToDebris( vis.Ent )
+				else
+					vis.Ent:Remove()
+				end
 			end
 		end
 	end
 
 	if ( SERVER ) then
 		if ( !self.Cleanup ) then
+			-- Spawn blood
+			local pos = self:GetPos()
+			local dir = Vector( 0, 0, 1 )
+				if ( self.Killer ) then
+					dir = ( pos - self.Killer:GetPos() ):GetNormalized() * 2
+				end
+			local col = PRK_Colour_Enemy_Blood
+			PRK_SendBlood( pos, dir, col )
+
+			-- Coins
 			GAMEMODE:SpawnCoins( self, self:GetPos(), self.Coins )
 		end
 	end
+
+	self:EmitSound( "npc/antlion_grub/squashed.wav", 130, math.random( 90, 120 ), 1 )
 end
 
 if ( CLIENT ) then
@@ -253,32 +287,28 @@ if ( CLIENT ) then
 		render.SetColorModulation( 1, 1, 1 )
 
 		-- Draw details
-		local boneid = 2
+		if ( self.ParentBone ) then
+			local matrix = self:GetBoneMatrix( self.ParentBone )
+			if ( matrix ) then
+				for k, mod in pairs( self.Visuals ) do
+					local ent = mod.Ent
+					local newpos, newang = LocalToWorld( mod[2], mod[3], matrix:GetTranslation(), matrix:GetAngles() )
 
-		if not boneid then
-			return
-		end
-
-		local matrix = self:GetBoneMatrix( boneid )
-		if matrix then
-			for k, mod in pairs( self.Visuals ) do
-				local ent = mod.Ent
-				local newpos, newang = LocalToWorld( mod[2], mod[3], matrix:GetTranslation(), matrix:GetAngles() )
-
-				ent:SetPos( newpos )
-				ent:SetAngles( newang )
-				ent:SetMaterial( PRK_Material_Base )
-				local col = mod[4]
-					if ( col == true ) then
-						col = self:GetColor()
-					end
-				render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
-					if ( mod.Think ) then
-						mod.Think( ent, self )
-					end
-					ent:SetupBones()
-					ent:DrawModel()
-				render.SetColorModulation( 1, 1, 1 )
+					ent:SetPos( newpos )
+					ent:SetAngles( newang )
+					ent:SetMaterial( PRK_Material_Base )
+					local col = mod[4]
+						if ( col == true ) then
+							col = self:GetColor()
+						end
+					render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+						if ( mod.Think ) then
+							mod.Think( ent, self )
+						end
+						ent:SetupBones()
+						ent:DrawModel()
+					render.SetColorModulation( 1, 1, 1 )
+				end
 			end
 		end
 	end

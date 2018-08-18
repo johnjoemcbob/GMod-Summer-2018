@@ -77,6 +77,9 @@ PRK_BulletTypeInfo = {
 			end
 			return false
 		end,
+		Fire = function( info, self )
+			return false, false, true, true
+		end,
 	},
 	-- Default
 	[1] = {
@@ -297,6 +300,15 @@ function SWEP:Initialize()
 		self.ChamberBullets[i] = PRK_BulletType.Default
 	end
 	self.ChamberBullets[1] = PRK_BulletType.Test1
+
+	-- Undo any FOV punching
+	-- timer.Simple( 2, function()
+		-- if ( self and self:IsValid() and self.Owner and self.Owner:IsValid() ) then
+			-- print( "try fix punch" )
+			-- self.Owner:SetFOV( 0, self.TimeBackFOVPunch )
+			-- self.FOVPunch = nil
+		-- end
+	-- end )
 end
 
 function SWEP:Think()

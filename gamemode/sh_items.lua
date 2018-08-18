@@ -20,7 +20,7 @@ function PRK_AddItem( name, base, data )
 				data.base = PRK_Items[base]
 			end
 		table.Merge( PRK_Items[name], data )
-		PrintTable( PRK_Items[name] )
+		-- PrintTable( PRK_Items[name] )
 	end
 	load()
 end
@@ -78,6 +78,16 @@ if ( SERVER ) then
 	end
 
 	function PRK_SpawnItem( name, pos )
+		if ( !name ) then
+			local possible = table.shallowcopy( PRK_Items )
+				for key, v in pairs( possible ) do
+					if ( string.find( key, "Base" ) ) then
+						possible[key] = nil
+					end
+				end
+			null, name = TableRandom( possible )
+		end
+
 		local ent = ents.Create( "prk_item" )
 			ent:SetPos( pos )
 			ent:SetItem( name )
@@ -113,6 +123,7 @@ if ( SERVER ) then
 				end
 			local item = PRK_SpawnItem( PRK_GetItem( ply ), pos )
 			item.Cooldown = ply.PRK_Item_Cooldown
+			item:SetZone( ply:GetNWInt( "PRK_Zone", 0 ) )
 			local phys = item:GetPhysicsObject()
 			if ( phys and phys:IsValid() ) then
 				phys:AddAngleVelocity( VectorRand() * 1000 )

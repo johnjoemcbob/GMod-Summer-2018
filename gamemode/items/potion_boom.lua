@@ -13,6 +13,7 @@ PRK_AddItem( "Potion_Boom", "Base_Potion", {
 				"AN EXPLOSION IN A BOTTLE",
 				"BOTTLED SPLODER ESSENCE",
 				"A BIG BOOM",
+				"A BIG BANG",
 				"YOUR OWN CURIOSITY",
 				"YOUR OWN STUPIDITY",
 				"ESPECIALLY POTENT WHISKEY",

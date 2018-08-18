@@ -51,6 +51,7 @@ PRK_Colour_Enemy_Skin							= Color( 22, 22, 22, 255 )
 PRK_Colour_Enemy_Eye							= PRK_HUD_Colour_Shadow
 PRK_Colour_Enemy_Tooth							= PRK_HUD_Colour_Main
 PRK_Colour_Enemy_Mouth							= Color( 100, 100, 100, 255 )
+PRK_Colour_Enemy_Blood							= Color( 255, 50, 200, 255 )
 PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 
 -- Grass

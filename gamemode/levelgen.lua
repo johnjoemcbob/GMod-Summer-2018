@@ -60,6 +60,10 @@ SpawnEditorEnt["Rock"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prk_rock", nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
 	return ent
 end
+SpawnEditorEnt["Pedestal"] = function( pos, ang, scale, model )
+	local ent = PRK_CreateEnt( "prk_pedestal", model, pos, ang )
+	return ent
+end
 SpawnEditorEnt["Prop"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prop_physics", model, pos, ang )
 		ent:SetMaterial( PRK_Material_Base )
@@ -84,7 +88,9 @@ function PRK_Gen( origin, zone )
 	CurrentRoomID = 0
 
 	-- Load rooms
-	rooms = PRK_Gen_LoadRooms()
+	rooms = {}
+	PRK_Gen_LoadRooms( PRK_DataPath, "DATA" )
+	PRK_Gen_LoadRooms( PRK_GamemodePath .. "content/data/" .. PRK_DataPath, "GAME" ) -- For gamemode content/data
 
 	-- Remove default navmeshes
 	navmesh.Reset()
@@ -625,36 +631,34 @@ function PRK_Gen_RotatePointAround( point, pointangle, attach, angle )
 	return pos, ang
 end
 
-function PRK_Gen_LoadRooms()
-	local rooms = {}
-		-- Find all room data files
-		local index = nil
-		local function handlefiles( files )
-			if ( index and !rooms[index] ) then
-				rooms[index] = {}
-			end
-			for k, filename in pairs( files ) do
-				local path = filename
-					if ( index ) then
-						path = index .. "/" .. filename
-					end
-				local room = file.Read( PRK_DataPath .. path )
-					room = PRK_Gen_LoadRooms_Parse( room )
+function PRK_Gen_LoadRooms( datadir, base )
+	-- Find all room data files
+	local index = nil
+	local function handlefiles( files )
+		if ( index and !rooms[index] ) then
+			rooms[index] = {}
+		end
+		for k, filename in pairs( files ) do
+			local path = filename
 				if ( index ) then
-					table.insert( rooms[index], room )
-				else
-					table.insert( rooms, room )
+					path = index .. "/" .. filename
 				end
+			local room = file.Read( datadir .. path, base )
+				room = PRK_Gen_LoadRooms_Parse( room )
+			if ( index ) then
+				table.insert( rooms[index], room )
+			else
+				table.insert( rooms, room )
 			end
 		end
-		local files, directories = file.Find( PRK_DataPath .. "*", "DATA" )
+	end
+	local files, directories = file.Find( datadir .. "*", base )
+	handlefiles( files )
+	for k, dir in pairs( directories ) do
+		index = dir
+		local files, directories = file.Find( datadir .. index .. "/*", base )
 		handlefiles( files )
-		for k, dir in pairs( directories ) do
-			index = dir
-			local files, directories = file.Find( PRK_DataPath .. index .. "/*", "DATA" )
-			handlefiles( files )
-		end
-	return rooms
+	end
 end
 
 function PRK_Gen_LoadRooms_Parse( room )

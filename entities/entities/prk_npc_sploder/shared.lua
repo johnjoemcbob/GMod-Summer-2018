@@ -8,7 +8,7 @@ sound.Add(
 	{ 
 		name = "prk_sploder_loop",
 		channel = CHAN_ITEM,
-		level = 85,
+		level = 130,
 		volume = 0.25,
 		pitch = { 230, 255 },
 		sound = "npc/scanner/scanner_siren2.wav"
@@ -92,8 +92,10 @@ function ENT:Initialize()
 	play()
 end
 
-function ENT:OnKilled( dmginfo )
-	self:Remove()
+function ENT:OnNewEnemy()
+	self.Playing = true
+	self:EmitSound( "prk_sploder_loop" )
+	self:EmitSound( "npc/headcrab_poison/ph_rattle3.wav", 130, 90, 1 )
 end
 
 function ENT:OnNoEnemy()
@@ -101,9 +103,8 @@ function ENT:OnNoEnemy()
 	self:StopSound( "prk_sploder_loop" )
 end
 
-function ENT:OnNewEnemy()
-	self.Playing = true
-	self:EmitSound( "prk_sploder_loop" )
+function ENT:OnKilled( dmginfo )
+	self:Remove()
 end
 
 function ENT:OnRemove()
@@ -117,6 +118,16 @@ function ENT:OnRemove()
 
 	if ( SERVER ) then
 		if ( !self.Cleanup ) then
+			-- Spawn blood
+			local pos = self:GetPos()
+			local dir = Vector( 0, 0, 1 )
+				if ( self.Killer ) then
+					dir = ( pos - self.Killer:GetPos() ):GetNormalized() * 2
+				end
+			local col = PRK_Colour_Enemy_Blood
+			PRK_SendBlood( pos, dir, col )
+
+			-- Debris
 			local debris = math.random( 3, 5 )
 			for i = 1, debris do
 				local prop = PRK_CreateEnt(
@@ -131,7 +142,7 @@ function ENT:OnRemove()
 				prop:PhysicsInitSphere( 5 * PRK_Enemy_Scale )
 				local phys = prop:GetPhysicsObject()
 				if ( phys and phys:IsValid() ) then
-					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 200 )
 				end
 			end
 
@@ -143,6 +154,7 @@ function ENT:OnRemove()
 	end
 
 	self:StopSound( "prk_sploder_loop" )
+	self:EmitSound( "npc/antlion_grub/squashed.wav", 130, 90, 1 )
 end
 
 if ( CLIENT ) then

@@ -90,6 +90,10 @@ function ENT:Initialize()
 	-- Set up solidity and movetype
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:SetSolid( SOLID_VPHYSICS )
+	local phys = self:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( false )
+	end
 
 	-- Enable custom collisions on the entity
 	self:EnableCustomCollisions( true )

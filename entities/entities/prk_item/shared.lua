@@ -13,15 +13,22 @@ ENT.AdminSpawnable = false
 function ENT:Initialize()
 	if ( !self:GetItem() or !PRK_Items[self:GetItem()] ) then return end
 
+	local item = PRK_Items[self:GetItem()]
 	-- Shared
-	PRK_Items[self:GetItem()]:InitShared( self )
+	if ( item.InitShared ) then
+		item:InitShared( self )
+	end
 
 	if ( CLIENT ) then
-		PRK_Items[self:GetItem()]:InitClient( self )
+		if ( item.InitClient ) then
+			item:InitClient( self )
+		end
 	end
 
 	if ( SERVER ) then
-		PRK_Items[self:GetItem()]:InitServer( self )
+		if ( item.InitServer ) then
+			item:InitServer( self )
+		end
 	end
 end
 

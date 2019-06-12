@@ -60,7 +60,7 @@ function ENT:Think()
 			if ( ply.PRK_GatewayTime + PRK_Gateway_TravelTime <= CurTime() ) then
 				self:Exit( ply )
 			end
-		elseif ( ply:Alive() ) then
+		elseif ( ply:Alive() and self:CheckInFront( ply ) ) then
 			local dist = self:GetPos():Distance( ply:GetPos() )
 			if ( dist <= PRK_Gateway_EnterRange ) then
 				self:Enter( ply )
@@ -94,7 +94,7 @@ function ENT:CheckPartyPresent()
 			for k, ply in pairs( player.GetAll() ) do
 				if ( ply:GetNWInt( "PRK_Zone", 0 ) == self.Zone ) then
 					local dist = ply:GetPos():Distance( self:GetPos() )
-					if ( dist <= close ) then
+					if ( dist <= close and self:CheckInFront( ply ) ) then
 						present = present + 1
 					end
 					table.insert( self.PartyMembers, ply )

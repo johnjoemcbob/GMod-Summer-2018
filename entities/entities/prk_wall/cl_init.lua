@@ -162,6 +162,12 @@ end
 function ENT:Draw()
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
 
+	-- test sphere
+	if ( true ) then
+		-- mesh.GenerateSphere( self:GetPos(), 400, 8, 8 )
+		-- return
+	end
+
 	-- Wall model
 	local size = PRK_Editor_Square_Size
 	wallent:SetPos( self:GetPos() )

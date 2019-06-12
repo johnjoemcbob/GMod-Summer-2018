@@ -14,6 +14,7 @@ AddCSLuaFile( "lua/includes/modules/3d2dvgui.lua" )
 
 -- LUA Includes
 include( "shared.lua" ) -- Must be first for globals
+include( "sh_items.lua" )
 include( "levelgen.lua" )
 include( "buffs.lua" )
 
@@ -38,6 +39,7 @@ print( "PRK" )
 print( "----------------" )
 print( "Add resources..." )
 resource.AddDir( dir )
+resource.AddWorkshop( "1468209847" )
 print( "Finish resources..." )
 print( "-------------------" )
 
@@ -141,6 +143,15 @@ function GM:Initialize()
 end
 
 function GM:InitPostEntity()
+	-- Force flatgrass
+	if ( game.GetMap() != "gm_flatgrass" ) then
+		local msg = "WRONG MAP - SWITCHING"
+		print( msg )
+		PrintMessage( HUD_PRINTCENTER, msg )
+		RunConsoleCommand( "changelevel", "gm_flatgrass" )
+		return
+	end
+
 	-- Hide sun
 	local suns = ents.FindByClass( "env_sun" )
 	for k, sun in pairs( suns ) do
@@ -222,15 +233,17 @@ function GM:PlayerInitialSpawn( ply )
 end
 
 function GM:MoveToZone( ply, zone )
-	-- Reset player info if coming travelling to/from the lobby
-	if ( ply:GetNWInt( "PRK_Zone", 0 ) == 0 or zone == 0 ) then
-		self:PlayerSetup( ply )
-	end
+	local oldzone = ply:GetNWInt( "PRK_Zone", 0 )
 
 	ply:SetNWInt( "PRK_Zone", zone )
 
 	-- Floors
 	PRK_Floor_MoveToZone( ply, zone )
+
+	-- Reset player info if coming travelling to/from the lobby
+	if ( oldzone == 0 or zone == 0 ) then
+		self:PlayerSetup( ply )
+	end
 
 	-- Request any entity client info
 		-- Send any required client data to the new client

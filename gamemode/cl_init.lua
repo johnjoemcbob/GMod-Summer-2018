@@ -6,6 +6,7 @@
 --
 
 include( "shared.lua" )
+include( "sh_items.lua" )
 
 include( "cl_editor_room.lua" )
 include( "cl_modelcache.lua" )
@@ -20,7 +21,7 @@ PRK_Material_Splat = function()
 	return mats[math.random( 1, #mats - 1 )]
 end
 
--- Resolution sccaling
+-- Resolution scaling
 local BaseResW = 1600
 local BaseResH = 900
 function PRK_GetResolutionIndependent( num )
@@ -90,7 +91,7 @@ end
 loadfonts()
 
 -- Sounds
-sound.Add(
+sound.Add( 
 	{ 
 		name = "prk_reload_alarm",
 		channel = CHAN_ITEM,
@@ -99,8 +100,8 @@ sound.Add(
 		pitch = 255,
 		sound = "ambient/alarms/apc_alarm_loop1.wav"
 	}
-)
-sound.Add(
+ )
+sound.Add( 
 	{ 
 		name = "prk_death",
 		channel = CHAN_STREAM,
@@ -109,7 +110,7 @@ sound.Add(
 		pitch = 255,
 		sound = PRK_Death_Sound
 	}
-)
+ )
 
 -- Variables
 local LagX = 10
@@ -163,7 +164,7 @@ net.Receive( "PRK_Die", function( len )
 	local ang = net.ReadAngle()
 	local killname = net.ReadString()
 
-	-- Try death particles at bone positions (inspired by Panic Ritual)
+	-- Try death particles at bone positions ( inspired by Panic Ritual )
 	local points = {}
 		-- Add playermodel bones
 		local bones = ply:GetBoneCount()
@@ -268,21 +269,21 @@ function PRK_Think_Die()
 		local speedpos = 5
 		local speedang = 5
 		local speedcol = 3
-		LocalPlayer().DieEffect[1] = LerpVector(
+		LocalPlayer().DieEffect[1] = LerpVector( 
 			FrameTime() * speedpos,
 			LocalPlayer().DieEffect[1],
 			Vector( LocalPlayer().DieEffect[1].x, LocalPlayer().DieEffect[1].y, LocalPlayer():GetPos().z + 3 )
-		)
-		LocalPlayer().DieEffect[2] = LerpAngle(
+		 )
+		LocalPlayer().DieEffect[2] = LerpAngle( 
 			FrameTime() * speedang,
 			LocalPlayer().DieEffect[2],
 			Angle( 0, LocalPlayer().DieEffect[2].y, 0 )
-		)
-		LocalPlayer().DieEffect[3] = Lerp(
+		 )
+		LocalPlayer().DieEffect[3] = Lerp( 
 			FrameTime() * speedcol,
 			LocalPlayer().DieEffect[3],
 			PRK_HUD_DieEffect_MaxAlpha
-		)
+		 )
 	elseif ( LocalPlayer().DieEffect and LocalPlayer().DieEffect.TimeMin <= CurTime() ) then
 		LocalPlayer():StopSound( "prk_death" )
 		LocalPlayer().DieEffect = nil
@@ -315,7 +316,7 @@ function PRK_Think_Item()
 		LocalPlayer().Item_TargetY = 0
 	end
 
-	-- Remove target if no item (set every frame in HUDPaint_Item)
+	-- Remove target if no item ( set every frame in HUDPaint_Item )
 	if ( !PRK_GetItem( LocalPlayer() ) ) then
 		LocalPlayer().Item_TargetY = ScrH() * 1.2
 	end
@@ -327,11 +328,11 @@ end
 
 function PRK_LookAtUsable( ent, text )
 	-- Only play sound if actually has to rotate
-	-- (i.e. wasn't already looking at something, and wasn't looking at something very recently)
-	if (
+	-- ( i.e. wasn't already looking at something, and wasn't looking at something very recently )
+	if ( 
 		!LocalPlayer().LookingAtUsable and
 		( !LocalPlayer().LookingAtLastTime or LocalPlayer().LookingAtLastTime + 0.04 <= CurTime() )
-	) then
+	 ) then
 		LocalPlayer():EmitSound( "npc/barnacle/barnacle_bark1.wav", 50, 255, 0.1 )
 	end
 
@@ -381,7 +382,7 @@ function GM:HUDPaint()
 	-- Should also be last
 	PRK_HUDPaint_Crosshair()
 
-	-- Must be last! (for HUD lag)
+	-- Must be last! ( for HUD lag )
 	if ( !LocalPlayer().LastEyeAngles ) then
 		LocalPlayer().LastEyeAngles = LocalPlayer():EyeAngles()
 	end
@@ -401,7 +402,7 @@ function GM:RenderScreenspaceEffects()
 	end
 end
 
--- This could be tidier but it works :)
+-- This could be tidier but it works : )
 local lastlabelang = Angle()
 local lastcursorang = Angle()
 hook.Add( "PostDrawTranslucentRenderables", "PRK_PostDrawTranslucentRenderables_LabelHelp", function()
@@ -613,7 +614,7 @@ function PRK_HUDPaint_Death()
 	local b = 16
 	local x = ScrW() / 2
 	local y = Lerp( 1 - ( LocalPlayer().DieEffect[3] / PRK_HUD_DieEffect_MaxAlpha ), ScrH() / 2, ScrH() + 100 )
-	local w, h = PRK_DrawText(
+	local w, h = PRK_DrawText( 
 		"YOU DIED",
 		x,
 		y,
@@ -621,11 +622,11 @@ function PRK_HUDPaint_Death()
 		TEXT_ALIGN_CENTER,
 		TEXT_ALIGN_CENTER,
 		128
-	)
+	 )
 
 	if ( LocalPlayer().DieEffect[4] ) then
 		local y = y + ScrH() / 2 - b
-		local w, h = PRK_DrawText(
+		local w, h = PRK_DrawText( 
 			LocalPlayer().DieEffect[4],
 			x,
 			y,
@@ -633,10 +634,10 @@ function PRK_HUDPaint_Death()
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_BOTTOM,
 			36
-		)
+		 )
 
 		y = y - h / 2 - b
-		local w, h = PRK_DrawText(
+		local w, h = PRK_DrawText( 
 			"KILLED BY",
 			x,
 			y,
@@ -644,7 +645,7 @@ function PRK_HUDPaint_Death()
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_BOTTOM,
 			36
-		)
+		 )
 	end
 end
 
@@ -744,7 +745,7 @@ function PRK_HUDPaint_CrosshairHelp()
 	drawlabel( x, y )
 
 	-- Draw help text
-	PRK_DrawText(
+	PRK_DrawText( 
 		text,
 		x + tri_width + width / 2,
 		y,
@@ -753,7 +754,7 @@ function PRK_HUDPaint_CrosshairHelp()
 		TEXT_ALIGN_CENTER,
 		fontsize,
 		false
-	)
+	 )
 end
 
 function PRK_HUDPaint_Health()
@@ -819,14 +820,14 @@ function PRK_HUDPaint_Money()
 			money = math.max( 0, money - money_add )
 			money_add = temp - money
 		end
-	local w, h = PRK_DrawText(
+	local w, h = PRK_DrawText( 
 		PRK_GetAsCurrency( money ),
 		x,
 		y,
 		PRK_HUD_Colour_Money,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
-	)
+	 )
 
 	if ( money_add and money_add != 0 ) then
 		local offy = 0
@@ -834,14 +835,14 @@ function PRK_HUDPaint_Money()
 			if ( money_add > 0 ) then
 				plus = "+"
 			end
-		PRK_DrawText(
+		PRK_DrawText( 
 			plus .. PRK_GetAsCurrency( money_add ),
 			x + w,
 			y + offy,
 			PRK_HUD_Colour_Money,
 			TEXT_ALIGN_LEFT,
 			TEXT_ALIGN_CENTER
-		)
+		 )
 	end
 end
 
@@ -895,7 +896,7 @@ function PRK_HUDPaint_Item()
 
 		-- Draw info
 		local y = y - ( r / 4 )
-		PRK_DrawText(
+		PRK_DrawText( 
 			PRK_Items[item].PrettyName,
 			x,
 			y,
@@ -904,7 +905,7 @@ function PRK_HUDPaint_Item()
 			TEXT_ALIGN_CENTER,
 			48,
 			false
-		)
+		 )
 	end
 end
 
@@ -1030,25 +1031,25 @@ function PRK_HUDPaint_RevolverChambers()
 		local pulsespeed = 8.35 -- 8.3
 		local pulsemag = 105
 		local time = CurTime() - PRK_RevolverChambers.NoAmmoWarningStart
-		PRK_DrawText(
+		PRK_DrawText( 
 			message,
 			x,
 			y - r * 1.3,
 			Color( 255, 255, 255, 255 - pulsemag + math.sin( time * pulsespeed ) * pulsemag ),
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_CENTER
-		)
+		 )
 
 		-- Draw R in the middle of chambers
 		local pulsemag = 20
-		PRK_DrawText(
+		PRK_DrawText( 
 			"R",
 			x,
 			y - 2,
 			Color( 255, 255, 255, 255 - pulsemag + math.sin( time * pulsespeed ) * pulsemag ),
 			TEXT_ALIGN_CENTER,
 			TEXT_ALIGN_CENTER
-		)
+		 )
 
 		LocalPlayer():EmitSound( "prk_reload_alarm" )
 	else
@@ -1088,28 +1089,28 @@ function PRK_HUDPaint_ExtraAmmo()
 			extraammo = "0" .. extraammo
 		end
 		extraammo = "x" .. extraammo
-	local w, h = PRK_DrawText(
+	local w, h = PRK_DrawText( 
 		extraammo,
 		x,
 		y,
 		PRK_HUD_Colour_Main,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
-	)
+	 )
 
 	if ( extraammo_add and extraammo_add != 0 ) then
 		local offy = 0
 		if ( extraammo_add > 0 ) then
 			extraammo_add = "+" .. extraammo_add
 		end
-		PRK_DrawText(
+		PRK_DrawText( 
 			extraammo_add,
 			x + w,
 			y + offy,
 			PRK_HUD_Colour_Main,
 			TEXT_ALIGN_LEFT,
 			TEXT_ALIGN_CENTER
-		)
+		 )
 	end
 end
 
@@ -1400,18 +1401,18 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_De
 	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
 	if ( PRK_Decal and LocalPlayer().PRK_Decals and LocalPlayer().PRK_Decals[zone] ) then
 		local width = 1
-		-- print( PRK_Material_Splat())
+		-- print( PRK_Material_Splat() )
 		local size = 48
 		local rendercount = 0
 		for k, decal in pairs( LocalPlayer().PRK_Decals[zone] ) do
 			render.SetMaterial( decal.mat )
-			render.DrawQuadEasy(
+			render.DrawQuadEasy( 
 				decal.pos + Vector( 0, 0, 1 ) * 0.01 * k,
 				Vector( 0, 0, 1 ),
 				decal.siz * size * width, decal.siz * size * width,
 				decal.col,
 				decal.rot
-			)
+			 )
 		end
 	end
 end )
@@ -1544,7 +1545,7 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 	-- Shadow
 	if ( shadow ) then
 		local offx, offy = PRK_GetUIPosVelocity( x, y, -PRK_HUD_Shadow_DistX, PRK_HUD_Shadow_DistY, PRK_HUD_Shadow_Effect )
-		draw.SimpleText(
+		draw.SimpleText( 
 			text,
 			"HeavyHUD" .. fontsize,
 			offx,
@@ -1552,11 +1553,11 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 			shadow,
 			xalign,
 			yalign
-		)
+		 )
 	end
 
 	-- Real text
-	draw.SimpleText(
+	draw.SimpleText( 
 		text,
 		"HeavyHUD" .. fontsize,
 		x,
@@ -1564,7 +1565,7 @@ function PRK_DrawText( text, x, y, col, xalign, yalign, fontsize, shadow )
 		col,
 		xalign,
 		yalign
-	)
+	 )
 
 	surface.SetFont( "HeavyHUD" .. fontsize )
 	local w, h = surface.GetTextSize( text )
@@ -1583,7 +1584,7 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 	local targety = y
 		local left = ( x <= ScrW() / 2 )
 		local bott = ( y <= ScrH() / 2 )
-		-- Default effect + punch effect (From gun firing, etc)
+		-- Default effect + punch effect ( From gun firing, etc )
 		local wep = LocalPlayer():GetActiveWeapon()
 		if ( wep.GunPunch ) then
 			local offx = lagx + wep.GunPunch * effectpunch * effect * 2
@@ -1612,7 +1613,7 @@ function PRK_GetUIPosVelocity( x, y, lagx, lagy, effect )
 		local up  = LocalPlayer():GetUp()
 			targetx = targetx + vel:Dot( rgt ) / PRK_Speed * effect
 			targety = targety + vel:Dot( up ) / PRK_Speed * effect
-		-- Turn effect (stored on DrawHUD)
+		-- Turn effect ( stored on DrawHUD )
 		-- if ( vel:Length() < PRK_Speed / 10 ) then
 			if ( LocalPlayer().LastEyeAngles ) then
 				local bac = -LocalPlayer():GetForward()
@@ -1635,34 +1636,34 @@ end
 
 function surface.DrawRectBorder( x, y, w, h, border )
 	-- Top
-	surface.DrawRect(
+	surface.DrawRect( 
 		x - border,
 		y - border,
 		w + border * 2,
 		border
-	)
+	 )
 	-- Bottom
-	surface.DrawRect(
+	surface.DrawRect( 
 		x - border,
 		y + h,
 		w + border * 2,
 		border
-	)
+	 )
 
 	-- Left
-	surface.DrawRect(
+	surface.DrawRect( 
 		x - border,
 		y,
 		border,
 		h
-	)
+	 )
 	-- Right
-	surface.DrawRect(
+	surface.DrawRect( 
 		x + w,
 		y,
 		border,
 		h
-	)
+	 )
 end
 
 function draw.Rect( x, y, w, h, color )
@@ -1741,16 +1742,16 @@ function draw.Ellipses( x, y, radius, width, seg, rotate )
 		local i = i * add
         table.insert( verts, { x = x + offx, y = y + offy } )
 
-        angle = math.rad(i-add)
-        offx = width*math.cos(angle) 
-        offy = radius*math.sin(angle)
+        angle = math.rad( i-add )
+        offx = width*math.cos( angle ) 
+        offy = radius*math.sin( angle )
 			local newx = offx * math.cos( rotate ) - offy * math.sin( rotate );
 			local newy = offx * math.sin( rotate ) + offy * math.cos( rotate );
         table.insert( verts, { x = x + newx, y = y + newy } )
 
-        angle = math.rad(i)
-        offx = width*math.cos(angle) 
-        offy = radius*math.sin(angle)
+        angle = math.rad( i )
+        offx = width*math.cos( angle ) 
+        offy = radius*math.sin( angle )
 			local newx = offx * math.cos( rotate ) - offy * math.sin( rotate );
 			local newy = offx * math.sin( rotate ) + offy * math.cos( rotate );
         table.insert( verts, { x = x + newx, y = y + newy } )
@@ -1769,38 +1770,132 @@ end
 
 function draw.StencilBasic( mask, inner )
 	render.ClearStencil()
-	render.SetStencilEnable(true)
-		render.SetStencilWriteMask(255)
-		render.SetStencilTestMask(255)
-		render.SetStencilFailOperation(STENCILOPERATION_KEEP)
-		render.SetStencilZFailOperation(STENCILOPERATION_REPLACE)
-		render.SetStencilPassOperation(STENCILOPERATION_REPLACE)
-		render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_ALWAYS)
-		render.SetBlend(0) --makes shit invisible
-		render.SetStencilReferenceValue(10)
+	render.SetStencilEnable( true )
+		render.SetStencilWriteMask( 255 )
+		render.SetStencilTestMask( 255 )
+		render.SetStencilFailOperation( STENCILOPERATION_KEEP )
+		render.SetStencilZFailOperation( STENCILOPERATION_REPLACE )
+		render.SetStencilPassOperation( STENCILOPERATION_REPLACE )
+		render.SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_ALWAYS )
+		render.SetBlend( 0 ) --makes shit invisible
+		render.SetStencilReferenceValue( 10 )
 			mask()
-		render.SetBlend(1)
-		render.SetStencilCompareFunction(STENCILCOMPARISONFUNCTION_EQUAL)
+		render.SetBlend( 1 )
+		render.SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL )
 			inner()
-	render.SetStencilEnable(false)
+	render.SetStencilEnable( false )
 end
 
 function draw.StencilCut( mask, inner )
 	render.ClearStencil()
-	render.SetStencilEnable(true)
-		render.SetStencilWriteMask(255)
-		render.SetStencilTestMask(255)
-		render.SetStencilFailOperation(STENCIL_KEEP)
-		render.SetStencilZFailOperation(STENCIL_REPLACE)
-		render.SetStencilPassOperation(STENCIL_REPLACE)
-		render.SetStencilCompareFunction(STENCIL_NEVER)
-		render.SetStencilReferenceValue(1)
+	render.SetStencilEnable( true )
+		render.SetStencilWriteMask( 255 )
+		render.SetStencilTestMask( 255 )
+		render.SetStencilFailOperation( STENCIL_KEEP )
+		render.SetStencilZFailOperation( STENCIL_REPLACE )
+		render.SetStencilPassOperation( STENCIL_REPLACE )
+		render.SetStencilCompareFunction( STENCIL_NEVER )
+		render.SetStencilReferenceValue( 1 )
 			mask()
-		render.SetStencilCompareFunction(STENCIL_NOTEQUAL)
-		render.SetStencilFailOperation(STENCIL_KEEP)
+		render.SetStencilCompareFunction( STENCIL_NOTEQUAL )
+		render.SetStencilFailOperation( STENCIL_KEEP )
 			inner()
-	render.SetStencilEnable(false)
+	render.SetStencilEnable( false )
 end
+
+-- From: https://github.com/caosdoar/spheres/blob/master/src/spheres.cpp
+-- local mat = Material( PRK_Material_Base )
+local mat = Material( "editor/wireframe" ) -- The material ( a wireframe )
+-- local mat = PRK_Material_Icon_Bullet
+local once = false
+local once = true
+function mesh.GenerateSphere( point, scale, meridians, parallels )
+	-- Gen
+	local triangles = {}
+	local function gen()
+		local verts = {}
+		local count = 0
+		local function addvert( id )
+			table.insert( triangles, point + verts[id] * scale )
+			count = count + 1
+		end
+		local function addtri( a, b, c )
+			addvert( a )
+			addvert( b )
+			addvert( c )
+		end
+		local function addquad( a, b, c, d )
+			addtri( a, b, c )
+			addtri( a, c, d )
+		end
+
+		verts[0] = Vector( 0, 1, 0 )
+		for j = 0, parallels - 1 do
+			local polar = math.pi * ( j + 1 ) / parallels
+			local sp = math.sin( polar )
+			local cp = math.cos( polar )
+			for i = 0, meridians do
+				local azimuth = 2 * math.pi * i / meridians
+				local sa = math.sin( azimuth )
+				local ca = math.cos( azimuth )
+				local x = sp * ca
+				local y = cp
+				local z = sp * sa
+				table.insert( verts, Vector( x, y, z ) )
+			end
+		end
+		table.insert( verts, Vector( 0, -1, 0 ) )
+		if ( !once ) then
+			for k, vert in pairs( verts ) do
+				PRK_BasicDebugSphere( point + vert * scale )
+			end
+		end
+
+		for i = 0, meridians do
+			local a = i + 1
+			local b = ( i + 2 )
+				if ( i + 2 > meridians ) then
+					b = 1
+				end
+			addtri( 0, b, a )
+		end
+
+		for j = 0, parallels - 2 do
+			local aStart = j * meridians + 1
+			local bStart = ( j + 1 ) * meridians + 1
+			for i = 0, meridians do
+				local a = aStart + i
+				local a1 = aStart + ( i + 1 ) % meridians
+				local b = bStart + i
+				local b1 = bStart + ( i + 1 ) % meridians
+
+				addquad( a, a1, b1, b )
+			end
+		end
+
+		for i = 0, meridians do
+			local a = i + meridians * ( parallels - 2 ) + 1
+			local b = ( i + 1 ) % meridians + meridians * ( parallels - 2 ) + 1
+			addtri( #verts - 1, a, b )
+		end
+	end
+	gen()
+
+	-- Render
+	render.SetMaterial( mat ) -- Apply the material
+	local primitives = #triangles / 3
+	mesh.Begin( MATERIAL_TRIANGLES, primitives ) -- Begin writing to the dynamic mesh
+		for k, pri in pairs( triangles ) do
+			mesh.Position( pri )
+			mesh.AdvanceVertex()
+		end
+	mesh.End()
+	once = true
+end
+
+hook.Add( "PostDrawOpaqueRenderables", "MeshLibTest", function()
+	-- mesh.GenerateSphere( LocalPlayer():GetPos(), 400, 8, 8 )
+end )
 
 function PRK_AddModel( mdl, pos, ang, scale, mat, col, ren )
 	if ( !ren ) then ren = RENDERGROUP_OTHER end

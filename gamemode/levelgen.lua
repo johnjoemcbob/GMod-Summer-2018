@@ -84,6 +84,7 @@ local room
 local rooms, starts, finishes, navs, endroom
 local runnextstep = true
 function PRK_Gen( origin, zone )
+	print( "PRK_Gen running" )
 	LastGen = {}
 	CurrentRoomID = 0
 
@@ -117,7 +118,13 @@ function PRK_Gen( origin, zone )
 	while ( runnextstep and steps < safety ) do
 		PRK_Gen_Step( zone )
 		steps = steps + 1
-		-- print( "step: " .. steps )
+		print( "step: " .. steps )
+	end
+	print( steps )
+	print( "done" )
+	print( runnextstep )
+	if ( runnextstep ) then
+		PRK_Gen_End()
 	end
 end
 
@@ -584,6 +591,37 @@ function PRK_Gen_End()
 		if ( v.Ent and v.Ent:IsValid() ) then
 			v.Ent:Remove()
 			v.Ent = nil
+		end
+	end
+
+	-- FPS testing
+	print( "PRK_Gen_End" )
+	print( "PRK_Gen_End" )
+	print( "PRK_Gen_End" )
+	print( "PRK_Gen_End" )
+	print( "PRK_Gen_End" )
+	print( "PRK_Gen_End" )
+	if ( PRK_NoWalls ) then
+		print( PRK_NoWalls )
+		for k, v in pairs( ents.FindByClass( "prk_wall" ) ) do
+			v:Remove()
+		end
+	end
+	if ( PRK_NoEnemies ) then
+		print( PRK_NoEnemies )
+		for k, v in pairs( ents.FindByClass( "prk_npc_*" ) ) do
+			v:Remove()
+		end
+		for k, v in pairs( ents.FindByClass( "prk_turret_*" ) ) do
+			v:Remove()
+		end
+	end
+	if ( PRK_NoEnts ) then
+		print( PRK_NoEnts )
+		for k, v in pairs( ents.FindByClass( "*" ) ) do
+			if ( PRK_NoEnts[v:GetClass()] ) then
+				v:Remove()
+			end
 		end
 	end
 end

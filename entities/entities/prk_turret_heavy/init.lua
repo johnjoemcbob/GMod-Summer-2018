@@ -66,6 +66,9 @@ function ENT:Initialize()
 	-- Unparent neck
 	self.Rotator:SetParent( nil )
 	self.Weakpoint:SetParent( nil )
+	-- Holster before first deploy
+	self.Rotator.TargetPos = self.Rotator:GetPos()
+	self.Rotator:SetPos( self.Rotator:GetPos() + Vector( 0, 0, -30 ) )
 
 	-- Sounds
 	self.Sound_Deploy = CreateSound( self, "vehicles/tank_turret_start1.wav" )
@@ -78,8 +81,10 @@ function ENT:Initialize()
 	self.TimeAutoRemoveLaser	= 2
 	self.TimeFire				= 3 --1.5
 	self.SpeedRotate			= 13--15 --10
+	self.SpeedDeploy			= 3--15 --10
 	self.SpeedFire				= 250 --300--000
 	self.LookAtApprox			= 0.1 --0.05
+	self.Deployed				= false
 end
 
 function ENT:Think()
@@ -120,7 +125,17 @@ function ENT:Think()
 	end
 
 	-- If first then deploy upwards
-	
+	local speed = FrameTime() * self.SpeedDeploy
+	if ( !self.Deployed ) then
+		self.Rotator:SetPos( LerpVector( speed, self.Rotator:GetPos(), self.Rotator.TargetPos ) )
+		local dist = self.Rotator:GetPos():Distance( self.Rotator.TargetPos )
+		if ( dist < 1 ) then
+			self.Deployed = true
+		end
+
+		self:NextThink( CurTime() )
+		return true
+	end
 
 	-- Rotate towards target
 	local speed = FrameTime() * self.SpeedRotate

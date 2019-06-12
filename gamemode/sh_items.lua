@@ -6,37 +6,75 @@
 --
 
 PRK_Items = {}
+local PRK_ItemsToLoad = {}
 function PRK_AddItem( name, base, data )
-	local function load()
-		PRK_Items[name] = {}
-			-- Base item
-			if ( base and base != "" ) then
-				if ( !PRK_Items[name] ) then
-					print( "hasn't loaded base: " .. name .. " yet... waiting..." )
-					timer.Simple( 1, function() load() end )
-					return
-				end
-				PRK_Items[name] = table.shallowcopy( PRK_Items[base] )
-				data.base = PRK_Items[base]
+	if ( !PRK_Items ) then PRK_Items = {} end
+
+	PRK_Items[name] = {}
+		-- Base item
+		print( "base; " .. base )
+		if ( base and base != "" ) then
+			print( PRK_Items[base] )
+			if ( !PRK_Items[base] ) then
+				print( "hasn't loaded base: " .. base .. " yet... waiting..." )
+				table.insert( PRK_ItemsToLoad, { name, base, data } )
+				return false
 			end
-		table.Merge( PRK_Items[name], data )
-		-- PrintTable( PRK_Items[name] )
-	end
-	load()
+			PRK_Items[name] = table.shallowcopy( PRK_Items[name] )
+			data.base = PRK_Items[base]
+		end
+	table.Merge( PRK_Items[name], data )
+	-- PrintTable( PRK_Items[name] )
+
+	return true
 end
 
-function PRK_GetItem( ply )
-	local item = ply:GetNWString( "PRK_Item", "" )
-		if ( item == "" ) then
-			item = nil
+PRK_BulletTypeInfo = {}
+local PRK_BulletsToLoad = {}
+function PRK_AddBullet( name, base, data )
+	if ( !PRK_BulletTypeInfo ) then PRK_BulletTypeInfo = {} end
+
+	PRK_BulletTypeInfo[name] = {}
+		-- Base item
+		if ( base and base != "" ) then
+			if ( !PRK_BulletTypeInfo[name] ) then
+				print( "hasn't loaded base: " .. name .. " yet... waiting..." )
+				table.insert( PRK_BulletsToLoad, { name, base, data } )
+				return false
+			end
+			PRK_BulletTypeInfo[name] = table.shallowcopy( PRK_BulletTypeInfo[base] )
+			data.base = PRK_BulletTypeInfo[base]
 		end
-	return item
+	table.Merge( PRK_BulletTypeInfo[name], data )
+	-- PrintTable( PRK_BulletTypeInfo[name] )
+
+	return true
 end
 
 -- Load use items last
+function PRK_Load_Items( localdir )
+	-- Try load all first
+	PRK_Load_Item_Files( localdir )
+
+	-- Now handle any items which depended upon a non-existent base
+	while ( #PRK_ItemsToLoad > 0 ) do
+		local item = PRK_ItemsToLoad[1]
+		PRK_AddItem( item[1], item[2], item[3] )
+		print( "Try late load; " .. item[1] )
+		table.remove( PRK_ItemsToLoad, 1 )
+	end
+	-- Now handle any bullets which depended upon a non-existent base
+	while ( #PRK_BulletsToLoad > 0 ) do
+		local item = PRK_BulletsToLoad[1]
+		PRK_AddBullet( item[1], item[2], item[3] )
+		print( "Try late load; " .. item[1] )
+		table.remove( PRK_BulletsToLoad, 1 )
+	end
+end
+
 local folder = "items/"
 local dir = PRK_GamemodePath .. "gamemode/" .. folder
-function PRK_Load_Items( localdir )
+function PRK_Load_Item_Files( localdir )
 	local srchpath = localdir .. "*"
 	print( srchpath )
 	local files, directories = file.Find( srchpath, "GAME" )
@@ -58,6 +96,15 @@ print( "Load Use Items..." )
 PRK_Load_Items( dir )
 print( "Finish Use Items..." )
 print( "----------------" )
+PrintTable( PRK_BulletTypeInfo )
+
+function PRK_GetItem( ply )
+	local item = ply:GetNWString( "PRK_Item", "" )
+		if ( item == "" ) then
+			item = nil
+		end
+	return item
+end
 
 if ( CLIENT ) then
 	net.Receive( "PRK_Item_Use", function( len, ply )

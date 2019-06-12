@@ -16,6 +16,12 @@ function ENT:SendZone( zone )
 end
 
 function ENT:SendScale( scale, phys )
+	-- Parameter can be a float instead of Vector if all axes should be same scale
+	if ( scale == tonumber( scale ) ) then
+		scale = Vector( 1, 1, 1 ) * scale
+	end
+	self.Scale = scale
+
 	net.Start( "PRK_EntScale" )
 		net.WriteEntity( self )
 		net.WriteVector( scale )

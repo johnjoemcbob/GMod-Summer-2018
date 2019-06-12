@@ -57,11 +57,8 @@ PRK_Colour_Explosion							= Color( 255, 150, 0, 255 )
 -- Grass
 PRK_Grass_Colour								= Color( 40, 40, 40, 255 )
 PRK_Grass_Mesh									= true
--- PRK_Grass_Mesh									= false -- FPS test
 PRK_Grass_Mesh_CountRange						= { 0.1, 0.2 }
--- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
 PRK_Grass_Mesh_Disruption						= true
--- PRK_Grass_Mesh_Disruption						= false -- FPS test
 PRK_Grass_Mesh_DisruptTime						= 0.2
 PRK_Grass_Mesh_DisruptorInnerRange				= 50
 PRK_Grass_Mesh_DisruptorOuterRange				= 4000
@@ -77,7 +74,6 @@ PRK_Grass_Mesh_Disruptors						= {
 													"prk_potion",
 }
 PRK_Grass_Billboard								= true
--- PRK_Grass_Billboard								= false -- FPS test
 PRK_Grass_Billboard_Count						= 3
 PRK_Grass_Billboard_DrawRange					= 5000
 PRK_Grass_Billboard_Forward						= 200 --400
@@ -91,7 +87,6 @@ PRK_Wall_Detail_Mesh_Count						= function()
 												end
 
 PRK_Decal										= true
--- PRK_Decal										= false -- FPS test
 PRK_Decal_NonDamage								= true
 PRK_Decal_Max									= 200
 PRK_Decal_CombineDist							= 10
@@ -184,3 +179,16 @@ PRK_Height_OutOfWorld							= -10000000000 -- -12735
 PRK_Position_Nowhere							= Vector( 0, 0, -20000 )
 PRK_GamemodePath								= "gamemodes/heavygullets/"
 PRK_DataPath									= "heavygullets/"
+
+-- FPS testing
+PRK_Grass_Mesh									= false -- FPS test
+PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
+PRK_Grass_Mesh_Disruption						= false -- FPS test
+PRK_Grass_Billboard								= false -- FPS test
+PRK_Decal										= false -- FPS test
+PRK_NoWalls										= false
+PRK_NoEnemies									= false
+PRK_NoEnts										= {
+													["prk_coin_heavy"]	= true,
+													-- ["prk_debris"]		= true,
+												}

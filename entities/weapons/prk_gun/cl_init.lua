@@ -6,10 +6,9 @@ PRK_Initialise_RevolverChambers()
 net.Receive( "PRK_Gun_Fire", function( len, ply )
 	local self = net.ReadEntity()
 	local tab = net.ReadTable()
-	local bul = net.ReadFloat()
+	local bul = net.ReadString()
 	local spn = net.ReadBool()
 
-	-- print( "fireing.. " .. CurTime() )
 	local takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[bul]:Fire( self )
 
 	-- Play animation
@@ -47,9 +46,11 @@ net.Receive( "PRK_Gun_Reload", function( len, ply )
 
 	self.ChamberBullets = tab
 
-	self.GunPunch = -0.4
-	self.GunPunchRnd = math.random( -10, 10 )
-	PRK_Gun_AddAmmo( dir ) -- In main cl_init.lua
+	if ( dir != 0 ) then
+		self.GunPunch = -0.4
+		self.GunPunchRnd = math.random( -10, 10 )
+		PRK_Gun_AddAmmo( dir ) -- In main cl_init.lua
+	end
 end )
 
 net.Receive( "PRK_Gun_NoAmmo", function( len, ply )

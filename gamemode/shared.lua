@@ -11,9 +11,8 @@ AddCSLuaFile( "sh_globals.lua" )
 AddCSLuaFile( "sh_items.lua" )
 end
 
--- Includes
-include( "sh_globals.lua" ) -- Always first
-include( "sh_items.lua" )
+-- Only allow global include here
+include( "sh_globals.lua" )
 
 function GM:FlatgrassZones()
 	local y = -12800

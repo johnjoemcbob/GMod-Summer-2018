@@ -315,6 +315,7 @@ hook.Add( "PreDrawTranslucentRenderables", "PRK_PreDrawTranslucentRenderables_Gr
 	end
 
 	-- Render grass
+	-- print( "Billboard: " .. tostring( PRK_Grass_Billboard ) )
 	if ( PRK_Grass_Billboard and LocalPlayer().Grasses and LocalPlayer().Grasses[zone] ) then
 		local width = 1
 		render.SetMaterial( PRK_Material_Grass )

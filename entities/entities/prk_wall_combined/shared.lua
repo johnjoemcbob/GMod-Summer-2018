@@ -1,6 +1,6 @@
 ENT.Type = "anim"
-ENT.Base = "base_anim"
-ENT.PrintName = "Prickly Base"
+ENT.Base = "prk_base"
+ENT.PrintName = "Prickly Wall Combined"
 ENT.Author = "johnjoemcbob"
 ENT.Purpose = ""
 ENT.Instructions = ""

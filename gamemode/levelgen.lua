@@ -5,6 +5,8 @@
 -- Level Generation
 --
 
+include( "sh_globals.lua" )
+
 local DEBUG						= true
 local PRK_GEN_COLLIDE_ALL		= false
 local PRK_GEN_DONT				= 4000
@@ -288,10 +290,13 @@ end
 function PRK_Gen_RoomAddModel( mod, zone, off, world )
 	if ( !PRK_Gen_IgnoreEnts or !PRK_Gen_IgnoreEnts[mod.Type] ) then
 		local class = "prop_physics"
+		print( mod.Type )
 			if ( mod.Type == PRK_GEN_TYPE_FLOOR ) then
 				class = "prk_floor"
 			elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
 				class = "prk_wall"
+				print( mod.Ang )
+				print( "-" )
 			elseif ( mod.Type == PRK_GEN_TYPE_CEILING ) then
 				class = "prk_ceiling"
 			end
@@ -461,6 +466,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 				if ( ent.SetZone ) then
 					ent:SetZone( zone )
 				end
+				table.insert( room.Ents, ent )
 			end
 		end
 	end
@@ -547,7 +553,7 @@ function PRK_Gen_RoomClose( point, zone )
 			count = count + #gen.AttachPoints
 		end
 	if ( count <= 1 and !endroom ) then
-		-- Finish
+		-- Finish - place exit gateway portal room
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
@@ -559,14 +565,14 @@ function PRK_Gen_RoomClose( point, zone )
 				orient_try = orient_try + 1
 			end
 			PRK_Gen_RoomEnd( room, zone, true, true )
+			endroom = true
 			PRK_Gen_End()
 		end )
-		endroom = true
+		endroom = "in progress"
 	else
 		-- Close
 		local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
-		local ang = Angle( -90, 0, 0 )
-			if ( point.Ang != 0 ) then ang = Angle( -90, 90, 0 ) end
+		local ang = Angle( 0, 0, 0 )
 		local mod = {
 			Pos = pos,
 			Ang = ang,
@@ -580,6 +586,8 @@ function PRK_Gen_RoomClose( point, zone )
 end
 
 function PRK_Gen_End()
+	if ( endroom != true ) then return end
+
 	-- Return to random seed
 	math.randomseed( os.time() )
 
@@ -593,6 +601,10 @@ function PRK_Gen_End()
 			v.Ent = nil
 		end
 	end
+
+	-- Combine walls
+	local ent = ents.Create( "prk_wall_combined" )
+	ent:Spawn()
 
 	-- FPS testing
 	print( "PRK_Gen_End" )
@@ -616,14 +628,15 @@ function PRK_Gen_End()
 			v:Remove()
 		end
 	end
-	if ( PRK_NoEnts ) then
-		print( PRK_NoEnts )
-		for k, v in pairs( ents.FindByClass( "*" ) ) do
-			if ( PRK_NoEnts[v:GetClass()] ) then
-				v:Remove()
+	timer.Simple( 0.1, function()
+		if ( PRK_NoEnts ) then
+			for k, v in pairs( ents.FindByClass( "*" ) ) do
+				if ( PRK_NoEnts[v:GetClass()] ) then
+					v:Remove()
+				end
 			end
 		end
-	end
+	end )
 end
 
 function PRK_Gen_RotateAround( room, attach, angle )
@@ -707,11 +720,9 @@ function PRK_Gen_LoadRooms_Parse( room )
 	room.AttachPoints = {}
 	room.Models = {}
 
-	-- Floors
+	-- Floors (needed for collision based generation currently)
 	for _, part in pairs( room.Parts ) do
-		if ( part.isattach ) then
-			-- table.insert( room.AttachPoints, { Pos = part.position } )
-		else
+		if ( !part.isattach ) then
 			table.insert( room.Models, {
 				Pos = part.position,
 				Ang = Angle( 0, 0, 0 ),
@@ -726,7 +737,7 @@ function PRK_Gen_LoadRooms_Parse( room )
 	-- Walls
 	PRK_Gen_LoadRooms_Walls( room )
 
-	-- Ceilings
+	-- Ceilings (needed for collision based generation currently)
 	for _, part in pairs( room.Parts ) do
 		if ( !part.isattach ) then
 			table.insert( room.Models, {
@@ -864,8 +875,7 @@ function PRK_Gen_LoadRooms_Walls( room )
 					local x = side.w == 1 and x + seg[1] or x
 					local y = side.b == 1 and y + seg[1] or y
 					local pos = Vector( x, -y, 8 ) * scale
-					local ang = Angle( -90, 0, 0 )
-						if ( side.w == 1 ) then ang = Angle( -90, 90, 0 ) end
+					local ang = Angle( 0, 0, 0 )
 					table.insert( room.Models, {
 						Pos = pos,
 						Ang = ang,
@@ -895,9 +905,16 @@ function PRK_Gen_Remove()
 	for k, v in pairs( LastGen ) do
 		for _, ent in pairs( v.Ents ) do
 			if ( ent and ent:IsValid() ) then
-				ent:Remove()
+				if ( ent:GetClass() == "prk_gateway" ) then
+					timer.Simple( 5, function() if ( ent and ent:IsValid() ) then ent:Remove() end end )
+				else
+					ent:Remove()
+				end
 			end
 		end
+	end
+	for k, v in pairs( ents.FindByClass( "prk_wall_combined" ) ) do
+		v:Remove()
 	end
 	LastGen = {}
 end

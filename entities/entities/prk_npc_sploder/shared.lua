@@ -172,9 +172,12 @@ function ENT:MoveCallback()
 	for k, v in pairs( player.GetAll() ) do
 		local dist = v:GetPos():Distance( self:GetPos() )
 		if ( dist <= self.SplodeRange ) then
-			self:SetEnemy( v )
-			self:Attack( v )
-			return "ok"
+			-- Also needs line of sight
+			if ( self:GetTrace( v ).Entity == v ) then
+				self:SetEnemy( v )
+				self:Attack( v )
+				return "ok"
+			end
 		end
 	end
 end

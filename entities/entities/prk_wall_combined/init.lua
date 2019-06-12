@@ -19,11 +19,29 @@ function ENT:Initialize()
 	self.Walls = {}
 	for k, wall in pairs( ents.FindByClass( "prk_wall" ) ) do
 		if ( wall.Zone == zone ) then
+			-- Initial pos
+			if ( self:GetPos() == Vector() ) then
+				self.TargetPos = wall:GetPos()
+				self:SetPos( self.TargetPos )
+			end
+
+			-- Correct for wrong angle and store bounds for combination
+			local mins = wall:OBBMins()
+			local maxs = wall:OBBMaxs()
+			if ( math.abs( wall:GetAngles().y ) == 90 ) then
+				local temp = mins.x
+				mins.x = mins.y
+				mins.y = temp
+				local temp = maxs.x
+				maxs.x = maxs.y
+				maxs.y = temp
+			end
 			table.insert( self.Walls, {
 				Ent = wall,
-				Min = wall:OBBMins(),
-				Max = wall:OBBMaxs(),
+				Min = wall:GetPos() + mins - self:GetPos(),
+				Max = wall:GetPos() + maxs - self:GetPos(),
 			} )
+			-- print( self:GetPos() )
 		end
 	end
 	if ( #self.Walls == 0 ) then
@@ -35,8 +53,8 @@ function ENT:Initialize()
 		-- Combine all wall physics meshes
 		local collisions = {}
 			for k, wall in pairs( self.Walls ) do
-				local min = wall.Ent:GetPos() + self:GetRotated( wall, wall.Min ) - self:GetPos()
-				local max = wall.Ent:GetPos() + self:GetRotated( wall, wall.Max ) - self:GetPos()
+				local min = ( wall.Min )
+				local max = ( wall.Max )
 				table.insert( collisions, {
 					Vector( min.x, min.y, min.z ),
 					Vector( min.x, min.y, max.z ),
@@ -47,24 +65,17 @@ function ENT:Initialize()
 					Vector( max.x, max.y, min.z ),
 					Vector( max.x, max.y, max.z ),
 				} )
-				debugoverlay.Box(
-					Vector(),
-					min + self:GetPos(),
-					max + self:GetPos(),
-					10,
-					Color( 255, 255, 255, 255 )
-				)
 			end
 		self:PhysicsInitMultiConvex( collisions )
 
 		-- Remove old walls
 		for k, wall in pairs( self.Walls ) do
-			-- wall.Ent:Remove()
+			wall.Ent:Remove()
 			-- local phys = wall.Ent:GetPhysicsObject()
 			-- if ( phys and phys:IsValid() ) then
 				-- phys:EnableCollisions( false )
 			-- end
-			wall.Ent:SetPos( wall.Ent:GetPos() + Vector( 0, 0, 300 ) )
+			-- wall.Ent:SetPos( wall.Ent:GetPos() + Vector( 0, 0, 300 ) )
 		end
 
 		-- Send walls to client for visualisation
@@ -83,25 +94,13 @@ function ENT:Initialize()
 	if ( phys and phys:IsValid() ) then
 		phys:EnableMotion( false )
 	end
+	
+	-- self:SetPos( self:GetPos() + self:GetUp() * -100 )
 end
 
--- Since walls up are facing along the horizontal axis
-function ENT:GetRotated( wall, point )
-	return point -- temp test
-	
-	
-	local ret = point
-		if ( wall.Ent:GetAngles().y == 0 ) then
-			local temp = ret.z
-			ret.z = ret.y
-			ret.y = temp
-		else
-			-- local temp = ret.x
-			-- ret.x = ret.y
-			-- ret.y = temp
-			local temp = ret.z
-			ret.z = ret.y
-			ret.y = temp
-		end
-	return ret
+function ENT:Think()
+	-- self:SetPos( self:GetPos() + self:GetUp() * math.sin( CurTime() ) * 100 )
+	if ( self.TargetPos != nil ) then
+		self:SetPos( self.TargetPos )
+	end
 end

@@ -169,26 +169,26 @@ function ENT:Draw()
 	end
 
 	-- Wall model
-	local size = PRK_Editor_Square_Size
-	wallent:SetPos( self:GetPos() )
-	local ang = self:GetAngles()
-		ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
-	local collision = self:OBBMaxs() - self:OBBMins()
-	local border = 0.004
-	local scale = Vector()
-		scale = scale + VectorAbs( ang:Forward() * collision.y / size + ang:Forward() * border )
-		scale = scale + VectorAbs( ang:Right()   * collision.z / size * 0.15 )
-		scale = scale + VectorAbs( ang:Up()      * collision.x / size )
-		if ( math.approx( math.abs( ang.y ), 180 ) or math.approx( math.abs( ang.y ), 0 ) ) then
-			ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
-		end
-	local mat = Matrix()
-		mat:Scale( scale )
-	wallent:EnableMatrix( "RenderMultiply", mat )
-	wallent:SetAngles( ang )
-	wallent:SetupBones()
+	-- local size = PRK_Editor_Square_Size
+	-- wallent:SetPos( self:GetPos() )
+	-- local ang = self:GetAngles()
+		-- ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+	-- local collision = self:OBBMaxs() - self:OBBMins()
+	-- local border = 0.004
+	-- local scale = Vector()
+		-- scale = scale + VectorAbs( ang:Forward() * collision.y / size + ang:Forward() * border )
+		-- scale = scale + VectorAbs( ang:Right()   * collision.z / size * 0.15 )
+		-- scale = scale + VectorAbs( ang:Up()      * collision.x / size )
+		-- if ( math.approx( math.abs( ang.y ), 180 ) or math.approx( math.abs( ang.y ), 0 ) ) then
+			-- ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
+		-- end
+	-- local mat = Matrix()
+		-- mat:Scale( scale )
+	-- wallent:EnableMatrix( "RenderMultiply", mat )
+	-- wallent:SetAngles( ang )
+	-- wallent:SetupBones()
 
-	wallent:DrawModel()
+	-- wallent:DrawModel()
 
 	-- Details
 	for k, v in pairs( self.Models ) do
@@ -196,6 +196,12 @@ function ENT:Draw()
 		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
 		v:DrawModel()
 	end
+	
+	-- self:DrawModel()
+	local col = Color( 0, 0, 255, 255 )
+	local pos, ang = self:GetPos(), self:GetAngles()
+	local min, max = self:OBBMins(), self:OBBMaxs()
+	render.DrawWireframeBox( pos, ang, min, max, col )
 end
 
 function ENT:OnRemove()

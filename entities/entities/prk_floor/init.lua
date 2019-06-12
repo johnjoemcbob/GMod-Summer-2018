@@ -43,7 +43,9 @@ function PRK_Send_Floor_Plant( ply, zone )
 	net.Send( ply )
 end
 
+-- Update all floors when a player moves into a zone
 function PRK_Floor_MoveToZone( ply, zone )
+	print( "move to zone floor" )
 	if ( PRK_Floors[zone] ) then
 		PRK_Send_Floor_Grass_Clear( ply )
 		for k, floor in pairs( PRK_Floors[zone] ) do

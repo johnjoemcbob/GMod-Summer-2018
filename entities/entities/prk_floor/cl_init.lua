@@ -5,6 +5,7 @@ PRK_Material_Grass_Multiple = Material( "prk_grass_multiple.png", "noclamp smoot
 
 net.Receive( "PRK_Floor_Grass_Clear", function( len, ply )
 	LocalPlayer().Grasses = {}
+	print( "Clear grass now" )
 end )
 
 net.Receive( "PRK_Floor_Grass", function( len, ply )
@@ -254,9 +255,9 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 		end
 	end
 
-	if ( CurTime() >= nextthink ) then
-		-- Grass
-		if ( PRK_Grass_Billboard and LocalPlayer().Grasses and LocalPlayer().Grasses[zone] ) then
+	-- Grass
+	if ( PRK_Grass_Billboard and LocalPlayer().Grasses and LocalPlayer().Grasses[zone] ) then
+		if ( CurTime() >= nextthink ) then
 			-- Decide if whole floor clumps of grass should be drawn
 			LocalPlayer().GrassesRenderOrder = {}
 			-- local testpos = LocalPlayer():GetPos()
@@ -273,9 +274,9 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 			end
 			-- Sort these entries so the closest will be drawn first
 			table.sort( LocalPlayer().GrassesRenderOrder, function( a, b ) return a.Dist < b.Dist end )
-		end
 
-		nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime
+			nextthink = CurTime() + PRK_Grass_Billboard_ShouldDrawTime
+		end
 	end
 end )
 

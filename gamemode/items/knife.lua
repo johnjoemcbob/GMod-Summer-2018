@@ -6,7 +6,8 @@ PRK_AddItem( "Knife", "", {
 	Cooldown = 0.5,
 	ThumbOffset = Vector( 0, 5, -10 ),
 	Colour = Color( 0, 0, 0, 255 ),
-	Range = 150,
+	Range = 75,
+	Radius = 50,
 	InitShared = function( info, self )
 		self.KillName = info.KillName
 		self.UseLabel = info.UseLabel
@@ -93,10 +94,15 @@ PRK_AddItem( "Knife", "", {
 			end )
 		end
 		if ( SERVER ) then
-			local trace = { start = ply:EyePos(), endpos = ply:EyePos() + ply:EyeAngles():Forward() * info.Range, filter = ply }
-			local tr = util.TraceEntity( trace, ply )
-			if ( tr.Entity and tr.Entity:IsValid() ) then
-				tr.Entity:TakeDamage( 1, ply, ply )
+			-- local trace = { start = ply:EyePos(), endpos = ply:EyePos() + ply:EyeAngles():Forward() * info.Range, filter = ply }
+			-- local tr = util.TraceEntity( trace, ply )
+			-- if ( tr.Entity and tr.Entity:IsValid() ) then
+				-- tr.Entity:TakeDamage( 1, ply, ply )
+			-- end
+			for k, ent in pairs( ents.FindInSphere( ply:EyePos() + ply:EyeAngles():Forward() * info.Range, info.Radius ) ) do
+				if ( ent != ply ) then
+					ent:TakeDamage( 1, ply, ply )
+				end
 			end
 		end
 		ply:EmitSound( "weapons/iceaxe/iceaxe_swing1.wav", 75, math.random( 150, 200 ) )

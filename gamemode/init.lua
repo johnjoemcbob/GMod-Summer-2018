@@ -39,7 +39,7 @@ print( "PRK" )
 print( "----------------" )
 print( "Add resources..." )
 resource.AddDir( dir )
-resource.AddWorkshop( "1468209847" )
+-- resource.AddWorkshop( "1468209847" )
 print( "Finish resources..." )
 print( "-------------------" )
 
@@ -198,7 +198,7 @@ function GM:InitPostEntity()
 		-- end )
 	-- end
 	-- verytest()
-	timer.Simple( 1, function()
+	timer.Simple( 5, function()
 		gen( 1 )
 		self:GenerateNextFloor( 1 )
 	end )
@@ -227,6 +227,15 @@ function GM:GenerateNextFloor( zone )
 
 	-- Generate new
 	PRK_Gen( PRK_Zones[zone].pos, zone )
+
+	-- Update any players already in this zone (primarily for dev test)
+	timer.Simple( PRK_Gen_FloorDeleteTime * 1.1, function()
+		for k, ply in pairs( player.GetAll() ) do
+			if ( ply:GetNWInt( "PRK_Zone" ) == zone ) then
+				PRK_Floor_MoveToZone( ply, zone )
+			end
+		end
+	end )
 end
 
 function GM:PlayerInitialSpawn( ply )
@@ -514,11 +523,14 @@ function GM:GenerateLobby()
 			"prk_wall",
 			"models/hunter/plates/plate8x8.mdl",
 			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 90, yaw, 0 ),
+			Angle( 0, 0, 0 ),
 			true,
 			true
 		)
 			wall.Size = { 8 * size * ( amount * 2 + 1 ), 0 }
+			if ( yaw == 0 ) then
+				wall.Size = { 0, 8 * size * ( amount * 2 + 1 ) }
+			end
 		wall:Spawn()
 		wall:SetZone( 0 )
 	end
@@ -530,6 +542,10 @@ function GM:GenerateLobby()
 		local x = y * amount * 1
 		createwall( x, 0, 90 )
 	end
+
+	-- Combine walls
+	local ent = ents.Create( "prk_wall_combined" )
+	ent:Spawn()
 
 	-- Add ceilings
 	local origin = origin + Vector( 0, 0, -hsize * 8 + size * 8 )

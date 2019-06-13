@@ -181,10 +181,10 @@ PRK_GamemodePath								= "gamemodes/heavygullets/"
 PRK_DataPath									= "heavygullets/"
 
 -- FPS testing
-PRK_Grass_Mesh									= false -- FPS test
-PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
-PRK_Grass_Mesh_Disruption						= false -- FPS test
-PRK_Grass_Billboard								= false -- FPS test
+-- PRK_Grass_Mesh									= false -- FPS test
+-- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
+-- PRK_Grass_Mesh_Disruption						= false -- FPS test
+-- PRK_Grass_Billboard								= false -- FPS test
 -- PRK_Decal										= false -- FPS test
 PRK_NoWalls										= false
 PRK_NoEnemies									= false

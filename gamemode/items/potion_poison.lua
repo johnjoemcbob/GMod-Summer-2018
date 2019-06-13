@@ -1,4 +1,4 @@
-PRK_AddItem( "Potion_Posion", "Base_Potion", {
+PRK_AddItem( "Potion_Poison", "Base_Potion", {
 	PrettyName = "Poison",
 	Price = 1,
 	Colour = Color( 10, 10, 10, 255 ),

@@ -1,4 +1,4 @@
-local scale = 0.2
+local scale = 1
 
 PRK_AddItem( "Base_Ammo", "", {
 	PrettyName = "Ammo Base",
@@ -12,11 +12,12 @@ PRK_AddItem( "Base_Ammo", "", {
 	end,
 	InitServer = function( info, self )
 		self:SetColor( info.Colour )
-		self:SetModel( "models/props_c17/oildrum001.mdl" )
+		-- self:SetModel( "models/props_c17/oildrum001.mdl" )
+		self:SetModel( "models/props_junk/PopCan01a.mdl" )
 		self:SetMoveType( MOVETYPE_VPHYSICS )
 		self:PhysicsInit( SOLID_VPHYSICS )
-		PRK_ResizePhysics( self, scale )
-		self:SendScale( scale )
+		-- PRK_ResizePhysics( self, scale )
+		-- self:SendScale( scale )
 		self:PhysWake()
 
 		self:SetPos( self:GetPos() + Vector( 0, 0, 15 ) )
@@ -32,10 +33,11 @@ PRK_AddItem( "Base_Ammo", "", {
 		local rotang = ang - Angle()
 			rotang:RotateAroundAxis( ang:Forward(), 180 )
 		PRK_RenderCachedModel(
-			"models/props_c17/oildrum001.mdl",
+			-- "models/props_c17/oildrum001.mdl",
+			"models/props_junk/PopCan01a.mdl",
 			pos,
 			rotang,
-			Vector( 1, 1, 0.75 ) * scale * 2,
+			Vector( 1, 1, 1 ) * scale * 1,
 			"models/shiny",
 			Color( 150, 150, 200, 100 ),
 			RENDERGROUP_TRANSLUCENT

@@ -120,11 +120,11 @@ function PRK_Gen( origin, zone )
 	while ( runnextstep and steps < safety ) do
 		PRK_Gen_Step( zone )
 		steps = steps + 1
-		print( "step: " .. steps )
+		-- print( "step: " .. steps )
 	end
-	print( steps )
-	print( "done" )
-	print( runnextstep )
+	-- print( steps )
+	-- print( "done" )
+	-- print( runnextstep )
 	if ( runnextstep ) then
 		PRK_Gen_End()
 	end
@@ -290,13 +290,13 @@ end
 function PRK_Gen_RoomAddModel( mod, zone, off, world )
 	if ( !PRK_Gen_IgnoreEnts or !PRK_Gen_IgnoreEnts[mod.Type] ) then
 		local class = "prop_physics"
-		print( mod.Type )
+		-- print( mod.Type )
 			if ( mod.Type == PRK_GEN_TYPE_FLOOR ) then
 				class = "prk_floor"
 			elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
 				class = "prk_wall"
-				print( mod.Ang )
-				print( "-" )
+				-- print( mod.Ang )
+				-- print( "-" )
 			elseif ( mod.Type == PRK_GEN_TYPE_CEILING ) then
 				class = "prk_ceiling"
 			end
@@ -607,20 +607,12 @@ function PRK_Gen_End()
 	ent:Spawn()
 
 	-- FPS testing
-	print( "PRK_Gen_End" )
-	print( "PRK_Gen_End" )
-	print( "PRK_Gen_End" )
-	print( "PRK_Gen_End" )
-	print( "PRK_Gen_End" )
-	print( "PRK_Gen_End" )
 	if ( PRK_NoWalls ) then
-		print( PRK_NoWalls )
 		for k, v in pairs( ents.FindByClass( "prk_wall" ) ) do
 			v:Remove()
 		end
 	end
 	if ( PRK_NoEnemies ) then
-		print( PRK_NoEnemies )
 		for k, v in pairs( ents.FindByClass( "prk_npc_*" ) ) do
 			v:Remove()
 		end

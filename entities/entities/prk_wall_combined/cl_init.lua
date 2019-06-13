@@ -109,42 +109,42 @@ end
 -- Debug combination
 hook.Add( "HUDPaint", "PRK_HUDPaint_WallCombined", function()
 	-- if ( Instance ) then
-		local self = Instance
-		for k, wall in pairs( self.Walls ) do
-			local size = PRK_Editor_Square_Size
-			local mid = wall.Min / size
-			local dim = ( wall.Max - wall.Min ) / size
-			local x = ScrW() / 14 + mid.x
-			local y = ScrH() / 8 + mid.y
-			local scale = 4
-			surface.SetDrawColor( 0, 255, 0, 10 )
-			surface.DrawRect( x * scale, y * scale, ( dim.x + 1 ) * scale, ( dim.y + 1 ) * scale )
-		end
-		print( #self.Walls )
+		-- local self = Instance
+		-- for k, wall in pairs( self.Walls ) do
+			-- local size = PRK_Editor_Square_Size
+			-- local mid = wall.Min / size
+			-- local dim = ( wall.Max - wall.Min ) / size
+			-- local x = ScrW() / 14 + mid.x
+			-- local y = ScrH() / 8 + mid.y
+			-- local scale = 4
+			-- surface.SetDrawColor( 0, 255, 0, 10 )
+			-- surface.DrawRect( x * scale, y * scale, ( dim.x + 1 ) * scale, ( dim.y + 1 ) * scale )
+		-- end
+		-- print( #self.Walls )
 
-		self:SplitWallsToGrid()
-		for k, wall in pairs( self.GridPoints ) do
-			local size = PRK_Editor_Square_Size
-			local mid = wall
-			local x = ScrW() / 14 + mid.x
-			local y = ScrH() / 8 + mid.y
-			local scale = 2
-			surface.SetDrawColor( 255, 0, 0, 255 )
-			surface.DrawRect( ( x * 2 ) * scale, ( y * 2 ) * scale, 1 * scale, 1 * scale )
-		end
+		-- self:SplitWallsToGrid()
+		-- for k, wall in pairs( self.GridPoints ) do
+			-- local size = PRK_Editor_Square_Size
+			-- local mid = wall
+			-- local x = ScrW() / 14 + mid.x
+			-- local y = ScrH() / 8 + mid.y
+			-- local scale = 2
+			-- surface.SetDrawColor( 255, 0, 0, 255 )
+			-- surface.DrawRect( ( x * 2 ) * scale, ( y * 2 ) * scale, 1 * scale, 1 * scale )
+		-- end
 
-		self:CombineGridToWalls()
-		for k, wall in pairs( self.CombinedWalls ) do
-			local size = PRK_Editor_Square_Size
-			local mid = wall.Min
-			local dim = ( wall.Max - wall.Min )
-			local x = ScrW() / 14 + mid.x
-			local y = ScrH() / 8 + mid.y
-			local scale = 4
-			surface.SetDrawColor( 0, 0, 255, 255 )
-			surface.DrawRect( x * scale, y * scale, ( dim.x + 1 ) * scale, ( dim.y + 1 ) * scale )
-		end
-		print( #self.CombinedWalls )
+		-- self:CombineGridToWalls()
+		-- for k, wall in pairs( self.CombinedWalls ) do
+			-- local size = PRK_Editor_Square_Size
+			-- local mid = wall.Min
+			-- local dim = ( wall.Max - wall.Min )
+			-- local x = ScrW() / 14 + mid.x
+			-- local y = ScrH() / 8 + mid.y
+			-- local scale = 4
+			-- surface.SetDrawColor( 0, 0, 255, 255 )
+			-- surface.DrawRect( x * scale, y * scale, ( dim.x + 1 ) * scale, ( dim.y + 1 ) * scale )
+		-- end
+		-- print( #self.CombinedWalls )
 	-- end
 end )
 
@@ -230,14 +230,14 @@ function ENT:CombineGridToWalls()
 				if ( wall.Min.x == other.Min.x and wall.Max.x == other.Max.x ) then
 					-- Then also within height range on either side
 					-- print( math.abs( wall.Min.y - other.Max.y ) )
-					if ( math.abs( wall.Min.y - other.Max.y ) <= 1 or math.abs( wall.Max.y - other.Min.y ) <= 1 ) then
+					if ( math.abs( wall.Min.y - other.Max.y ) == 1 or math.abs( wall.Max.y - other.Min.y ) == 1 ) then
 						-- Take the minimum miny and maximum maxy and remove the other
 						wall.Min.y = math.min( wall.Min.y, other.Min.y )
 						wall.Max.y = math.max( wall.Max.y, other.Max.y )
 
 						-- other.Min = Vector()
 						-- other.Max = Vector()
-						table.insert( todelete, v )
+						-- table.insert( todelete, v )
 						-- print( "match " .. k .. " with " .. v )
 					end
 				end

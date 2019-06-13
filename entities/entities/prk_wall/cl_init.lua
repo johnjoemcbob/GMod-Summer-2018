@@ -152,14 +152,14 @@ function ENT:Initialize()
 
 	local collision = self:OBBMaxs() - self:OBBMins()
 	local border = 0.004
-	local scale = Vector( collision.x / size, collision.y / size + border, 0.01 * collision.z / size + border )
+	local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
 	local min = -scale * size
 	local max = scale * size
 	-- ent:SetRenderBounds( min, max )
 	self:SetRenderBounds( min, max )
 end
 
-function ENT:Draw()
+function ENT:Draw()	
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
 
 	-- test sphere
@@ -169,26 +169,25 @@ function ENT:Draw()
 	end
 
 	-- Wall model
-	-- local size = PRK_Editor_Square_Size
-	-- wallent:SetPos( self:GetPos() )
-	-- local ang = self:GetAngles()
-		-- ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
-	-- local collision = self:OBBMaxs() - self:OBBMins()
-	-- local border = 0.004
-	-- local scale = Vector()
-		-- scale = scale + VectorAbs( ang:Forward() * collision.y / size + ang:Forward() * border )
-		-- scale = scale + VectorAbs( ang:Right()   * collision.z / size * 0.15 )
-		-- scale = scale + VectorAbs( ang:Up()      * collision.x / size )
-		-- if ( math.approx( math.abs( ang.y ), 180 ) or math.approx( math.abs( ang.y ), 0 ) ) then
-			-- ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
-		-- end
-	-- local mat = Matrix()
-		-- mat:Scale( scale )
-	-- wallent:EnableMatrix( "RenderMultiply", mat )
-	-- wallent:SetAngles( ang )
-	-- wallent:SetupBones()
+	local size = PRK_Editor_Square_Size
+	wallent:SetPos( self:GetPos() )
+	local ang = self:GetAngles()
+		ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+	local collision = self:OBBMaxs() - self:OBBMins()
+	local border = -0.004
+	local scale = Vector()
+		scale = scale + VectorAbs( ang:Up() * collision.y / size + ang:Up() * border )
+		scale = scale + VectorAbs( ang:Right()   * collision.x / size + ang:Right() * border )
+		scale = scale + VectorAbs( ang:Forward()      * collision.z / size )
+			ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
+			ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+	local mat = Matrix()
+		mat:Scale( scale )
+	wallent:EnableMatrix( "RenderMultiply", mat )
+	wallent:SetAngles( ang )
+	wallent:SetupBones()
 
-	-- wallent:DrawModel()
+	wallent:DrawModel()
 
 	-- Details
 	for k, v in pairs( self.Models ) do
@@ -198,10 +197,10 @@ function ENT:Draw()
 	end
 	
 	-- self:DrawModel()
-	local col = Color( 0, 0, 255, 255 )
-	local pos, ang = self:GetPos(), self:GetAngles()
-	local min, max = self:OBBMins(), self:OBBMaxs()
-	render.DrawWireframeBox( pos, ang, min, max, col )
+	-- local col = Color( 0, 0, 255, 255 )
+	-- local pos, ang = self:GetPos(), self:GetAngles()
+	-- local min, max = self:OBBMins(), self:OBBMaxs()
+	-- render.DrawWireframeBox( pos, ang, min, max, col )
 end
 
 function ENT:OnRemove()

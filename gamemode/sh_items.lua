@@ -12,9 +12,9 @@ function PRK_AddItem( name, base, data )
 
 	PRK_Items[name] = {}
 		-- Base item
-		print( "base; " .. base )
+		-- print( "base; " .. base )
 		if ( base and base != "" ) then
-			print( PRK_Items[base] )
+			-- print( PRK_Items[base] )
 			if ( !PRK_Items[base] ) then
 				print( "hasn't loaded base: " .. base .. " yet... waiting..." )
 				table.insert( PRK_ItemsToLoad, { name, base, data } )
@@ -22,6 +22,14 @@ function PRK_AddItem( name, base, data )
 			end
 			PRK_Items[name] = table.shallowcopy( PRK_Items[name] )
 			data.base = PRK_Items[base]
+
+			-- Pass unique down to inherit table
+			for key, value in pairs( data.base ) do
+				if ( data[key] == nil ) then
+					-- print( key .. " " .. tostring( data[key] ) )
+					data[key] = value
+				end
+			end
 		end
 	table.Merge( PRK_Items[name], data )
 	-- PrintTable( PRK_Items[name] )
@@ -70,6 +78,8 @@ function PRK_Load_Items( localdir )
 		print( "Try late load; " .. item[1] )
 		table.remove( PRK_BulletsToLoad, 1 )
 	end
+
+	-- PrintTable( PRK_Items )
 end
 
 local folder = "items/"

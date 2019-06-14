@@ -157,8 +157,12 @@ PRK_Enemy_Types									= {
 													["Sploder"] = "prk_npc_sploder",
 													["Turret"] = "prk_turret_heavy",
 													["Tether"] = "prk_turret_tether",
+													["Snake"] = "prk_snake",
 }
 PRK_Enemy_CoinDropMult							= 0.2 -- 0.1
+PRK_Enemy_SpawnChance_Start						= 0.5
+PRK_Enemy_SpawnChance_PerFloor					= 0.1
+PRK_Enemy_TetherHurtTime						= 4
 
 -- Player
 PRK_UseRange									= 150
@@ -183,11 +187,11 @@ PRK_GamemodePath								= "gamemodes/heavygullets/"
 PRK_DataPath									= "heavygullets/"
 
 -- FPS testing
-PRK_Grass_Mesh									= false -- FPS test
-PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
-PRK_Grass_Mesh_Disruption						= false -- FPS test
+-- PRK_Grass_Mesh									= false -- FPS test
+-- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
+-- PRK_Grass_Mesh_Disruption						= false -- FPS test
 PRK_Grass_Billboard								= false -- FPS test
-PRK_Decal										= false -- FPS test
+-- PRK_Decal										= false -- FPS test
 PRK_NoWalls										= false
 PRK_NoEnemies									= false
 PRK_NoEnts										= {

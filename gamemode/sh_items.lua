@@ -138,17 +138,23 @@ if ( SERVER ) then
 		if ( !name ) then
 			local possible = table.shallowcopy( PRK_Items )
 				for key, v in pairs( possible ) do
-					if ( string.find( key, "Base" ) ) then
+					if ( string.find( key, "Base" ) or v.Digital ) then
+						print( key .. " cannot spawn on pedestal" )
 						possible[key] = nil
 					end
 				end
 			null, name = TableRandom( possible )
 		end
 
-		local ent = ents.Create( "prk_item" )
+		local ent = nil
+		if ( PRK_Items[name].SpawnOverride ) then
+			ent = PRK_Items[name]:SpawnOverride( pos )
+		else
+			ent = ents.Create( "prk_item" )
 			ent:SetPos( pos )
 			ent:SetItem( name )
 			ent:Spawn()
+		end
 		return ent
 	end
 

@@ -11,7 +11,7 @@ function ENT:Initialize()
 	local min = Vector( -breadth / 2, -length / 2, -height / 2 )
 	local max = -min
 
-	print( min )
+	-- print( min )
 	self:PhysicsInitConvex( {
 		Vector( min.x, min.y, min.z ),
 		Vector( min.x, min.y, max.z ),

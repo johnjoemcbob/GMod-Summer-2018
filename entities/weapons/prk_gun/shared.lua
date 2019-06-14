@@ -439,6 +439,10 @@ function SWEP:SetChambers( chambers )
 	self:SendNumChambers( chambers )
 end
 
+function SWEP:AddChambers( add )
+	self:SetChambers( self.MaxClip + add )
+end
+
 function SWEP:GetFilledChamberCount()
 	local count = 0
 		if ( self.ChamberBullets ) then

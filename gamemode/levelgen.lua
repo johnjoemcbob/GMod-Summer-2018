@@ -55,7 +55,12 @@ SpawnEditorEnt["Gateway"] = function( pos, ang, scale, model )
 	return ent
 end
 SpawnEditorEnt["Spawner"] = function( pos, ang, scale, model )
-	local ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
+	local ent = nil
+	local max = 10
+	local floordifficulty = math.random( 1, max )
+	if ( floordifficulty >= ( max * PRK_Enemy_SpawnChance_Start ) - ( max * GAMEMODE.Floors * PRK_Enemy_SpawnChance_PerFloor ) ) then
+		ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
+	end
 	return ent
 end
 SpawnEditorEnt["Rock"] = function( pos, ang, scale, model )
@@ -463,10 +468,12 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 
 				-- Spawn entity
 				local ent = SpawnEditorEnt[v.Editor_Ent]( helper:GetPos(), helper:GetAngles(), v.Scale, v.Model )
-				if ( ent.SetZone ) then
-					ent:SetZone( zone )
+				if ( ent and ent:IsValid() ) then
+					if ( ent.SetZone ) then
+						ent:SetZone( zone )
+					end
+					table.insert( room.Ents, ent )
 				end
-				table.insert( room.Ents, ent )
 			end
 		end
 	end

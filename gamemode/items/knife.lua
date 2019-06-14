@@ -6,8 +6,8 @@ PRK_AddItem( "Knife", "", {
 	Cooldown = 0.5,
 	ThumbOffset = Vector( 0, 5, -10 ),
 	Colour = Color( 0, 0, 0, 255 ),
-	Range = 75,
-	Radius = 50,
+	Range = 100,
+	Radius = 100,
 	InitShared = function( info, self )
 		self.KillName = info.KillName
 		self.UseLabel = info.UseLabel

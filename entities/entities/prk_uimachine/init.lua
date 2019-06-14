@@ -268,26 +268,31 @@ function ENT:TryVend( ply, selection )
 		-- Take money
 		ply:SetNWInt( "PRK_Money", money - price )
 
-		-- Spawn item
-		local ent
-		if ( data.Name != "" ) then
-			ent = PRK_SpawnItem( data.Name, self:GetPos() )
-			timer.Simple( 0.75, function()
-				if ( ent and ent:IsValid() ) then
-					local phys = ent:GetPhysicsObject()
-					if ( phys and phys:IsValid() ) then
-						local speed = 3
-						local dir = ( ply:GetPos() - ent:GetPos() )
-						local velocity = dir * phys:GetMass() * speed
-						phys:ApplyForceCenter( velocity )
-					end
-				end
-			end )
+		if ( data.OnBuy ) then
+			data:OnBuy( ply )
 		end
-		-- Extra spawn functionality
-		-- if ( data.Spawn ) then
-			-- data:Spawn( ent, ply )
-		-- end
+		if ( !data.Digital ) then
+		-- Spawn item
+			local ent
+			if ( data.Name != "" ) then
+				ent = PRK_SpawnItem( data.Name, self:GetPos() )
+				timer.Simple( 0.75, function()
+					if ( ent and ent:IsValid() ) then
+						local phys = ent:GetPhysicsObject()
+						if ( phys and phys:IsValid() ) then
+							local speed = 3
+							local dir = ( ply:GetPos() - ent:GetPos() )
+							local velocity = dir * phys:GetMass() * speed
+							phys:ApplyForceCenter( velocity )
+						end
+					end
+				end )
+			end
+			-- Extra spawn functionality
+			-- if ( data.Spawn ) then
+				-- data:Spawn( ent, ply )
+			-- end
+		end
 
 		self.Entity:EmitSound( "npc/scanner/combat_scan" .. math.random( 1, 2 ) .. ".wav" )
 	else

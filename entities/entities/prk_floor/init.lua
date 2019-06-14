@@ -26,14 +26,14 @@ function PRK_Send_Floor_Grass( ply, zone, pos, min, max )
 	net.Send( ply )
 end
 
-function PRK_Send_Floor_Plant( ply, zone )
+function PRK_Send_Floor_Plant( ply, zone, tab )
 	if ( !zone ) then return end
 
-	local count = #PRK_Floor_Plants[zone]
+	local count = #tab
 	net.Start( "PRK_Floor_Plant" )
 		net.WriteFloat( zone )
 		net.WriteFloat( count )
-		for k, plant in pairs( PRK_Floor_Plants[zone] ) do
+		for k, plant in pairs( tab ) do
 			net.WriteFloat( plant[1] )
 			net.WriteVector( plant[2] )
 			net.WriteAngle( plant[3] )
@@ -51,7 +51,7 @@ function PRK_Floor_MoveToZone( ply, zone )
 		for k, floor in pairs( PRK_Floors[zone] ) do
 			PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
 		end
-		PRK_Send_Floor_Plant( ply, zone )
+		PRK_Send_Floor_Plant( ply, zone, PRK_Floor_Plants[zone] )
 	end
 end
 
@@ -134,23 +134,27 @@ function ENT:GeneratePlants()
 			local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * precision, PRK_Grass_Mesh_CountRange[2] * precision ) / precision * ( sca.x + sca.y ) )
 			for i = 1, amount do
 				local ind = math.random( 1, #PRK_Floor_Models )
-				local rnd = PRK_Floor_Models[ind]
-				local pos = self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) + rnd[2]
-				local ang = rnd[3] + Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
-				local sca = math.random( rnd[5][1] * 100, rnd[5][2] * 100 ) / 100
-				local col = math.random( 1, #PRK_Floor_Colours )
-
-				table.insert( PRK_Floor_Plants[self.Zone], {
-					ind,
-					pos,
-					ang,
-					sca,
-					col
-				} )
+				table.insert( PRK_Floor_Plants[self.Zone], PRK_GetPlantTable( ind, self:GetPos() + Vector( math.random( min.x, max.x ), math.random( min.y, max.y ), math.random( min.z, max.z ) ) ) )
 			end
 		else
 			timer.Simple( between, function() createplants() end )
 		end
 	end
 	createplants()
+end
+
+function PRK_GetPlantTable( ind, pos )
+	local rnd = PRK_Floor_Models[ind]
+	local pos = pos + rnd[2]
+	local ang = rnd[3] + Angle( math.random( -10, 10 ), math.random( 0, 360 ), math.random( -10, 10 ) )
+	local sca = math.random( rnd[5][1] * 100, rnd[5][2] * 100 ) / 100
+	local col = math.random( 1, #PRK_Floor_Colours )
+
+	return {
+		ind,
+		pos,
+		ang,
+		sca,
+		col
+	}
 end

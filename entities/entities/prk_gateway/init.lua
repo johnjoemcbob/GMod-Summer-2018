@@ -39,7 +39,7 @@ function ENT:Initialize()
 			endpos = pos - self:GetForward() * 10000,
 			filter = self,
 		} )
-		self:SetPos( tr.HitPos + tr.HitNormal * 0.04 )
+		self:SetPos( tr.HitPos + tr.HitNormal * 0.08 )
 		self:SetAngles( tr.HitNormal:Angle() )
 	end )
 

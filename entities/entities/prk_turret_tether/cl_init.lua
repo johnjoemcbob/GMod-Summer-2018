@@ -1,5 +1,14 @@
 include( "shared.lua" )
 
+ENT.TimeToHurt	= PRK_Enemy_TetherHurtTime
+
+function ENT:Think()
+	if ( self.TimeToHurt <= 0 ) then
+		self.TimeToHurt = PRK_Enemy_TetherHurtTime
+	end
+	self.TimeToHurt = self.TimeToHurt - FrameTime()
+end
+
 local mat = Material( "cable/rope" )
 function ENT:Draw()
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
@@ -9,6 +18,8 @@ function ENT:Draw()
 	local target = self:GetNWEntity( "Tether" )
 	-- print( target )
 	if ( target and target:IsValid() and target != self ) then
+		local progress = 1 - ( self.TimeToHurt / PRK_Enemy_TetherHurtTime )
+
 		if ( !self.Points ) then
 			self.Points = {}
 			self.PointTargets = {}
@@ -34,11 +45,13 @@ function ENT:Draw()
 			self.Points[point] = LerpVector( FrameTime() * speed / ( middist * slow ), self.Points[point], pos )
 			-- draw.NoTexture()
 			render.SetMaterial( mat )
-			render.DrawBeam( next, self.Points[point], 2, 0, 0, Color( 255, 255, 0, 255 ) )
+			local col = Color( 255, Lerp( progress, 255, 0 ), 0, 255 )
+			render.DrawBeam( next, self.Points[point], 2, 0, 0, col )
 			next = self.Points[point] - dist:GetNormalized() * border
 		end
 	else
 		self.Points = {}
 		self.PointTargets = {}
+		self.TimeToHurt	= PRK_Enemy_TetherHurtTime
 	end
 end

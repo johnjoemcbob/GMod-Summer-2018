@@ -156,6 +156,7 @@ PRK_Enemy_Types									= {
 													["Biter"] = "prk_npc_biter",
 													["Sploder"] = "prk_npc_sploder",
 													["Turret"] = "prk_turret_heavy",
+													["Tether"] = "prk_turret_tether",
 }
 PRK_Enemy_CoinDropMult							= 0.2 -- 0.1
 
@@ -165,6 +166,7 @@ PRK_UseBetween									= 0.5
 PRK_BaseClip									= 3 --6
 PRK_Health										= 6
 PRK_Speed										= 600
+PRK_TetherSpeed									= 200
 PRK_Jump										= 0
 
 -- Gun
@@ -181,11 +183,11 @@ PRK_GamemodePath								= "gamemodes/heavygullets/"
 PRK_DataPath									= "heavygullets/"
 
 -- FPS testing
--- PRK_Grass_Mesh									= false -- FPS test
--- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
--- PRK_Grass_Mesh_Disruption						= false -- FPS test
--- PRK_Grass_Billboard								= false -- FPS test
--- PRK_Decal										= false -- FPS test
+PRK_Grass_Mesh									= false -- FPS test
+PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
+PRK_Grass_Mesh_Disruption						= false -- FPS test
+PRK_Grass_Billboard								= false -- FPS test
+PRK_Decal										= false -- FPS test
 PRK_NoWalls										= false
 PRK_NoEnemies									= false
 PRK_NoEnts										= {

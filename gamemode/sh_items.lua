@@ -139,7 +139,6 @@ if ( SERVER ) then
 			local possible = table.shallowcopy( PRK_Items )
 				for key, v in pairs( possible ) do
 					if ( string.find( key, "Base" ) or v.Digital ) then
-						print( key .. " cannot spawn on pedestal" )
 						possible[key] = nil
 					end
 				end

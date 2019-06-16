@@ -29,19 +29,21 @@ function ENT:Think()
 		self.Walls = Walls
 		-- Combine all wall physics meshes
 		local collisions = {}
-			for k, wall in pairs( self.Walls ) do
-				local min = ( wall.Min )
-				local max = ( wall.Max )
-				table.insert( collisions, {
-					Vector( min.x, min.y, min.z ),
-					Vector( min.x, min.y, max.z ),
-					Vector( min.x, max.y, min.z ),
-					Vector( min.x, max.y, max.z ),
-					Vector( max.x, min.y, min.z ),
-					Vector( max.x, min.y, max.z ),
-					Vector( max.x, max.y, min.z ),
-					Vector( max.x, max.y, max.z ),
-				} )
+			for k, room in pairs( self.Walls ) do
+				for v, wall in pairs( room ) do
+					local min = ( wall.Min )
+					local max = ( wall.Max )
+					table.insert( collisions, {
+						Vector( min.x, min.y, min.z ),
+						Vector( min.x, min.y, max.z ),
+						Vector( min.x, max.y, min.z ),
+						Vector( min.x, max.y, max.z ),
+						Vector( max.x, min.y, min.z ),
+						Vector( max.x, min.y, max.z ),
+						Vector( max.x, max.y, min.z ),
+						Vector( max.x, max.y, max.z ),
+					} )
+				end
 			end
 		self:PhysicsInitMultiConvex( collisions )
 
@@ -62,9 +64,8 @@ function ENT:Think()
 		local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
 		local min = -scale * size
 		local max = scale * size
-		-- ent:SetRenderBounds( min, max )
-		print( min )
-		print( max )
+		-- print( min )
+		-- print( max )
 		self:SetRenderBounds( min, max )
 		
 		Walls = nil
@@ -75,34 +76,61 @@ function ENT:Draw()
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
 	if ( !self.Walls ) then return end
 
-	-- print( "draw" )
-	-- print( Walls )
-	for k, wall in pairs( self.Walls ) do
-		local min = ( wall.Min )
-		local max = ( wall.Max )
-		-- print( min )
-		local col = Color( 255, 0, 0, 255 )
-		-- render.DrawWireframeBox( self:GetPos(), self:GetAngles(), min, max, col )
+	-- Find current room
+	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
+	if ( zone != 0 ) then
+		local size = PRK_Plate_Size
+		local gridpos = LocalPlayer():GetPos() - PRK_Zones[zone].pos
+			gridpos = gridpos / size
+			gridpos.x = math.Round( gridpos.x )
+			gridpos.y = math.Round( gridpos.y )
+		local roomid = nil
+			if ( PRK_Floor_Grid[zone][gridpos.x] ) then
+				roomid = PRK_Floor_Grid[zone][gridpos.x][gridpos.y]
+			end
+		if ( roomid != nil ) then
+			LocalPlayer().PRK_Room = roomid
+		end
+	end
 
-		-- Wall model
-		local size = PRK_Editor_Square_Size
-		wallent:SetPos( self:GetPos() + ( wall.Max + wall.Min ) / 2 )
-		local ang = self:GetAngles()
-			ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
-		local collision = wall.Min - wall.Max
-		local border = 0.004
-		local scale = Vector()
-			scale = scale + VectorAbs( ang:Up() * collision.y / size + ang:Forward() * border )
-			scale = scale + VectorAbs( ang:Right()   * collision.x / size )
-			scale = scale + VectorAbs( ang:Forward()      * collision.z / size )
-				ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
-				ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
-		local mat = Matrix()
-			mat:Scale( scale )
-		wallent:EnableMatrix( "RenderMultiply", mat )
-		wallent:SetAngles( ang )
-		wallent:SetupBones()
-		wallent:DrawModel()
+	-- Render
+	if ( PRK_Wall_Render and LocalPlayer().PRK_Room and PRK_RoomConnections ) then
+		local rooms = {}
+			rooms[LocalPlayer().PRK_Room] = true
+			for k, room in pairs( PRK_RoomConnections[self.Zone][LocalPlayer().PRK_Room] ) do
+				rooms[room] = true
+			end
+		for room, v in pairs( rooms ) do
+			if ( self.Walls[room] ) then
+				for k, wall in pairs( self.Walls[room] ) do
+					local min = ( wall.Min )
+					local max = ( wall.Max )
+					-- print( min )
+					local col = Color( 255, 0, 0, 255 )
+					-- render.DrawWireframeBox( self:GetPos(), self:GetAngles(), min, max, col )
+
+					-- Wall model
+					local size = PRK_Editor_Square_Size
+					wallent:SetPos( self:GetPos() + ( wall.Max + wall.Min ) / 2 )
+					local ang = self:GetAngles()
+						ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+					local collision = wall.Min - wall.Max
+					local border = 0.004
+					local scale = Vector()
+						scale = scale + VectorAbs( ang:Up() * collision.y / size + ang:Forward() * border )
+						scale = scale + VectorAbs( ang:Right()   * collision.x / size )
+						scale = scale + VectorAbs( ang:Forward()      * collision.z / size )
+							ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
+							ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
+					local mat = Matrix()
+						mat:Scale( scale )
+					wallent:EnableMatrix( "RenderMultiply", mat )
+					wallent:SetAngles( ang )
+					wallent:SetupBones()
+					wallent:DrawModel()
+				end
+			end
+		end
 	end
 end
 

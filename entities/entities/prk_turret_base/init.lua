@@ -85,6 +85,11 @@ function ENT:Initialize()
 		self.Sound_Rotate:SetSoundLevel( 85 )
 	self.Sound_StopRotate = "vehicles/tank_turret_stop1.wav"
 	self.Sound_Fire = "weapons/physcannon/superphys_launch1.wav"
+
+	self:ExtraInitialize()
+end
+
+function ENT:ExtraInitialize()
 end
 
 function ENT:Think()

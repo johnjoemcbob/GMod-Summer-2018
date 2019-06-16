@@ -81,6 +81,7 @@ PRK_Grass_Billboard_ShouldDrawTime				= 0.1
 PRK_Grass_Billboard_MaxRenderCount				= 1000
 PRK_Grass_Billboard_MultipleSprite				= false
 
+PRK_Wall_Render									= true
 PRK_Wall_Detail_Mesh_Count						= function()
 													return math.max( 0, math.random( -10, 1 ) )
 													-- return 0
@@ -156,6 +157,7 @@ PRK_Enemy_Types									= {
 													["Biter"] = "prk_npc_biter",
 													["Sploder"] = "prk_npc_sploder",
 													["Turret"] = "prk_turret_heavy",
+													["Rocket"] = "prk_turret_rocket",
 													["Tether"] = "prk_turret_tether",
 													["Snake"] = "prk_snake",
 }
@@ -190,8 +192,9 @@ PRK_DataPath									= "heavygullets/"
 -- PRK_Grass_Mesh									= false -- FPS test
 -- PRK_Grass_Mesh_CountRange						= { 0, 0 } -- FPS test
 -- PRK_Grass_Mesh_Disruption						= false -- FPS test
-PRK_Grass_Billboard								= false -- FPS test
+-- PRK_Grass_Billboard								= false -- FPS test
 -- PRK_Decal										= false -- FPS test
+-- PRK_Wall_Render									= false
 PRK_NoWalls										= false
 PRK_NoEnemies									= false
 PRK_NoEnts										= {

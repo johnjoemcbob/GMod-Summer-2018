@@ -5,10 +5,12 @@ include( "shared.lua" )
 
 PRK_Floors = {}
 PRK_Floor_Plants = {}
+PRK_Floor_Grid = {}
 
 util.AddNetworkString( "PRK_Floor_Grass_Clear" )
 util.AddNetworkString( "PRK_Floor_Grass" )
 util.AddNetworkString( "PRK_Floor_Plant" )
+util.AddNetworkString( "PRK_Floor_Grid" )
 
 function PRK_Send_Floor_Grass_Clear( ply )
 	net.Start( "PRK_Floor_Grass_Clear" )
@@ -43,6 +45,17 @@ function PRK_Send_Floor_Plant( ply, zone, tab )
 	net.Send( ply )
 end
 
+function PRK_Send_Floor_Grid( ply, zone )
+	if ( !zone ) then return end
+	if ( !PRK_Floor_Grid[zone] ) then return end
+
+	net.Start( "PRK_Floor_Grid" )
+		net.WriteFloat( zone )
+		net.WriteTable( PRK_Floor_Grid[zone] )
+		net.WriteTable( PRK_RoomConnections[zone] )
+	net.Send( ply )
+end
+
 -- Update all floors when a player moves into a zone
 function PRK_Floor_MoveToZone( ply, zone )
 	print( "move to zone floor" )
@@ -52,12 +65,15 @@ function PRK_Floor_MoveToZone( ply, zone )
 			PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
 		end
 		PRK_Send_Floor_Plant( ply, zone, PRK_Floor_Plants[zone] )
+		PRK_Send_Floor_Grid( ply, zone )
 	end
 end
 
 function PRK_Floor_ResetZone( zone )
 	PRK_Floors[zone] = {}
 	PRK_Floor_Plants[zone] = {}
+	PRK_Floor_Grid[zone] = {}
+	PRK_RoomConnections[zone] = {}
 end
 
 function ENT:Initialize()
@@ -94,7 +110,7 @@ function ENT:Initialize()
 	timer.Simple( PRK_Gen_FloorDeleteTime, function()
 		if ( self and self:IsValid() ) then
 			-- Store position for visuals
-			local min, max = self:GetCollisionBounds()
+			local min, max = self:GetRotatedCollisionBounds()
 			-- print( self.Zone )
 			if ( self.Zone ) then
 				if ( !PRK_Floors[self.Zone] ) then
@@ -107,6 +123,7 @@ function ENT:Initialize()
 				} )
 			end
 			self:GeneratePlants()
+			self:StoreGrid()
 
 			-- Remove the entity for performance
 			self:Remove()
@@ -126,9 +143,7 @@ function ENT:GeneratePlants()
 				PRK_Floor_Plants[self.Zone] = {}
 			end
 
-			-- local min = self:OBBMins()
-			-- local max = self:OBBMaxs()
-			local min, max = self:GetCollisionBounds()
+			local min, max = self:GetRotatedCollisionBounds()
 			local sca = Vector( max.x / PRK_Plate_Size * 2, max.y / PRK_Plate_Size * 2, 1 )
 			local precision = 10
 			local amount = math.floor( math.random( PRK_Grass_Mesh_CountRange[1] * precision, PRK_Grass_Mesh_CountRange[2] * precision ) / precision * ( sca.x + sca.y ) )
@@ -141,6 +156,69 @@ function ENT:GeneratePlants()
 		end
 	end
 	createplants()
+end
+
+function ENT:StoreGrid()
+	local between = 1
+	local function storegrid()
+		if ( self.Zone != nil and PRK_Zones and PRK_Zones[self.Zone] ) then
+			if ( !PRK_Floor_Grid ) then
+				PRK_Floor_Grid = {}
+			end
+			if ( !PRK_Floor_Grid[self.Zone] ) then
+				PRK_Floor_Grid[self.Zone] = {}
+			end
+
+			-- Find each grid square by dividing the bounds by the base cell size
+			local size = PRK_Plate_Size
+			local pos = PRK_Zones[self.Zone].pos - self:GetPos()
+			local min, max = self:GetRotatedCollisionBounds()
+				min = ( min - pos ) / size
+					min.x = math.Round( min.x )
+					min.y = math.Round( min.y )
+				max = ( max - pos ) / size
+					max.x = math.Round( max.x )
+					max.y = math.Round( max.y )
+			local dir = ( max - min ):GetNormalized()
+				dir.x = math.sign( dir.x )
+				dir.y = math.sign( dir.y )
+			for x = 0, math.abs( min.x - max.x ) do
+				for y = 0, math.abs( min.y - max.y ) do
+					local gridx = min.x + dir.x * x
+					local gridy = min.y + dir.y * y
+					PRK_Floor_Grid[self.Zone][gridx] = PRK_Floor_Grid[self.Zone][gridx] or {}
+					PRK_Floor_Grid[self.Zone][gridx][gridy] = self.PRK_Room
+				end
+			end
+		else
+			timer.Simple( between, function() storegrid() end )
+		end
+	end
+	storegrid()
+end
+
+function ENT:GetRotatedCollisionBounds()
+	local col = Color( 255, 255, 255, 255 )
+	local min, max = self:GetCollisionBounds()
+		local yaw = self:GetAngles().y
+		if ( math.abs( yaw ) == 90 ) then
+			local temp = min.x
+			min.x = min.y
+			min.y = temp
+			local temp = max.x
+			max.x = max.y
+			max.y = temp
+			col = Color( 0, 0, 255, 255 )
+		elseif ( math.abs( yaw ) == 180 ) then
+			min.x = -min.x
+			min.y = -min.y
+			max.x = -max.x
+			max.y = -max.y
+			col = Color( 255, 0, 0, 255 )
+		end
+	-- print( self:GetAngles() )
+	debugoverlay.Box( self:GetPos(), min, max, 50, col )
+	return min, max
 end
 
 function PRK_GetPlantTable( ind, pos )

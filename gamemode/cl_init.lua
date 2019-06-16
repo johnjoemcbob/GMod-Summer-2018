@@ -827,7 +827,29 @@ function PRK_HUDPaint_Money()
 		PRK_HUD_Colour_Money,
 		TEXT_ALIGN_LEFT,
 		TEXT_ALIGN_CENTER
-	 )
+	)
+
+	-- Temp test TODO remove
+	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
+	if ( zone != 0 ) then
+		local size = PRK_Plate_Size
+		local gridpos = LocalPlayer():GetPos() - PRK_Zones[zone].pos
+			gridpos = gridpos / size
+			gridpos.x = math.Round( gridpos.x )
+			gridpos.y = math.Round( gridpos.y )
+		local roomid = ""
+			if ( PRK_Floor_Grid[zone][gridpos.x] ) then
+				roomid = PRK_Floor_Grid[zone][gridpos.x][gridpos.y]
+			end
+		local w, h = PRK_DrawText( 
+			tostring( gridpos ) .. " " .. tostring( roomid ),
+			x,
+			64,
+			PRK_HUD_Colour_Money,
+			TEXT_ALIGN_LEFT,
+			TEXT_ALIGN_CENTER
+		)
+	end
 
 	if ( money_add and money_add != 0 ) then
 		local offy = 0

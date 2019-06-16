@@ -77,6 +77,19 @@ net.Receive( "PRK_Floor_Plant", function( len, ply )
 	try()
 end )
 
+net.Receive( "PRK_Floor_Grid", function( len, ply )
+	local zone = net.ReadFloat()
+	local grid = net.ReadTable()
+	local conn = net.ReadTable()
+
+	print( "floor grid received" )
+	PRK_Floor_Grid = PRK_Floor_Grid or {}
+	PRK_Floor_Grid[zone] = grid
+	PRK_RoomConnections = PRK_RoomConnections or {}
+	PRK_RoomConnections[zone] = conn
+	PrintTable( PRK_RoomConnections[zone] )
+end )
+
 function PRK_Floor_InitializePlantModels()
 	if ( PRK_Floor_Models[1].Ent and PRK_Floor_Models[1].Ent:IsValid() ) then return end
 

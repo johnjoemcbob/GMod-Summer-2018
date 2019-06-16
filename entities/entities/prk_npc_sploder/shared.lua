@@ -183,9 +183,19 @@ function ENT:MoveCallback()
 end
 
 function ENT:Attack( victim )
-	-- Spawn explosion
-	PRK_Explosion( self, self:GetPos() + Vector( 0, 0, 30 ), self.SplodeRange )
+	if ( self.ToRemove ) then return end
 
-	-- Flag for removal
-	self.ToRemove = true
+	self:SetEnemy( nil )
+
+	-- Spawn explosion
+	local pos = self:GetPos()
+	local range = self.SplodeRange
+	timer.Simple( 0.6, function()
+		if ( self and self:IsValid() ) then
+			-- Flag for removal
+			self.ToRemove = true
+
+			PRK_Explosion( self, pos + Vector( 0, 0, 30 ), range )
+		end
+	end )
 end

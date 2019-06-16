@@ -371,6 +371,14 @@ function math.approx( num, target )
 	return dif < PRK_Epsilon
 end
 
+function math.sign( num )
+	if ( num < 0 ) then
+		return -1
+	else
+		return 1
+	end
+end
+
 function LerpAngleBasic( t, from, to )
 	local ret = from
 		ret.p = Lerp( t, from.p, to.p )

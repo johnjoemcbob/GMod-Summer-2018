@@ -36,7 +36,9 @@ function ENT:Initialize()
 				maxs.x = maxs.y
 				maxs.y = temp
 			end
-			table.insert( self.Walls, {
+			local room = wall.PRK_Room
+			self.Walls[room] = self.Walls[room] or {}
+			table.insert( self.Walls[room], {
 				Ent = wall,
 				Min = wall:GetPos() + mins - self:GetPos(),
 				Max = wall:GetPos() + maxs - self:GetPos(),
@@ -52,30 +54,34 @@ function ENT:Initialize()
 
 		-- Combine all wall physics meshes
 		local collisions = {}
-			for k, wall in pairs( self.Walls ) do
-				local min = ( wall.Min )
-				local max = ( wall.Max )
-				table.insert( collisions, {
-					Vector( min.x, min.y, min.z ),
-					Vector( min.x, min.y, max.z ),
-					Vector( min.x, max.y, min.z ),
-					Vector( min.x, max.y, max.z ),
-					Vector( max.x, min.y, min.z ),
-					Vector( max.x, min.y, max.z ),
-					Vector( max.x, max.y, min.z ),
-					Vector( max.x, max.y, max.z ),
-				} )
+			for k, room in pairs( self.Walls ) do
+				for v, wall in pairs( room ) do
+					local min = ( wall.Min )
+					local max = ( wall.Max )
+					table.insert( collisions, {
+						Vector( min.x, min.y, min.z ),
+						Vector( min.x, min.y, max.z ),
+						Vector( min.x, max.y, min.z ),
+						Vector( min.x, max.y, max.z ),
+						Vector( max.x, min.y, min.z ),
+						Vector( max.x, min.y, max.z ),
+						Vector( max.x, max.y, min.z ),
+						Vector( max.x, max.y, max.z ),
+					} )
+				end
 			end
 		self:PhysicsInitMultiConvex( collisions )
 
 		-- Remove old walls
-		for k, wall in pairs( self.Walls ) do
-			wall.Ent:Remove()
-			-- local phys = wall.Ent:GetPhysicsObject()
-			-- if ( phys and phys:IsValid() ) then
-				-- phys:EnableCollisions( false )
-			-- end
-			-- wall.Ent:SetPos( wall.Ent:GetPos() + Vector( 0, 0, 300 ) )
+		for k, room in pairs( self.Walls ) do
+			for v, wall in pairs( room ) do
+				wall.Ent:Remove()
+				-- local phys = wall.Ent:GetPhysicsObject()
+				-- if ( phys and phys:IsValid() ) then
+					-- phys:EnableCollisions( false )
+				-- end
+				-- wall.Ent:SetPos( wall.Ent:GetPos() + Vector( 0, 0, 300 ) )
+			end
 		end
 
 		-- Send walls to client for visualisation

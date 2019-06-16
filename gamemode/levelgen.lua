@@ -22,6 +22,8 @@ PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_FLOOR]	= "models/rendertarget" -- "phoenix_storms/
 PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_WALL]		= "prk_gradient" -- "phoenix_storms/dome"
 PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_CEILING]	= "models/rendertarget" -- "phoenix_storms/metalset_1-2"
 
+PRK_RoomConnections = {}
+
 local size = PRK_Plate_Size
 local hsize = size / 2
 
@@ -81,6 +83,7 @@ end
 local LastGen = {} -- Table of all rooms last generated
 local ToGen = {} -- Table of rooms still to try attach points for
 local CurrentRoomID = 0 -- Indices for rooms
+local Origin
 local room
 
 -- concommand.Add( "prk_gen", function( ply, cmd, args )
@@ -94,6 +97,7 @@ function PRK_Gen( origin, zone )
 	print( "PRK_Gen running" )
 	LastGen = {}
 	CurrentRoomID = 0
+	Origin = origin
 
 	-- Load rooms
 	rooms = {}
@@ -108,7 +112,7 @@ function PRK_Gen( origin, zone )
 	endroom = false
 	ToGen = {}
 	PRK_Gen_RoomStart( rooms.start[1], zone, origin )
-	PRK_Gen_RoomEnd( room, zone, true )
+	PRK_Gen_RoomEnd( room, zone, true, false, 1 )
 	-- ToGen = {
 		-- {
 			-- AttachPoints = {
@@ -140,8 +144,8 @@ local plan
 local index_try = 1
 local orient_try = 1
 local function next_attach()
-	-- Ensure parents are removed
 	if ( room ) then
+		-- Ensure parents are removed
 		for k, v in pairs( room.Ents ) do
 			v:SetParent( nil )
 		end
@@ -210,7 +214,7 @@ function PRK_Gen_Step( zone )
 	elseif ( room.AttachPoints[index_try] != nil ) then
 		local collide = PRK_Gen_Step_Try( true )
 		if ( !collide ) then
-			PRK_Gen_RoomEnd( room, zone )
+			PRK_Gen_RoomEnd( room, zone, false, false, ToGen[1].AttachPoints[1].Room )
 
 			next_step( zone )
 			return
@@ -355,7 +359,7 @@ function PRK_Gen_RoomStart( plan, zone, origin )
 	orient_try = 1
 end
 
-function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
+function PRK_Gen_RoomEnd( room, zone, force, forceandrotate, lastroomid )
 	table.insert( LastGen, room )
 
 	local anchor = HelperModels["Anchor"].Ent
@@ -381,6 +385,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 		if ( force ) then
 			local point = {
 				Pos = temp_room.Origin + v.Pos,
+				Room = CurrentRoomID,
 			}
 			table.insert( attachpoints, point )
 		else
@@ -409,6 +414,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 			-- Store or cap off attach point
 			local point = {
 				Pos = helper:GetPos(),
+				Room = CurrentRoomID,
 			}
 				-- Calculate each end of the attach using this pos, the angle of rotation, and the size of the attach gap
 				local x = math.abs( v.Max.x )
@@ -540,6 +546,18 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 	--	-- break -- temp
 	--end
 
+	if ( lastroomid ) then
+		print( lastroomid .. " - connect to - " .. CurrentRoomID )
+		-- print( lastroomid )
+		-- print( CurrentRoomID )
+		PRK_RoomConnections = PRK_RoomConnections or {}
+		PRK_RoomConnections[zone] = PRK_RoomConnections[zone] or {}
+		PRK_RoomConnections[zone][lastroomid] = PRK_RoomConnections[zone][lastroomid] or {}
+		PRK_RoomConnections[zone][CurrentRoomID] = PRK_RoomConnections[zone][CurrentRoomID] or {}
+		table.insert( PRK_RoomConnections[zone][lastroomid], CurrentRoomID )
+		table.insert( PRK_RoomConnections[zone][CurrentRoomID], lastroomid )
+	end
+
 	-- Must be after attach point etc
 	next_attach()
 
@@ -561,17 +579,27 @@ function PRK_Gen_RoomClose( point, zone )
 		end
 	if ( count <= 1 and !endroom ) then
 		-- Finish - place exit gateway portal room
+		local lastroomid = CurrentRoomID
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
-			while ( orient_try <= 4 ) do
-				local collide = PRK_Gen_Step_Try( orient_try != 4 )
-				if ( !collide ) then
-					break
+			local collide = false
+				while ( orient_try <= 4 ) do
+					collide = PRK_Gen_Step_Try( orient_try != 4 )
+					if ( !collide ) then
+						break
+					end
+					orient_try = orient_try + 1
 				end
-				orient_try = orient_try + 1
+			-- Failed to generate - couldn't place this end room
+			if ( collide ) then
+				print( "Generation failed... restarting..." )
+				timer.Simple( 1, function()
+					GAMEMODE.Floors = GAMEMODE.Floors - 1
+					GAMEMODE:GenerateNextFloor( zone )
+				end )
 			end
-			PRK_Gen_RoomEnd( room, zone, true, true )
+			PRK_Gen_RoomEnd( room, zone, true, true, lastroomid )
 			endroom = true
 			PRK_Gen_End()
 		end )

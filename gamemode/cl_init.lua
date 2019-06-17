@@ -251,6 +251,23 @@ function GM:Think()
 	PRK_Think_Punch()
 	PRK_Think_Use()
 	PRK_Think_Item()
+
+	-- Find current room
+	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
+	if ( zone != 0 and PRK_Zones[zone] ) then
+		local size = PRK_Plate_Size
+		local gridpos = LocalPlayer():GetPos() - PRK_Zones[zone].pos
+			gridpos = gridpos / size
+			gridpos.x = math.Round( gridpos.x )
+			gridpos.y = math.Round( gridpos.y )
+		local roomid = nil
+			if ( PRK_Floor_Grid and PRK_Floor_Grid[zone] and PRK_Floor_Grid[zone][gridpos.x] ) then
+				roomid = PRK_Floor_Grid[zone][gridpos.x][gridpos.y]
+			end
+		if ( roomid != nil ) then
+			LocalPlayer().PRK_Room = roomid
+		end
+	end
 end
 
 function PRK_Think_Punch()
@@ -831,7 +848,7 @@ function PRK_HUDPaint_Money()
 
 	-- Temp test TODO remove
 	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
-	if ( zone != 0 ) then
+	if ( zone != 0 and PRK_Zones[zone] ) then
 		local size = PRK_Plate_Size
 		local gridpos = LocalPlayer():GetPos() - PRK_Zones[zone].pos
 			gridpos = gridpos / size

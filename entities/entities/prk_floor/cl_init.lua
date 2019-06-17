@@ -87,7 +87,8 @@ net.Receive( "PRK_Floor_Grid", function( len, ply )
 	PRK_Floor_Grid[zone] = grid
 	PRK_RoomConnections = PRK_RoomConnections or {}
 	PRK_RoomConnections[zone] = conn
-	PrintTable( PRK_RoomConnections[zone] )
+	-- PrintTable( PRK_Floor_Grid[zone] )
+	-- PrintTable( PRK_RoomConnections[zone] )
 end )
 
 function PRK_Floor_InitializePlantModels()

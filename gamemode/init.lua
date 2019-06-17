@@ -229,7 +229,7 @@ function GM:GenerateNextFloor( zone )
 	PRK_Gen( PRK_Zones[zone].pos, zone )
 
 	-- Update any players already in this zone (primarily for dev test)
-	timer.Simple( PRK_Gen_FloorDeleteTime * 1.1, function()
+	timer.Simple( PRK_Gen_FloorDeleteTime * 1.2, function()
 		for k, ply in pairs( player.GetAll() ) do
 			if ( ply:GetNWInt( "PRK_Zone" ) == zone ) then
 				PRK_Floor_MoveToZone( ply, zone )

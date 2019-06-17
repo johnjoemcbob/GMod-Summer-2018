@@ -20,7 +20,7 @@ function ENT:DoFire()
 			end
 		bullet.Owner = self
 		bullet:SetZone( self.Zone )
-		timer.Simple( self.TimeAutoRemoveLaser, function()
+		timer.Simple( self.TimeAutoRemoveProj, function()
 			if ( bullet and bullet:IsValid() ) then
 				bullet:Remove()
 			end

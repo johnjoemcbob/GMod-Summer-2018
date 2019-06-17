@@ -5,7 +5,7 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
-	if ( !PlayerInZone( self, self.Zone ) ) then return end
+	if ( !self:ShouldDraw() ) then return end
 
 	self:DrawModel()
 end

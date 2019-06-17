@@ -4,6 +4,7 @@ AddCSLuaFile( "cl_init.lua" )
 include( "shared.lua" )
 
 ENT.SpeedFire = 70
+ENT.TimeAutoRemoveProj = 4
 
 function ENT:ExtraInitialize()
 	self.Head:SetModel( "models/hunter/blocks/cube1x1x05.mdl" )
@@ -26,7 +27,7 @@ function ENT:DoFire()
 			end
 		bullet.Owner = self
 		bullet:SetZone( self.Zone )
-		timer.Simple( self.TimeAutoRemoveLaser, function()
+		timer.Simple( self.TimeAutoRemoveProj, function()
 			if ( bullet and bullet:IsValid() ) then
 				bullet:Remove()
 			end

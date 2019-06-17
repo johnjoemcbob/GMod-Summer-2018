@@ -25,8 +25,8 @@ PRK_AddBullet( "Default", "", {
 		-- Spawn bullet
 		if ( SERVER ) then
 			local bullet = ents.Create( "prk_bullet_heavy" )
-			bullet:Spawn()
 			bullet.Owner = self.Owner
+			bullet:Spawn()
 			-- Appear at hit point and bounce back towards player
 			local out = 10
 			local pos = tr.HitPos + tr.HitNormal * out

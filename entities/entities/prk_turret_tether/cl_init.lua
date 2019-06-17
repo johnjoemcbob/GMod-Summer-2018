@@ -11,10 +11,11 @@ end
 
 local mat = Material( "cable/rope" )
 function ENT:Draw()
-	if ( !PlayerInZone( self, self.Zone ) ) then return end
+	if ( self:ShouldDraw() ) then
+		self:DrawModel()
+	end
 
-	self:DrawModel()
-
+	-- Always draw rope so player knows where they got got
 	local target = self:GetNWEntity( "Tether" )
 	-- print( target )
 	if ( target and target:IsValid() and target != self ) then

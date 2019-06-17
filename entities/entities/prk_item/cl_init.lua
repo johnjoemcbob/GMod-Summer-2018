@@ -1,6 +1,8 @@
 include( "shared.lua" )
 
 function ENT:Draw()
+	if ( !self:ShouldDraw() ) then return end
+
 	if ( self:GetItem() ) then
 		PRK_Items[self:GetItem()]:Draw( self )
 	end

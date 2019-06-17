@@ -159,8 +159,8 @@ function ENT:Initialize()
 	self:SetRenderBounds( min, max )
 end
 
-function ENT:Draw()	
-	if ( !PlayerInZone( self, self.Zone ) ) then return end
+function ENT:Draw()
+	if ( !self:ShouldDraw() ) then return end
 
 	-- test sphere
 	if ( true ) then

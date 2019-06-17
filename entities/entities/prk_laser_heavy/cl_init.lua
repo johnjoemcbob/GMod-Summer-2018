@@ -18,6 +18,8 @@ end
 
 -- Also update pos/ang here in case Draw wouldn't be called (if the entity is already out of view)
 function ENT:Think()
+	if ( !self:ShouldDraw() ) then return end
+
 	if ( !self.Bullet or !self.Bullet:IsValid() ) then
 		self:Initialize()
 	end

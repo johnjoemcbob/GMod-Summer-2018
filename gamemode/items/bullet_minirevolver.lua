@@ -50,8 +50,8 @@ PRK_AddBullet( "Mini Revolver", "", {
 		-- Spawn bullet
 		if ( SERVER ) then
 			local bullet = ents.Create( "prk_bullet_heavy" )
-			bullet:Spawn()
 			bullet.Owner = self.Owner
+			bullet:Spawn()
 			local scale = 0.5
 				PRK_ResizePhysics( bullet, scale )
 				bullet:SendScale( scale )

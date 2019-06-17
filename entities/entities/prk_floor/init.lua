@@ -59,14 +59,22 @@ end
 -- Update all floors when a player moves into a zone
 function PRK_Floor_MoveToZone( ply, zone )
 	print( "move to zone floor" )
-	if ( PRK_Floors[zone] ) then
-		PRK_Send_Floor_Grass_Clear( ply )
-		for k, floor in pairs( PRK_Floors[zone] ) do
-			PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
+	local function send()
+		local floors = #ents.FindByClass( "prk_floor" )
+		if ( floors != 0 ) then
+			timer.Simple( 1, function() send() end )
+		else
+			if ( PRK_Floors[zone] ) then
+				PRK_Send_Floor_Grass_Clear( ply )
+				for k, floor in pairs( PRK_Floors[zone] ) do
+					PRK_Send_Floor_Grass( ply, zone, floor[1], floor[2], floor[3] )
+				end
+				PRK_Send_Floor_Plant( ply, zone, PRK_Floor_Plants[zone] )
+				PRK_Send_Floor_Grid( ply, zone )
+			end
 		end
-		PRK_Send_Floor_Plant( ply, zone, PRK_Floor_Plants[zone] )
-		PRK_Send_Floor_Grid( ply, zone )
 	end
+	send()
 end
 
 function PRK_Floor_ResetZone( zone )
@@ -124,6 +132,16 @@ function ENT:Initialize()
 			end
 			self:GeneratePlants()
 			self:StoreGrid()
+			-- Update any players already in this zone
+			-- if ( #ents.FindByClass( "prk_wall_combined" ) > 0 ) then
+				-- print( "probably finished generation" )
+				-- for k, ply in pairs( player.GetAll() ) do
+					-- if ( ply:GetNWInt( "PRK_Zone" ) == self.Zone ) then
+						-- PRK_Send_Floor_Grid( ply, self.Zone )
+						-- print( "Late floor grid update to " .. tostring( ply ) )
+					-- end
+				-- end
+			-- end
 
 			-- Remove the entity for performance
 			self:Remove()

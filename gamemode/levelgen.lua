@@ -129,14 +129,10 @@ function PRK_Gen( origin, zone )
 	while ( runnextstep and steps < safety ) do
 		PRK_Gen_Step( zone )
 		steps = steps + 1
-		-- print( "step: " .. steps )
 	end
-	-- print( steps )
-	-- print( "done" )
-	-- print( runnextstep )
-	if ( runnextstep ) then
-		PRK_Gen_End()
-	end
+	-- if ( runnextstep ) then
+		-- PRK_Gen_End()
+	-- end
 end
 
 -- local room = nil
@@ -197,7 +193,7 @@ end
 function PRK_Gen_Step( zone )
 	runnextstep = false
 	if ( !ToGen or #ToGen == 0 or ( #ToGen == 1 and #ToGen[1].AttachPoints == 0 ) ) then
-		PRK_Gen_End()
+		-- PRK_Gen_End()
 		return
 	end
 	if ( #ToGen[1].AttachPoints == 0 ) then
@@ -297,6 +293,7 @@ function PRK_Gen_Step_Try( undo )
 end
 
 function PRK_Gen_RoomAddModel( mod, zone, off, world )
+	local ent = nil
 	if ( !PRK_Gen_IgnoreEnts or !PRK_Gen_IgnoreEnts[mod.Type] ) then
 		local class = "prop_physics"
 		-- print( mod.Type )
@@ -309,7 +306,7 @@ function PRK_Gen_RoomAddModel( mod, zone, off, world )
 			elseif ( mod.Type == PRK_GEN_TYPE_CEILING ) then
 				class = "prk_ceiling"
 			end
-		local ent = PRK_CreateEnt(
+		ent = PRK_CreateEnt(
 			class,
 			mod.Mod,
 			mod.Pos + off,
@@ -335,6 +332,7 @@ function PRK_Gen_RoomAddModel( mod, zone, off, world )
 			table.insert( room.Ents, ent )
 		end
 	end
+	return ent
 end
 
 function PRK_Gen_RoomStart( plan, zone, origin )
@@ -546,6 +544,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate, lastroomid )
 	--	-- break -- temp
 	--end
 
+	print( "end room : " .. CurrentRoomID )
 	if ( lastroomid ) then
 		print( lastroomid .. " - connect to - " .. CurrentRoomID )
 		-- print( lastroomid )
@@ -579,7 +578,7 @@ function PRK_Gen_RoomClose( point, zone )
 		end
 	if ( count <= 1 and !endroom ) then
 		-- Finish - place exit gateway portal room
-		local lastroomid = CurrentRoomID
+		local lastroomid = point.Room
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
@@ -592,7 +591,7 @@ function PRK_Gen_RoomClose( point, zone )
 					orient_try = orient_try + 1
 				end
 			-- Failed to generate - couldn't place this end room
-			if ( collide ) then
+			if ( collide or #LastGen < 3 ) then
 				print( "Generation failed... restarting..." )
 				timer.Simple( 1, function()
 					GAMEMODE.Floors = GAMEMODE.Floors - 1
@@ -616,7 +615,8 @@ function PRK_Gen_RoomClose( point, zone )
 			Type = PRK_GEN_TYPE_WALL,
 		}
 		PRK_BasicDebugSphere( point.Pos )
-		PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+		local ent = PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+		ent.PRK_Room = point.Room
 	end
 end
 

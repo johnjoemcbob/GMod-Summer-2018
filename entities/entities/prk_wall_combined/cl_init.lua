@@ -76,30 +76,9 @@ function ENT:Draw()
 	if ( !PlayerInZone( self, self.Zone ) ) then return end
 	if ( !self.Walls ) then return end
 
-	-- Find current room
-	local zone = LocalPlayer():GetNWInt( "PRK_Zone", 0 )
-	if ( zone != 0 ) then
-		local size = PRK_Plate_Size
-		local gridpos = LocalPlayer():GetPos() - PRK_Zones[zone].pos
-			gridpos = gridpos / size
-			gridpos.x = math.Round( gridpos.x )
-			gridpos.y = math.Round( gridpos.y )
-		local roomid = nil
-			if ( PRK_Floor_Grid[zone][gridpos.x] ) then
-				roomid = PRK_Floor_Grid[zone][gridpos.x][gridpos.y]
-			end
-		if ( roomid != nil ) then
-			LocalPlayer().PRK_Room = roomid
-		end
-	end
-
 	-- Render
 	if ( PRK_Wall_Render and LocalPlayer().PRK_Room and PRK_RoomConnections ) then
-		local rooms = {}
-			rooms[LocalPlayer().PRK_Room] = true
-			for k, room in pairs( PRK_RoomConnections[self.Zone][LocalPlayer().PRK_Room] ) do
-				rooms[room] = true
-			end
+		local rooms = PRK_GetShouldDrawRooms( self.Zone, LocalPlayer().PRK_Room )
 		for room, v in pairs( rooms ) do
 			if ( self.Walls[room] ) then
 				for k, wall in pairs( self.Walls[room] ) do

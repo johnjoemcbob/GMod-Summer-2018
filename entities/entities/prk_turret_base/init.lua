@@ -4,7 +4,7 @@ AddCSLuaFile( "cl_init.lua" )
 include( "shared.lua" )
 
 -- Variables
-ENT.TimeAutoRemoveLaser		= 2
+ENT.TimeAutoRemoveProj		= 2
 ENT.TimeFire				= 3 --1.5
 ENT.SpeedRotate				= 13--15 --10
 ENT.SpeedDeploy				= 3--15 --10

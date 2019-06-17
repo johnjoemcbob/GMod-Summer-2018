@@ -72,6 +72,10 @@ function PRK_Floor_MoveToZone( ply, zone )
 				PRK_Send_Floor_Plant( ply, zone, PRK_Floor_Plants[zone] )
 				PRK_Send_Floor_Grid( ply, zone )
 			end
+			
+			for k, v in pairs( ents.FindByClass( "prk_wall_combined" ) ) do
+				v:SendWallCombined()
+			end
 		end
 	end
 	send()

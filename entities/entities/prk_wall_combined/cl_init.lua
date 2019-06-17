@@ -78,6 +78,7 @@ function ENT:Draw()
 
 	-- Render
 	if ( PRK_Wall_Render and LocalPlayer().PRK_Room and PRK_RoomConnections ) then
+		-- print( LocalPlayer().PRK_Room )
 		local rooms = PRK_GetShouldDrawRooms( self.Zone, LocalPlayer().PRK_Room )
 		for room, v in pairs( rooms ) do
 			if ( self.Walls[room] ) then

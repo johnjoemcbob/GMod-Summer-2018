@@ -109,4 +109,5 @@ function ENT:Think()
 	if ( self.TargetPos != nil ) then
 		self:SetPos( self.TargetPos )
 	end
+	-- self:SendWallCombined()
 end

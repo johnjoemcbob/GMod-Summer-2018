@@ -67,7 +67,7 @@ function ENT:Think()
 		-- print( min )
 		-- print( max )
 		self:SetRenderBounds( min, max )
-		
+
 		Walls = nil
 	end
 end

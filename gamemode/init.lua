@@ -238,7 +238,13 @@ function GM:GenerateNextFloor( zone )
 	end )
 end
 
+-- Requires sv_cheats 1 sadly
 function GM:PlayerInitialSpawn( ply )
+	ply:ConCommand( "mat_fullbright 1" )
+end
+
+function GM:PlayerDisconnected( ply )
+	ply:ConCommand( "mat_fullbright 0" )
 end
 
 function GM:MoveToZone( ply, zone )

@@ -11,6 +11,9 @@ This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **You can download this gamemode from the release tab or do it old way (see original text)**
 
+There is still stack overflow bug however... 
+I'm going try to fix it a bit later
+
 ## Original Text
 
 The Prickly Team entry to the Summer of 2018 GmodStore Garry's Mod Gamemode Competition

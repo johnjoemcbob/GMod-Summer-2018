@@ -14,6 +14,8 @@ This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 There is still stack overflow bug however... 
 I'm going try to fix it a bit later
 
+Upd from 14.01.2022 - Finds out, the gamemode isn't actually random, i'm not sure what the problem is exactly, but i'm going to try to fix it
+
 ## Original Text
 
 The Prickly Team entry to the Summer of 2018 GmodStore Garry's Mod Gamemode Competition

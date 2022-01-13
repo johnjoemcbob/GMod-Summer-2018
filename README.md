@@ -9,6 +9,8 @@ This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **Should be played on gm_flatgrass !**
 
+**You can download this gamemode from the release tab or do it old way (see original text)**
+
 ## Original Text
 
 The Prickly Team entry to the Summer of 2018 GmodStore Garry's Mod Gamemode Competition

@@ -1,4 +1,4 @@
-# Fixed (Not fully) version of Heavy Gullets from Prickly Team
+# Fixed (Not fully (Only First Floor available to play for some reason)) version of Heavy Gullets from Prickly Team
 This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **I'm not a author of the original gamemode! All credits go to https://steamcommunity.com/id/johnjoemcbob !**

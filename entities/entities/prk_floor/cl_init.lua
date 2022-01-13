@@ -138,7 +138,7 @@ hook.Add( "Think", "PRK_Think_Grass", function()
 		end
 		local specialcases = {}
 			specialcases["prk_gateway"] = function( ent, moving )
-				return true, 300, ent.Scale / 2, -1, false
+				return true, 300, ent:GetModelScale() / 2, -1, false
 			end
 			specialcases["prk_debris"] = function( ent, moving )
 				if ( ent:GetNWBool( "Explosion" ) ) then

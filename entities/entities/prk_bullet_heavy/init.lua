@@ -122,6 +122,10 @@ function ENT:Initialize()
 	self:PhysicsInitBox( min, max )
 	self:PhysWake()
 
+	timer.Simple( 0.1, function()
+		self:SetZone( self.Owner:GetNWInt( "PRK_Zone" ) )
+	end )
+
 	-- Variables
 	self.Damage = 1
 	self.Collide = 0

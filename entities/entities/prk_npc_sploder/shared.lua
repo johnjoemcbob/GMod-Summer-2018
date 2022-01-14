@@ -4,29 +4,29 @@ ENT.Base 			= "prk_npc_base"
 ENT.Spawnable		= true
 ENT.KillName		= "Sploder"
 
-list.Set( "NPC", "prk_npc_sploder", {
-	Name = "Prickly Sploder",
-	Class = "prk_npc_sploder",
-	Category = "Prickly"
-} )
-
 sound.Add(
 	{ 
 		name = "prk_sploder_loop",
 		channel = CHAN_ITEM,
-		level = 85,
+		level = 130,
 		volume = 0.25,
 		pitch = { 230, 255 },
 		sound = "npc/scanner/scanner_siren2.wav"
 	}
 )
 
+list.Set( "NPC", "prk_npc_sploder", {
+	Name = "Prickly Sploder",
+	Class = "prk_npc_sploder",
+	Category = "Prickly"
+} )
+
 function ENT:Initialize()
 	self:SetModel( "models/headcrab.mdl" )
 	self:SetModelScale( PRK_Enemy_Scale, 0 )
-	self:SetMaterial( "models/debug/debugwhite", true )
+	self:SetMaterial( PRK_Material_Base, true )
 	self:SetColor( PRK_Colour_Enemy_Skin )
-	self:SetCollisionGroup( COLLISION_GROUP_WORLD )
+	-- self:SetCollisionGroup( COLLISION_GROUP_WORLD )
 
 	-- Extra visual details
 	if ( CLIENT ) then
@@ -46,7 +46,7 @@ function ENT:Initialize()
 			local berry_pos = v / 3 * self:GetModelScale()
 			local berry_ang = Angle()
 			local berry_sca = ( 0.8 + math.random( 10, 50 ) / 100 ) / 3 * self:GetModelScale()
-			local berry_mat = "models/debug/debugwhite"
+			local berry_mat = PRK_Material_Base
 			local berry_col = Color(
 				PRK_Colour_Enemy_Eye.r * ( 0.7 + math.random( 10, 100 ) / 100 ),
 				PRK_Colour_Enemy_Eye.g,
@@ -92,8 +92,10 @@ function ENT:Initialize()
 	play()
 end
 
-function ENT:OnKilled( dmginfo )
-	self:Remove()
+function ENT:OnNewEnemy()
+	self.Playing = true
+	self:EmitSound( "prk_sploder_loop" )
+	self:EmitSound( "npc/headcrab_poison/ph_rattle3.wav", 130, 90, 1 )
 end
 
 function ENT:OnNoEnemy()
@@ -101,9 +103,8 @@ function ENT:OnNoEnemy()
 	self:StopSound( "prk_sploder_loop" )
 end
 
-function ENT:OnNewEnemy()
-	self.Playing = true
-	self:EmitSound( "prk_sploder_loop" )
+function ENT:OnKilled( dmginfo )
+	self:Remove()
 end
 
 function ENT:OnRemove()
@@ -117,6 +118,16 @@ function ENT:OnRemove()
 
 	if ( SERVER ) then
 		if ( !self.Cleanup ) then
+			-- Spawn blood
+			local pos = self:GetPos()
+			local dir = Vector( 0, 0, 1 )
+				if ( self.Killer ) then
+					dir = ( pos - self.Killer:GetPos() ):GetNormalized() * 2
+				end
+			local col = PRK_Colour_Enemy_Blood
+			PRK_SendBlood( pos, dir, col )
+
+			-- Debris
 			local debris = math.random( 3, 5 )
 			for i = 1, debris do
 				local prop = PRK_CreateEnt(
@@ -125,13 +136,13 @@ function ENT:OnRemove()
 					AngleRand(),
 					true
 				)
-				prop:SetMaterial( "models/debug/debugwhite", true )
+				prop:SetMaterial( PRK_Material_Base, true )
 				prop:SetColor( PRK_Colour_Enemy_Eye )
 				prop:SetModelScale( 1 / 3 * PRK_Enemy_Scale, 0 )
 				prop:PhysicsInitSphere( 5 * PRK_Enemy_Scale )
 				local phys = prop:GetPhysicsObject()
 				if ( phys and phys:IsValid() ) then
-					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 1000 )
+					phys:SetVelocity( ( Vector( 0, 0, 1 ) + VectorRand() ) * 200 )
 				end
 			end
 
@@ -143,6 +154,7 @@ function ENT:OnRemove()
 	end
 
 	self:StopSound( "prk_sploder_loop" )
+	self:EmitSound( "npc/antlion_grub/squashed.wav", 130, 90, 1 )
 end
 
 if ( CLIENT ) then
@@ -160,17 +172,30 @@ function ENT:MoveCallback()
 	for k, v in pairs( player.GetAll() ) do
 		local dist = v:GetPos():Distance( self:GetPos() )
 		if ( dist <= self.SplodeRange ) then
-			self:SetEnemy( v )
-			self:Attack( v )
-			return "ok"
+			-- Also needs line of sight
+			if ( self:GetTrace( v ).Entity == v ) then
+				self:SetEnemy( v )
+				self:Attack( v )
+				return "ok"
+			end
 		end
 	end
 end
 
 function ENT:Attack( victim )
-	-- Spawn explosion
-	PRK_Explosion( self, self:GetPos() + Vector( 0, 0, 30 ), self.SplodeRange )
+	if ( self.ToRemove ) then return end
 
-	-- Flag for removal
-	self.ToRemove = true
+	self:SetEnemy( nil )
+
+	-- Spawn explosion
+	local pos = self:GetPos()
+	local range = self.SplodeRange
+	timer.Simple( 0.6, function()
+		if ( self and self:IsValid() ) then
+			-- Flag for removal
+			self.ToRemove = true
+
+			PRK_Explosion( self, pos + Vector( 0, 0, 30 ), range )
+		end
+	end )
 end

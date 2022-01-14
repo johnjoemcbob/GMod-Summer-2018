@@ -133,7 +133,6 @@ function ENT:FindEnemy()
 	if ( #possibletargets > 0 ) then
 		-- We found one so lets set it as our enemy and return true
 		self:SetEnemy( possibletargets[math.random( 1, #possibletargets ) ] )
-		self:OnNewEnemy()
 		return true
 	end
 	-- We found nothing so we will set our enemy as nil ( nothing ) and return false
@@ -146,7 +145,13 @@ end
 -- Simple functions used in keeping our enemy saved
 ----------------------------------------------------
 function ENT:SetEnemy( ent )
+	local temp = self.Enemy
 	self.Enemy = ent
+	if ( ent and ent:IsValid() ) then
+		self:OnNewEnemy()
+	elseif ( temp and temp:IsValid() ) then
+		self:OnNoEnemy()
+	end
 end
 function ENT:GetEnemy()
 	return self.Enemy
@@ -171,7 +176,7 @@ function ENT:HaveEnemy()
 			-- return self:FindEnemy()
 		-- If the enemy is dead( we have to check if its a player before we use Alive() )
 		if ( self:GetEnemy():IsPlayer() and !self:GetEnemy():Alive() ) then
-			self:OnNoEnemy()
+			self:SetEnemy( nil )
 			return self:FindEnemy()		-- Return false if the search finds nothing
 		end
 		-- The enemy is neither too far nor too dead so we can return true

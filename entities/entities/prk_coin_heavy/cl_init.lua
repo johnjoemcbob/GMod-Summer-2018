@@ -18,6 +18,8 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
+	if ( !self:ShouldDraw() ) then return end
+
 	if ( !self.Visual or !self.Visual:IsValid() ) then
 		self:Initialize()
 	end

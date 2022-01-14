@@ -1,0 +1,6 @@
+"heavygullets"
+{
+	"base"			"base"
+	"title"			"Heavy Gullets"
+	"menusystem"	"1"
+}

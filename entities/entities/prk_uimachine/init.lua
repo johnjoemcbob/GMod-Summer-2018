@@ -61,19 +61,15 @@ local models = {
 }
 
 PRK_Vendor_Stock = {
-	["BULLET"]					= { 10, "prk_bullet_heavy" },
-	["POTION"]					= { 15, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Health Potion" )
-		end,
-	},
-	["CHAMBERS POTION"]			= { 20, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Chamber Potion" )
-		end,
-	},
-	["GOLD POTION"]				= { 28, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Gold Potion" )
-		end,
-	},
+	-- ["BULLET"]					= { 10, "prk_bullet_heavy" },
+	-- ["CHAMBERS POTION"]			= { 20, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Chamber Potion" )
+		-- end,
+	-- },
+	-- ["GOLD POTION"]				= { 28, "prk_potion", Spawn = function( self, ent, ply )
+			-- ent:SetPotionType( "Gold Potion" )
+		-- end,
+	-- },
 	-- ["SPEED POTION"]			= { 0, "prk_potion", Spawn = function( self, ent, ply )
 			-- ent:SetPotionType( "Speed Potion" )
 		-- end,
@@ -82,23 +78,14 @@ PRK_Vendor_Stock = {
 			-- ent:SetPotionType( "Damage Potion" )
 		-- end,
 	-- },
-	["BOOM BOTTLE"]				= { 2, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType( "Boom" )
-		end,
-	},
-	["MYSTERY POTION"]			= { 5, "prk_potion", Spawn = function( self, ent, ply )
-			ent:SetPotionType()
-			ent:SetColor( ColorRand() )
-		end,
-	},
-	["HEAL"]					= { 10, "", Spawn = function( self, ent, ply )
-			local heal = 2 -- One full heart = 2hp
-			ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
-		end,
-		ExtraRequire = function( self, ply )
-			return ( ply:Health() != ply:GetMaxHealth() )
-		end,
-	},
+	-- ["HEAL"]					= { 10, "", Spawn = function( self, ent, ply )
+			-- local heal = 2 -- One full heart = 2hp
+			-- ply:SetHealth( math.min( ply:Health() + heal, ply:GetMaxHealth() ) )
+		-- end,
+		-- ExtraRequire = function( self, ply )
+			-- return ( ply:Health() != ply:GetMaxHealth() )
+		-- end,
+	-- },
 	-- ["BOMB"]					= { 10, "prk_bullet_heavy" },
 	-- ["KNIFE"]					= { 30, "prk_bullet_heavy" },
 }
@@ -145,6 +132,16 @@ net.Receive( "PRK_UIMachine_Select", function( len, ply )
 end )
 
 function ENT:Initialize()
+	-- Add all items loaded from file which have a price
+	local purchasables = {}
+		for name, item in pairs( PRK_Items ) do
+			if ( item.Price ) then
+				purchasables[item.PrettyName] = item
+				purchasables[item.PrettyName].Name = name
+			end
+		end
+	PRK_Vendor_Stock = purchasables
+
 	-- Visuals
 	local dia = self.Scale
 	self:SetModel( "models/props_phx/construct/metal_tube.mdl" )
@@ -206,12 +203,12 @@ function ENT:Initialize()
 
 	-- Variables
 	self.MaxItems = 4
-	self.PriceFlux = math.random( 80, 170 ) / 100
+	self.PriceFlux = math.max( 1, math.random( 60, 170 ) / 100 ) -- Minimum of 1 but randomise lower to give more chance of no flux
 	local possiblestock = table.shallowcopy( PRK_Vendor_Stock )
 	self.Stock = {}
 		for i = 1, self.MaxItems do
 			local item, rnd = table.Random( possiblestock )
-				item[1] = math.Round( item[1] * self.PriceFlux )
+				item[1] = math.Round( item.Price * self.PriceFlux )
 			self.Stock[rnd] = table.shallowcopy( item )
 			possiblestock[rnd] = nil
 		end
@@ -271,26 +268,30 @@ function ENT:TryVend( ply, selection )
 		-- Take money
 		ply:SetNWInt( "PRK_Money", money - price )
 
-		-- Spawn item
-		local ent
-		if ( data[2] != "" ) then
-			ent = PRK_CreateEnt( data[2], nil, self:GetPos(), AngleRand(), true )
-			ent:PhysWake()
-			timer.Simple( 0.75, function()
-				if ( ent and ent:IsValid() ) then
-					local phys = ent:GetPhysicsObject()
-					if ( phys and phys:IsValid() ) then
-						local speed = 3
-						local dir = ( ply:GetPos() - ent:GetPos() )
-						local velocity = dir * phys:GetMass() * speed
-						phys:ApplyForceCenter( velocity )
-					end
-				end
-			end )
+		if ( data.OnBuy ) then
+			data:OnBuy( ply )
 		end
-		-- Extra spawn functionality
-		if ( data.Spawn ) then
-			data:Spawn( ent, ply )
+		if ( !data.Digital ) then
+		-- Spawn item
+			local ent
+			if ( data.Name != "" ) then
+				ent = PRK_SpawnItem( data.Name, self:GetPos() )
+				timer.Simple( 0.75, function()
+					if ( ent and ent:IsValid() ) then
+						local phys = ent:GetPhysicsObject()
+						if ( phys and phys:IsValid() ) then
+							local speed = 3
+							local dir = ( ply:GetPos() - ent:GetPos() )
+							local velocity = dir * phys:GetMass() * speed
+							phys:ApplyForceCenter( velocity )
+						end
+					end
+				end )
+			end
+			-- Extra spawn functionality
+			-- if ( data.Spawn ) then
+				-- data:Spawn( ent, ply )
+			-- end
 		end
 
 		self.Entity:EmitSound( "npc/scanner/combat_scan" .. math.random( 1, 2 ) .. ".wav" )

@@ -1,6 +1,0 @@
-"prickly_summer_2018"
-{
-	"base"			"base"
-	"title"			"Heavy Gullets (Fixed)"
-	"menusystem"	"1"
-}

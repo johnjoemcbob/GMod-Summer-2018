@@ -1,7 +1,7 @@
 ENT.Type = "anim"
 ENT.Base = "base_anim"
 ENT.PrintName = "Prickly Base"
-ENT.Author = "johnjoemcbob / Dr. Melon"
+ENT.Author = "johnjoemcbob"
 ENT.Purpose = ""
 ENT.Instructions = ""
 

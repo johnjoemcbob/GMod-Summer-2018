@@ -8,11 +8,13 @@
 -- LUA Downloads
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_editor_room.lua" )
+AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "shared.lua" )
 AddCSLuaFile( "lua/includes/modules/3d2dvgui.lua" )
 
 -- LUA Includes
 include( "shared.lua" ) -- Must be first for globals
+include( "sh_items.lua" )
 include( "levelgen.lua" )
 include( "buffs.lua" )
 
@@ -37,39 +39,14 @@ print( "PRK" )
 print( "----------------" )
 print( "Add resources..." )
 resource.AddDir( dir )
+-- resource.AddWorkshop( "1468209847" )
 print( "Finish resources..." )
-print( "-------------------" )
-
--- Copy over initial room designs
-local dir_from = PRK_GamemodePath .. "baserooms/"
-local dir_to = PRK_DataPath
-if ( !file.Exists( dir_to, "DATA" ) ) then
-	print( "No room designs..." )
-	print( "Copying defaults..." )
-	local function copy( localdir )
-		local srchpath = localdir .. "*"
-		print( srchpath )
-		local files, directories = file.Find( srchpath, "GAME" )
-		for k, fil in pairs( files ) do
-			local src = localdir .. fil
-			local dest = dir_to .. string.gsub( localdir, dir_from, "" )
-			print( src .. " -> " .. dest )
-			local data = file.Read( localdir .. fil, "GAME" )
-			file.CreateDir( dest )
-			file.Write( dest .. fil, data )
-		end
-		for k, dir in pairs( directories ) do
-			copy( localdir .. dir .. "/" )
-		end
-	end
-	copy( dir_from )
-end
-print( "Finish copying..." )
 print( "-------------------" )
 
 -- Net
 util.AddNetworkString( "PRK_KeyValue" )
 util.AddNetworkString( "PRK_TakeDamage" )
+util.AddNetworkString( "PRK_Blood" )
 util.AddNetworkString( "PRK_Die" )
 util.AddNetworkString( "PRK_Drink" )
 util.AddNetworkString( "PRK_Spawn" )
@@ -77,14 +54,14 @@ util.AddNetworkString( "PRK_ResetZone" )
 util.AddNetworkString( "PRK_Editor" )
 util.AddNetworkString( "PRK_EditorExport" )
 
-function SendKeyValue( ply, key, val )
+function PRK_SendKeyValue( ply, key, val )
 	net.Start( "PRK_KeyValue" )
 		net.WriteString( key )
 		net.WriteString( val )
 	net.Send( ply )
 end
 
-function SendTakeDamage( ply, amount, dir, pos )
+function PRK_SendTakeDamage( ply, amount, dir, pos )
 	net.Start( "PRK_TakeDamage" )
 		net.WriteEntity( ply )
 		net.WriteFloat( amount )
@@ -93,27 +70,36 @@ function SendTakeDamage( ply, amount, dir, pos )
 	net.Broadcast()
 end
 
-function SendDie( ply, pos, ang, killname )
+function PRK_SendBlood( pos, dir, col )
+	net.Start( "PRK_Blood" )
+		net.WriteVector( pos )
+		net.WriteVector( dir )
+		net.WriteColor( col )
+	net.Broadcast()
+end
+
+function PRK_SendDie( ply, pos, ang, killname )
 	net.Start( "PRK_Die" )
+		net.WriteEntity( ply )
 		net.WriteVector( pos )
 		net.WriteAngle( ang )
 		net.WriteString( killname )
-	net.Send( ply )
+	net.Broadcast()
 end
 
-function SendDrink( ply )
+function PRK_SendDrink( ply )
 	net.Start( "PRK_Drink" )
 		net.WriteEntity( ply )
 	net.Broadcast()
 end
 
-function SendSpawn( ply, time )
+function PRK_SendSpawn( ply, time )
 	net.Start( "PRK_Spawn" )
 		net.WriteFloat( time )
 	net.Send( ply )
 end
 
-function SendResetZone( zone )
+function PRK_SendResetZone( zone )
 	net.Start( "PRK_ResetZone" )
 		net.WriteFloat( zone )
 	net.Broadcast()
@@ -157,6 +143,15 @@ function GM:Initialize()
 end
 
 function GM:InitPostEntity()
+	-- Force flatgrass
+	if ( game.GetMap() != "gm_flatgrass" ) then
+		local msg = "WRONG MAP - SWITCHING"
+		print( msg )
+		PrintMessage( HUD_PRINTCENTER, msg )
+		RunConsoleCommand( "changelevel", "gm_flatgrass" )
+		return
+	end
+
 	-- Hide sun
 	local suns = ents.FindByClass( "env_sun" )
 	for k, sun in pairs( suns ) do
@@ -203,7 +198,7 @@ function GM:InitPostEntity()
 		-- end )
 	-- end
 	-- verytest()
-	timer.Simple( 1, function()
+	timer.Simple( 5, function()
 		gen( 1 )
 		self:GenerateNextFloor( 1 )
 	end )
@@ -214,11 +209,13 @@ function GM:GenerateNextFloor( zone )
 	print( "Floor: " .. self.Floors )
 
 	-- Temp for judging so I know what's coming :)
-	math.randomseed( PRK_Gen_Seed + self.Floors )
+	if ( PRK_Gen_Seed != nil ) then
+		math.randomseed( PRK_Gen_Seed + self.Floors )
+	end
 
 	-- Clear any remaining entities with this zone
 	-- (other than the gateway currently trasporting the players!)
-	SendResetZone( zone )
+	PRK_SendResetZone( zone )
 	PRK_Floor_ResetZone( zone )
 	PRK_Gen_Remove()
 	for k, v in pairs( ents.GetAll() ) do
@@ -230,21 +227,38 @@ function GM:GenerateNextFloor( zone )
 
 	-- Generate new
 	PRK_Gen( PRK_Zones[zone].pos, zone )
+
+	-- Update any players already in this zone (primarily for dev test)
+	timer.Simple( PRK_Gen_FloorDeleteTime * 1.2, function()
+		for k, ply in pairs( player.GetAll() ) do
+			if ( ply:GetNWInt( "PRK_Zone" ) == zone ) then
+				PRK_Floor_MoveToZone( ply, zone )
+			end
+		end
+	end )
 end
 
+-- Requires sv_cheats 1 sadly
 function GM:PlayerInitialSpawn( ply )
+	ply:ConCommand( "mat_fullbright 1" )
+end
+
+function GM:PlayerDisconnected( ply )
+	ply:ConCommand( "mat_fullbright 0" )
 end
 
 function GM:MoveToZone( ply, zone )
-	-- Reset player info if coming travelling to/from the lobby
-	if ( ply:GetNWInt( "PRK_Zone", 0 ) == 0 or zone == 0 ) then
-		self:PlayerSetup( ply )
-	end
+	local oldzone = ply:GetNWInt( "PRK_Zone", 0 )
 
 	ply:SetNWInt( "PRK_Zone", zone )
 
 	-- Floors
 	PRK_Floor_MoveToZone( ply, zone )
+
+	-- Reset player info if coming travelling to/from the lobby
+	if ( oldzone == 0 or zone == 0 ) then
+		self:PlayerSetup( ply )
+	end
 
 	-- Request any entity client info
 		-- Send any required client data to the new client
@@ -264,9 +278,13 @@ function GM:PlayerSpawn( ply )
 	-- Position centrally
 	ply:SetPos( Vector( 0, 0, ply:GetPos().z ) )
 
+	-- Fix weird view punch issue, and give nice spawn effect
+	ply:SetFOV( 0, 0 )
+	ply:ViewPunch( Angle( -50, 0, 0 ) )
+
 	-- Player model/colour
 	ply:SetModel( "models/player/soldier_stripped.mdl" )
-	ply:SetMaterial( "models/debug/debugwhite" )
+	ply:SetMaterial( PRK_Material_Base )
 	local cols = PRK_Colour_Player
 	ply:SetColor( cols[math.random( 1, #cols )] )
 
@@ -310,7 +328,7 @@ function GM:PlayerSetup( ply )
 
 	-- Store spawn time
 	ply.SpawnTime = CurTime()
-	SendSpawn( ply, ply.SpawnTime )
+	PRK_SendSpawn( ply, ply.SpawnTime )
 
 	-- Init collisions
 	ply:SetNoCollideWithTeammates( true )
@@ -321,7 +339,13 @@ function GM:PlayerSetup( ply )
 end
 
 function GM:Think()
-	
+	-- Handle player input 
+	for k, ply in pairs( player.GetAll() ) do
+		-- Trace use
+		if ( ply:KeyDown( IN_USE ) ) then
+			PRK_HandleUse( ply )
+		end
+	end
 end
 
 -- function GM:PlayerDeathThink( ply )
@@ -351,7 +375,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 		if ( dmginfo:GetDamage() > 0 ) then
 			local dir = dmginfo:GetInflictor():GetPos() - target:GetPos()
 				dir:Normalize()
-			SendTakeDamage( target, dmginfo:GetDamage(), dir, dmginfo:GetInflictor():GetPos() )
+			PRK_SendTakeDamage( target, dmginfo:GetDamage(), dir, dmginfo:GetInflictor():GetPos() )
 
 			-- Play sound
 			local pitchhealth = 1 - ( target:Health() / target:GetMaxHealth() )
@@ -371,6 +395,7 @@ function GM:EntityTakeDamage( target, dmginfo )
 end
 
 function GM:DoPlayerDeath( ply, attacker, dmginfo )
+	-- Send killer name to client
 	local killname = attacker.KillName
 		if ( killname == "OWNER" ) then
 			attacker = attacker.Owner
@@ -390,8 +415,15 @@ function GM:DoPlayerDeath( ply, attacker, dmginfo )
 		if ( type(killname) == "table" ) then
 			killname = killname[math.random( 1, #killname )]
 		end
-	SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
+	PRK_SendDie( ply, ply:EyePos(), ply:EyeAngles(), killname )
+
+	-- Smooth transition into falling eyes anim
 	ply:SetPos( ply:EyePos() )
+
+	-- Drop old use items
+	if ( !ply.PRK_Item_DisableDropOnDeath ) then
+		PRK_DropItem( ply )
+	end
 end
 
 function GM:PlayerDeathSound()
@@ -407,6 +439,32 @@ end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+function PRK_HandleUse( ply )
+	if ( !ply.PRK_NextUse or ply.PRK_NextUse <= CurTime() ) then
+		local tr = util.TraceLine( {
+			start = ply:EyePos(),
+			endpos = ply:EyePos() + ply:EyeAngles():Forward() * PRK_UseRange,
+			filter = { ply },
+		} )
+		if ( tr.Entity ) then
+			if ( tr.Entity.TraceUse ) then
+				tr.Entity:TraceUse( ply )
+				ply.PRK_NextUse = CurTime() + PRK_UseBetween
+			end
+		end
+	end
+end
+
+function PRK_HandleJump( ply, cmd, args )
+	PRK_UseItem( ply )
+end
+concommand.Add( "+prk_jump", PRK_HandleJump )
+
+function PRK_HandleDuck( ply, cmd, args )
+	PRK_DropItem( ply )
+end
+concommand.Add( "+prk_duck", PRK_HandleDuck )
 
 function PRK_OverrideDeathMessage( plytab, message )
 	local function set( ply )
@@ -471,11 +529,14 @@ function GM:GenerateLobby()
 			"prk_wall",
 			"models/hunter/plates/plate8x8.mdl",
 			origin + Vector( size * 8 * y, size * 8 * x, hsize * 8 ),
-			Angle( 90, yaw, 0 ),
+			Angle( 0, 0, 0 ),
 			true,
 			true
 		)
 			wall.Size = { 8 * size * ( amount * 2 + 1 ), 0 }
+			if ( yaw == 0 ) then
+				wall.Size = { 0, 8 * size * ( amount * 2 + 1 ) }
+			end
 		wall:Spawn()
 		wall:SetZone( 0 )
 	end
@@ -487,6 +548,10 @@ function GM:GenerateLobby()
 		local x = y * amount * 1
 		createwall( x, 0, 90 )
 	end
+
+	-- Combine walls
+	local ent = ents.Create( "prk_wall_combined" )
+	ent:Spawn()
 
 	-- Add ceilings
 	local origin = origin + Vector( 0, 0, -hsize * 8 + size * 8 )
@@ -511,8 +576,33 @@ function GM:GenerateLobby()
 	local flatsize = 15345 * 2
 	createceil( Vector( 0, 0, -12800 ) + Vector( 0, 0, size * 8 ), flatsize, flatsize )
 
+	-- Add details
+	local floor = origin - Vector( 0, 0, hsize * 8 )
+	local lobbydetails = {
+		-- {
+			-- "models/xqm/button3.mdl",
+			-- floor,
+			-- Angle(),
+			-- 10,
+			-- PRK_Material_Base,
+			-- Color( 100, 190, 190, 255 ),
+		-- },
+	}
+	for k, v in pairs( lobbydetails ) do
+		local ent = PRK_CreateEnt(
+			"prop_physics",
+			v[1],
+			v[2],
+			v[3]
+		)
+		ent:SetModelScale( v[4] )
+		PRK_ResizePhysics( ent, v[4] )
+		ent:SetMaterial( v[5] )
+		ent:SetColor( v[6] )
+	end
+
+	-- Update any players already in this zone (primarily for server host in lobby)
 	timer.Simple( PRK_Gen_FloorDeleteTime * 1.1, function()
-		-- Update any players already in this zone (primarily for server host in lobby)
 		for k, ply in pairs( player.GetAll() ) do
 			if ( ply:GetNWInt( "PRK_Zone" ) == 0 ) then
 				PRK_Floor_MoveToZone( ply, 0 )
@@ -552,7 +642,7 @@ function PRK_Explosion( attacker, pos, radius )
 			pos,
 			Angle( 0, 0, 0 )
 		)
-			sphere:SetMaterial( "models/debug/debugwhite", true )
+			sphere:SetMaterial( PRK_Material_Base, true )
 			sphere:SetColor( col )
 			sphere:SetModelScale( radius_visual / PRK_Plate_Size, 0 )
 			sphere:SetModelScale( 0, time )

@@ -5,6 +5,8 @@
 -- Level Generation
 --
 
+include( "sh_globals.lua" )
+
 local DEBUG						= true
 local PRK_GEN_COLLIDE_ALL		= false
 local PRK_GEN_DONT				= 4000
@@ -19,6 +21,8 @@ PRK_GEN_TYPE_MAT = {}
 PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_FLOOR]	= "models/rendertarget" -- "phoenix_storms/bluemetal"
 PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_WALL]		= "prk_gradient" -- "phoenix_storms/dome"
 PRK_GEN_TYPE_MAT[PRK_GEN_TYPE_CEILING]	= "models/rendertarget" -- "phoenix_storms/metalset_1-2"
+
+PRK_RoomConnections = {}
 
 local size = PRK_Plate_Size
 local hsize = size / 2
@@ -53,16 +57,25 @@ SpawnEditorEnt["Gateway"] = function( pos, ang, scale, model )
 	return ent
 end
 SpawnEditorEnt["Spawner"] = function( pos, ang, scale, model )
-	local ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
+	local ent = nil
+	local max = 10
+	local floordifficulty = math.random( 1, max )
+	if ( floordifficulty >= ( max * PRK_Enemy_SpawnChance_Start ) - ( max * GAMEMODE.Floors * PRK_Enemy_SpawnChance_PerFloor ) ) then
+		ent = PRK_CreateEnt( table.Random( PRK_Enemy_Types ), nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
+	end
 	return ent
 end
 SpawnEditorEnt["Rock"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prk_rock", nil, pos, Angle( 0, math.random( 0, 360 ), 0 ) )
 	return ent
 end
+SpawnEditorEnt["Pedestal"] = function( pos, ang, scale, model )
+	local ent = PRK_CreateEnt( "prk_pedestal", model, pos, ang )
+	return ent
+end
 SpawnEditorEnt["Prop"] = function( pos, ang, scale, model )
 	local ent = PRK_CreateEnt( "prop_physics", model, pos, ang )
-		ent:SetMaterial( "models/debug/debugwhite" )
+		ent:SetMaterial( PRK_Material_Base )
 		ent:SetModelScale( scale )
 	return ent
 end
@@ -70,6 +83,7 @@ end
 local LastGen = {} -- Table of all rooms last generated
 local ToGen = {} -- Table of rooms still to try attach points for
 local CurrentRoomID = 0 -- Indices for rooms
+local Origin
 local room
 
 -- concommand.Add( "prk_gen", function( ply, cmd, args )
@@ -78,12 +92,17 @@ local room
 -- end )
 
 local rooms, starts, finishes, navs, endroom
+local runnextstep = true
 function PRK_Gen( origin, zone )
+	print( "PRK_Gen running" )
 	LastGen = {}
 	CurrentRoomID = 0
+	Origin = origin
 
 	-- Load rooms
-	rooms = PRK_Gen_LoadRooms()
+	rooms = {}
+	PRK_Gen_LoadRooms( PRK_DataPath, "DATA" )
+	PRK_Gen_LoadRooms( PRK_GamemodePath .. "content/data/" .. PRK_DataPath, "GAME" ) -- For gamemode content/data
 
 	-- Remove default navmeshes
 	navmesh.Reset()
@@ -93,7 +112,7 @@ function PRK_Gen( origin, zone )
 	endroom = false
 	ToGen = {}
 	PRK_Gen_RoomStart( rooms.start[1], zone, origin )
-	PRK_Gen_RoomEnd( room, zone, true )
+	PRK_Gen_RoomEnd( room, zone, true, false, 1 )
 	-- ToGen = {
 		-- {
 			-- AttachPoints = {
@@ -104,7 +123,16 @@ function PRK_Gen( origin, zone )
 		-- }
 	-- }
 	-- PrintTable( ToGen )
-	PRK_Gen_Step( zone )
+	local steps = 0
+	local safety = 10000
+	runnextstep = true
+	while ( runnextstep and steps < safety ) do
+		PRK_Gen_Step( zone )
+		steps = steps + 1
+	end
+	-- if ( runnextstep ) then
+		-- PRK_Gen_End()
+	-- end
 end
 
 -- local room = nil
@@ -112,8 +140,8 @@ local plan
 local index_try = 1
 local orient_try = 1
 local function next_attach()
-	-- Ensure parents are removed
 	if ( room ) then
+		-- Ensure parents are removed
 		for k, v in pairs( room.Ents ) do
 			v:SetParent( nil )
 		end
@@ -135,8 +163,10 @@ local function next_attach()
 end
 local function next_step( zone )
 	if ( PRK_Gen_StepBetweenTime == 0 ) then
-		PRK_Gen_Step( zone )
+		-- To avoid stack overflow, flag here to call Step again from base Gen function
+		runnextstep = true
 	else
+		runnextstep = false
 		timer.Simple( PRK_Gen_StepBetweenTime, function() PRK_Gen_Step( zone ) end )
 	end
 end
@@ -161,28 +191,28 @@ local function getrotatedfloor( v, anchor )
 	return min, max
 end
 function PRK_Gen_Step( zone )
+	runnextstep = false
 	if ( !ToGen or #ToGen == 0 or ( #ToGen == 1 and #ToGen[1].AttachPoints == 0 ) ) then
-		PRK_Gen_End()
+		-- PRK_Gen_End()
 		return
 	end
 	if ( #ToGen[1].AttachPoints == 0 ) then
 		next_attach()
 		next_step( zone )
+		return
 	end
 
 	if ( !room ) then
 		local roomid = math.random( 1, #rooms )
-		-- PrintTable( ToGen[1] )
 		if ( #ToGen[1].AttachPoints != 0 ) then
 			PRK_Gen_RoomStart( rooms[roomid], zone, ToGen[1].AttachPoints[1].Pos )
 		end
-	elseif ( room.AttachPoints[index_try] ) then
+	elseif ( room.AttachPoints[index_try] != nil ) then
 		local collide = PRK_Gen_Step_Try( true )
 		if ( !collide ) then
-			PRK_Gen_RoomEnd( room, zone )
+			PRK_Gen_RoomEnd( room, zone, false, false, ToGen[1].AttachPoints[1].Room )
 
 			next_step( zone )
-
 			return
 		end
 
@@ -200,9 +230,16 @@ function PRK_Gen_Step( zone )
 				PRK_Gen_RoomClose( pointtemp, zone ) -- No fitting attached
 			end
 		end
+	else
+		-- Delete none workable room
+		for p, ent in pairs( room.Ents ) do
+			ent:Remove()
+		end
+		room = nil
 	end
 
 	next_step( zone )
+	return
 end
 
 function PRK_Gen_Step_Try( undo )
@@ -256,16 +293,20 @@ function PRK_Gen_Step_Try( undo )
 end
 
 function PRK_Gen_RoomAddModel( mod, zone, off, world )
+	local ent = nil
 	if ( !PRK_Gen_IgnoreEnts or !PRK_Gen_IgnoreEnts[mod.Type] ) then
 		local class = "prop_physics"
+		-- print( mod.Type )
 			if ( mod.Type == PRK_GEN_TYPE_FLOOR ) then
 				class = "prk_floor"
 			elseif ( mod.Type == PRK_GEN_TYPE_WALL ) then
 				class = "prk_wall"
+				-- print( mod.Ang )
+				-- print( "-" )
 			elseif ( mod.Type == PRK_GEN_TYPE_CEILING ) then
 				class = "prk_ceiling"
 			end
-		local ent = PRK_CreateEnt(
+		ent = PRK_CreateEnt(
 			class,
 			mod.Mod,
 			mod.Pos + off,
@@ -280,15 +321,18 @@ function PRK_Gen_RoomAddModel( mod, zone, off, world )
 			if ( mod.Type != nil ) then
 				ent:SetMaterial( PRK_GEN_TYPE_MAT[mod.Type] )
 			end
-			if ( #room.Ents != 0 ) then
+			if ( room != nil and #room.Ents != 0 ) then
 				ent:SetParent( room.Ents[1] )
 			end
 			ent.Collide = mod.Collide or PRK_GEN_COLLIDE_ALL
 			ent.PRK_Room = CurrentRoomID
 		ent:Spawn()
 		ent:SetZone( zone )
-		table.insert( room.Ents, ent )
+		if ( room != nil ) then
+			table.insert( room.Ents, ent )
+		end
 	end
+	return ent
 end
 
 function PRK_Gen_RoomStart( plan, zone, origin )
@@ -313,7 +357,7 @@ function PRK_Gen_RoomStart( plan, zone, origin )
 	orient_try = 1
 end
 
-function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
+function PRK_Gen_RoomEnd( room, zone, force, forceandrotate, lastroomid )
 	table.insert( LastGen, room )
 
 	local anchor = HelperModels["Anchor"].Ent
@@ -339,6 +383,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 		if ( force ) then
 			local point = {
 				Pos = temp_room.Origin + v.Pos,
+				Room = CurrentRoomID,
 			}
 			table.insert( attachpoints, point )
 		else
@@ -367,6 +412,7 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 			-- Store or cap off attach point
 			local point = {
 				Pos = helper:GetPos(),
+				Room = CurrentRoomID,
 			}
 				-- Calculate each end of the attach using this pos, the angle of rotation, and the size of the attach gap
 				local x = math.abs( v.Max.x )
@@ -426,8 +472,11 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 
 				-- Spawn entity
 				local ent = SpawnEditorEnt[v.Editor_Ent]( helper:GetPos(), helper:GetAngles(), v.Scale, v.Model )
-				if ( ent.SetZone ) then
-					ent:SetZone( zone )
+				if ( ent and ent:IsValid() ) then
+					if ( ent.SetZone ) then
+						ent:SetZone( zone )
+					end
+					table.insert( room.Ents, ent )
 				end
 			end
 		end
@@ -495,10 +544,29 @@ function PRK_Gen_RoomEnd( room, zone, force, forceandrotate )
 	--	-- break -- temp
 	--end
 
+	print( "end room : " .. CurrentRoomID )
+	if ( lastroomid ) then
+		print( lastroomid .. " - connect to - " .. CurrentRoomID )
+		-- print( lastroomid )
+		-- print( CurrentRoomID )
+		PRK_RoomConnections = PRK_RoomConnections or {}
+		PRK_RoomConnections[zone] = PRK_RoomConnections[zone] or {}
+		PRK_RoomConnections[zone][lastroomid] = PRK_RoomConnections[zone][lastroomid] or {}
+		PRK_RoomConnections[zone][CurrentRoomID] = PRK_RoomConnections[zone][CurrentRoomID] or {}
+		table.insert( PRK_RoomConnections[zone][lastroomid], CurrentRoomID )
+		table.insert( PRK_RoomConnections[zone][CurrentRoomID], lastroomid )
+	end
+
 	-- Must be after attach point etc
 	next_attach()
 
 	table.insert( ToGen, { AttachPoints = attachpoints } )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- print( "ADD ATTACH TO TOGEN" )
+	-- PrintTable( attachpoints )
+	-- print( "ADD ATTACH TO TOGEN" )
 end
 
 function PRK_Gen_RoomClose( point, zone )
@@ -509,24 +577,36 @@ function PRK_Gen_RoomClose( point, zone )
 			count = count + #gen.AttachPoints
 		end
 	if ( count <= 1 and !endroom ) then
+		-- Finish - place exit gateway portal room
+		local lastroomid = point.Room
 		timer.Simple( 1, function()
 			PRK_Gen_RoomStart( rooms.finish[1], zone, point.Pos )
 			orient_try = 1
-			while ( orient_try <= 4 ) do
-				local collide = PRK_Gen_Step_Try( orient_try != 4 )
-				if ( !collide ) then
-					break
+			local collide = false
+				while ( orient_try <= 4 ) do
+					collide = PRK_Gen_Step_Try( orient_try != 4 )
+					if ( !collide ) then
+						break
+					end
+					orient_try = orient_try + 1
 				end
-				orient_try = orient_try + 1
+			-- Failed to generate - couldn't place this end room
+			if ( collide or #LastGen < 3 ) then
+				print( "Generation failed... restarting..." )
+				timer.Simple( 1, function()
+					GAMEMODE.Floors = GAMEMODE.Floors - 1
+					GAMEMODE:GenerateNextFloor( zone )
+				end )
 			end
-			PRK_Gen_RoomEnd( room, zone, true, true )
+			PRK_Gen_RoomEnd( room, zone, true, true, lastroomid )
+			endroom = true
 			PRK_Gen_End()
 		end )
-		endroom = true
+		endroom = "in progress"
 	else
+		-- Close
 		local pos = point.Pos + Vector( 0, 0, 1 ) * PRK_Editor_Square_Size * 8 / 2
-		local ang = Angle( -90, 0, 0 )
-			if ( point.Ang != 0 ) then ang = Angle( -90, 90, 0 ) end
+		local ang = Angle( 0, 0, 0 )
 		local mod = {
 			Pos = pos,
 			Ang = ang,
@@ -535,12 +615,19 @@ function PRK_Gen_RoomClose( point, zone )
 			Type = PRK_GEN_TYPE_WALL,
 		}
 		PRK_BasicDebugSphere( point.Pos )
-		PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+		local ent = PRK_Gen_RoomAddModel( mod, zone, Vector(), true )
+		ent.PRK_Room = point.Room
 	end
 end
 
 function PRK_Gen_End()
+	if ( endroom != true ) then return end
+
+	-- Return to random seed
 	math.randomseed( os.time() )
+
+	-- Don't run any more steps
+	runnextstep = false
 
 	-- Remove each helper model entity
 	for k, v in pairs( HelperModels ) do
@@ -549,6 +636,34 @@ function PRK_Gen_End()
 			v.Ent = nil
 		end
 	end
+
+	-- Combine walls
+	local ent = ents.Create( "prk_wall_combined" )
+	ent:Spawn()
+
+	-- FPS testing
+	if ( PRK_NoWalls ) then
+		for k, v in pairs( ents.FindByClass( "prk_wall" ) ) do
+			v:Remove()
+		end
+	end
+	if ( PRK_NoEnemies ) then
+		for k, v in pairs( ents.FindByClass( "prk_npc_*" ) ) do
+			v:Remove()
+		end
+		for k, v in pairs( ents.FindByClass( "prk_turret_*" ) ) do
+			v:Remove()
+		end
+	end
+	timer.Simple( 0.1, function()
+		if ( PRK_NoEnts ) then
+			for k, v in pairs( ents.FindByClass( "*" ) ) do
+				if ( PRK_NoEnts[v:GetClass()] ) then
+					v:Remove()
+				end
+			end
+		end
+	end )
 end
 
 function PRK_Gen_RotateAround( room, attach, angle )
@@ -594,36 +709,34 @@ function PRK_Gen_RotatePointAround( point, pointangle, attach, angle )
 	return pos, ang
 end
 
-function PRK_Gen_LoadRooms()
-	local rooms = {}
-		-- Find all room data files
-		local index = nil
-		local function handlefiles( files )
-			if ( index and !rooms[index] ) then
-				rooms[index] = {}
-			end
-			for k, filename in pairs( files ) do
-				local path = filename
-					if ( index ) then
-						path = index .. "/" .. filename
-					end
-				local room = file.Read( PRK_DataPath .. path )
-					room = PRK_Gen_LoadRooms_Parse( room )
+function PRK_Gen_LoadRooms( datadir, base )
+	-- Find all room data files
+	local index = nil
+	local function handlefiles( files )
+		if ( index and !rooms[index] ) then
+			rooms[index] = {}
+		end
+		for k, filename in pairs( files ) do
+			local path = filename
 				if ( index ) then
-					table.insert( rooms[index], room )
-				else
-					table.insert( rooms, room )
+					path = index .. "/" .. filename
 				end
+			local room = file.Read( datadir .. path, base )
+				room = PRK_Gen_LoadRooms_Parse( room )
+			if ( index ) then
+				table.insert( rooms[index], room )
+			else
+				table.insert( rooms, room )
 			end
 		end
-		local files, directories = file.Find( PRK_DataPath .. "*", "DATA" )
+	end
+	local files, directories = file.Find( datadir .. "*", base )
+	handlefiles( files )
+	for k, dir in pairs( directories ) do
+		index = dir
+		local files, directories = file.Find( datadir .. index .. "/*", base )
 		handlefiles( files )
-		for k, dir in pairs( directories ) do
-			index = dir
-			local files, directories = file.Find( PRK_DataPath .. index .. "/*", "DATA" )
-			handlefiles( files )
-		end
-	return rooms
+	end
 end
 
 function PRK_Gen_LoadRooms_Parse( room )
@@ -634,11 +747,9 @@ function PRK_Gen_LoadRooms_Parse( room )
 	room.AttachPoints = {}
 	room.Models = {}
 
-	-- Floors
+	-- Floors (needed for collision based generation currently)
 	for _, part in pairs( room.Parts ) do
-		if ( part.isattach ) then
-			-- table.insert( room.AttachPoints, { Pos = part.position } )
-		else
+		if ( !part.isattach ) then
 			table.insert( room.Models, {
 				Pos = part.position,
 				Ang = Angle( 0, 0, 0 ),
@@ -653,7 +764,7 @@ function PRK_Gen_LoadRooms_Parse( room )
 	-- Walls
 	PRK_Gen_LoadRooms_Walls( room )
 
-	-- Ceilings
+	-- Ceilings (needed for collision based generation currently)
 	for _, part in pairs( room.Parts ) do
 		if ( !part.isattach ) then
 			table.insert( room.Models, {
@@ -674,7 +785,9 @@ function PRK_Gen_LoadRooms_Parse( room )
 	end
 
 	-- Debug output
+	-- print( "LOADED ROOM:" )
 	-- PrintTable( room )
+	-- print( "LOADED ROOM ^" )
 
 	return room
 end
@@ -789,8 +902,7 @@ function PRK_Gen_LoadRooms_Walls( room )
 					local x = side.w == 1 and x + seg[1] or x
 					local y = side.b == 1 and y + seg[1] or y
 					local pos = Vector( x, -y, 8 ) * scale
-					local ang = Angle( -90, 0, 0 )
-						if ( side.w == 1 ) then ang = Angle( -90, 90, 0 ) end
+					local ang = Angle( 0, 0, 0 )
 					table.insert( room.Models, {
 						Pos = pos,
 						Ang = ang,
@@ -820,9 +932,16 @@ function PRK_Gen_Remove()
 	for k, v in pairs( LastGen ) do
 		for _, ent in pairs( v.Ents ) do
 			if ( ent and ent:IsValid() ) then
-				ent:Remove()
+				if ( ent:GetClass() == "prk_gateway" ) then
+					timer.Simple( 5, function() if ( ent and ent:IsValid() ) then ent:Remove() end end )
+				else
+					ent:Remove()
+				end
 			end
 		end
+	end
+	for k, v in pairs( ents.FindByClass( "prk_wall_combined" ) ) do
+		v:Remove()
 	end
 	LastGen = {}
 end

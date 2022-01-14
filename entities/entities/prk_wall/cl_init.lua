@@ -90,6 +90,10 @@ function ENT:Initialize()
 	-- Set up solidity and movetype
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:SetSolid( SOLID_VPHYSICS )
+	local phys = self:GetPhysicsObject()
+	if ( phys and phys:IsValid() ) then
+		phys:EnableMotion( false )
+	end
 
 	-- Enable custom collisions on the entity
 	self:EnableCustomCollisions( true )
@@ -132,7 +136,7 @@ function ENT:Initialize()
 				ang:RotateAroundAxis( self:GetAngles():Forward(), rnd[3].p )
 				ang:RotateAroundAxis( self:GetAngles():Up(), rnd[3].y )
 				ang:RotateAroundAxis( self:GetAngles():Right(), rnd[3].r )
-			local mat = "models/debug/debugwhite"
+			local mat = PRK_Material_Base
 			local col = rnd[5][math.random( 1, #rnd[5] )]
 
 			local ent = self:AddModel( mdl, pos, ang, 1, mat, col )
@@ -148,7 +152,7 @@ function ENT:Initialize()
 
 	local collision = self:OBBMaxs() - self:OBBMins()
 	local border = 0.004
-	local scale = Vector( collision.x / size, collision.y / size + border, 0.01 * collision.z / size + border )
+	local scale = Vector( collision.x / size, collision.y / size + border, collision.z / size + border )
 	local min = -scale * size
 	local max = scale * size
 	-- ent:SetRenderBounds( min, max )
@@ -156,7 +160,13 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
-	if ( !PlayerInZone( self, self.Zone ) ) then return end
+	if ( !self:ShouldDraw() ) then return end
+
+	-- test sphere
+	if ( true ) then
+		-- mesh.GenerateSphere( self:GetPos(), 400, 8, 8 )
+		-- return
+	end
 
 	-- Wall model
 	local size = PRK_Editor_Square_Size
@@ -164,14 +174,13 @@ function ENT:Draw()
 	local ang = self:GetAngles()
 		ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
 	local collision = self:OBBMaxs() - self:OBBMins()
-	local border = 0.004
+	local border = -0.004
 	local scale = Vector()
-		scale = scale + VectorAbs( ang:Forward() * collision.y / size + ang:Forward() * border )
-		scale = scale + VectorAbs( ang:Right()   * collision.z / size * 0.15 )
-		scale = scale + VectorAbs( ang:Up()      * collision.x / size )
-		if ( math.approx( math.abs( ang.y ), 180 ) or math.approx( math.abs( ang.y ), 0 ) ) then
+		scale = scale + VectorAbs( ang:Up() * collision.y / size + ang:Up() * border )
+		scale = scale + VectorAbs( ang:Right()   * collision.x / size + ang:Right() * border )
+		scale = scale + VectorAbs( ang:Forward()      * collision.z / size )
 			ang:RotateAroundAxis( self:GetAngles():Forward(), 90 )
-		end
+			ang:RotateAroundAxis( self:GetAngles():Right(), 90 )
 	local mat = Matrix()
 		mat:Scale( scale )
 	wallent:EnableMatrix( "RenderMultiply", mat )
@@ -186,27 +195,16 @@ function ENT:Draw()
 		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
 		v:DrawModel()
 	end
+	
+	-- self:DrawModel()
+	-- local col = Color( 0, 0, 255, 255 )
+	-- local pos, ang = self:GetPos(), self:GetAngles()
+	-- local min, max = self:OBBMins(), self:OBBMaxs()
+	-- render.DrawWireframeBox( pos, ang, min, max, col )
 end
 
 function ENT:OnRemove()
 	for k, v in pairs( self.Models ) do
 		v:Remove()
 	end
-end
-
-function ENT:AddModel( mdl, pos, ang, scale, mat, col )
-	local model = ClientsideModel( mdl )
-		model:SetPos( self:GetPos() + pos )
-		model:SetAngles( ang )
-		model:SetModelScale( scale )
-		model:SetMaterial( mat )
-		model:SetColor( col )
-		model.Pos = pos
-		model.Ang = ang
-		-- model.RenderBoundsMin, model.RenderBoundsMax = model:GetRenderBounds()
-	table.insert(
-		self.Models,
-		model
-	)
-	return model
 end

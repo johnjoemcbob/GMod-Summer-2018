@@ -18,6 +18,8 @@ function ENT:Initialize()
 end
 
 function ENT:Draw()
+	if ( !self:ShouldDraw() ) then return end
+
 	if ( !self.Bullet ) then
 		self:Initialize()
 	end

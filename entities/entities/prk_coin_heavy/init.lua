@@ -51,6 +51,7 @@ local function trypickup( ent, colent )
         colent:SetNWInt( "PRK_Money", colent:GetNWInt( "PRK_Money" ) + money_fract_rollover )
 
         -- Don't forget, we want the player to see that extra 1 or 2 currency they picked up with fractional rollover!
+		PRK_ChainPitchedSounds[colent:Nick() .. "_PRK_Coin_Shoot"] = nil
 		local chain = PRK_EmitChainPitchedSound(
 			colent:Nick() .. "_PRK_Coin_Pickup",
 			colent,
@@ -63,13 +64,10 @@ local function trypickup( ent, colent )
 			1,
 			function( self )
 				colent:EmitSound( "items/medshot4.wav", 75, 255 )
-				-- SendKeyValue( colent, "PRK_Money_Add_End", "true" )
 				colent:SetNWInt( "PRK_Money_Add", 0 )
 			end,
             money_whole + money_fract_rollover
 		)
-		-- SendKeyValue( colent, "PRK_Money_Add", chain )
-        
 		colent:SetNWInt( "PRK_Money_Add", chain )
 
 		ent:Remove()

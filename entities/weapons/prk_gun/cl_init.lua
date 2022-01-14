@@ -6,10 +6,9 @@ PRK_Initialise_RevolverChambers()
 net.Receive( "PRK_Gun_Fire", function( len, ply )
 	local self = net.ReadEntity()
 	local tab = net.ReadTable()
-	local bul = net.ReadFloat()
+	local bul = net.ReadString()
 	local spn = net.ReadBool()
 
-	-- print( "fireing.. " .. CurTime() )
 	local takeammo, spin, shootparticles, punch = PRK_BulletTypeInfo[bul]:Fire( self )
 
 	-- Play animation
@@ -47,9 +46,11 @@ net.Receive( "PRK_Gun_Reload", function( len, ply )
 
 	self.ChamberBullets = tab
 
-	self.GunPunch = -0.4
-	self.GunPunchRnd = math.random( -10, 10 )
-	PRK_Gun_AddAmmo( dir ) -- In main cl_init.lua
+	if ( dir != 0 ) then
+		self.GunPunch = -0.4
+		self.GunPunchRnd = math.random( -10, 10 )
+		PRK_Gun_AddAmmo( dir ) -- In main cl_init.lua
+	end
 end )
 
 net.Receive( "PRK_Gun_NoAmmo", function( len, ply )
@@ -79,6 +80,17 @@ net.Receive( "PRK_Gun_BulletUpdate", function( len, ply )
 	self.ChamberBullets = tab
 end )
 
+net.Receive( "PRK_Gun_ChamberWarning", function( len, ply )
+	local self = net.ReadEntity()
+	local chamber = net.ReadFloat()
+
+	if ( !LocalPlayer().ChamberWarning ) then
+		LocalPlayer().ChamberWarning = {}
+	end
+	LocalPlayer().ChamberWarning[chamber] = 255
+	self.Weapon:EmitSound( "weapons/pistol/pistol_empty.wav" )
+end )
+
 function SWEP:OnEntityCreated()
 	PRK_Initialise_RevolverChambers()
 
@@ -106,7 +118,7 @@ end
 
 function SWEP:DrawWorldModel()
 	render.SetColorModulation( 1, 1, 1 )
-	self:SetMaterial( "models/debug/debugwhite" )
+	self:SetMaterial( PRK_Material_Base )
 	self:DrawModel()
 end
 

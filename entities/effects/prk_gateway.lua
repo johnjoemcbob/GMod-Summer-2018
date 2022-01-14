@@ -1,6 +1,9 @@
 
 -- Materials
 PRK_Material_Square = Material( "square.png", "noclamp smooth" )
+if ( !PRK_Gateway_Emitters ) then
+	PRK_Gateway_Emitters = {}
+end
 
 function EFFECT:Init( data )
 	local origin = data:GetOrigin()

@@ -454,7 +454,7 @@ function GM:GenerateLobby()
 			floor.Size = { 8 * size, 8 * size }
 			floor:DrawShadow( false )
 			floor:SetMaterial( "models/rendertarget" )
-			floor:SetColor( 0, 0, 0, 255 )
+			floor:SetColor( Color(0, 0, 0, 255) )
 		floor:Spawn()
 		floor:SetZone( 0 )
 	end

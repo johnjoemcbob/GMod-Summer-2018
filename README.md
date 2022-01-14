@@ -1,4 +1,4 @@
-# Fixed (Fully) version of Heavy Gullets from Prickly Team
+# Fixed version of Heavy Gullets from Prickly Team
 This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **I'm not a author of the original gamemode! All credits go to https://steamcommunity.com/id/johnjoemcbob !**

@@ -1,7 +1,5 @@
-# Fixed version of Heavy Gullets from Prickly Team
-This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
-
-**I'm not a author of the original gamemode! All credits go to https://steamcommunity.com/id/johnjoemcbob !**
+# Heavy Gullets from Prickly Team
+This is fixed version of Heavy Gullets provided by SNeicer (thanks!).
 
 **This gamemode requires this libary: https://github.com/handsomematt/3d2d-vgui**
 

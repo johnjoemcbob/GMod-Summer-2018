@@ -1,4 +1,4 @@
-# Fixed (Not fully (Only First Floor available for some reason)) version of Heavy Gullets from Prickly Team
+# Fixed (Fully) version of Heavy Gullets from Prickly Team
 This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **I'm not a author of the original gamemode! All credits go to https://steamcommunity.com/id/johnjoemcbob !**
@@ -11,10 +11,14 @@ This is fixed (At least for now) version of Heavy Gullets from Prickly Team.
 
 **You can download this gamemode from the release tab or do it old way (see original text)**
 
-There is still stack overflow bug however... 
-I'm going try to fix it a bit later
+### Stack overflow fix
 
-Upd from 14.01.2022 - Finds out, the gamemode isn't actually random, i'm not sure what the problem is exactly, but i'm going to try to fix it
+If you have problem with stack overflow, follow this steps to fix it:
+1. Go to "PathToSteam/steamapps/common/GarrysMod/garrysmod/addons"
+2. Delete every .gma files in this directory
+3. Then go to "PathToSteam/steamapps/common/GarrysMod/garrysmod/data"
+4. Find "prickly" folder and delete it
+5. Now launch the gamemode, it should work!
 
 ## Original Text
 
